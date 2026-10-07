@@ -35,5 +35,5 @@ build/
 ### Eclipse ###
 bin/
 
-### Secrets ###
+### Secretos ###
 application-local.properties
