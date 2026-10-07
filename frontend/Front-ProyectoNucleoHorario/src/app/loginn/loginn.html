@@ -38,7 +38,7 @@
               <polyline points="22,6 12,13 2,6"/>
             </svg>
           </span>
-          <input type="email" placeholder="Correo institucional">
+          <input type="email" [(ngModel)]="correo" name="correo" placeholder="Correo institucional">
         </div>
 
         <div class="input-group">
@@ -49,7 +49,11 @@
             </svg>
           </span>
 
-          <input [type]="mostrarContrasenia ? 'text' : 'password'" placeholder="Contraseña">
+          <input
+            [type]="mostrarContrasenia ? 'text' : 'password'"
+            [(ngModel)]="contrasenia"
+            name="contrasenia"
+            placeholder="Contraseña">
 
           <button type="button" class="toggle-password" (click)="toggleMostrarContrasenia()">
             <svg *ngIf="!mostrarContrasenia" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -68,7 +72,8 @@
           <a href="#">¿Olvidaste tu contraseña?</a>
         </div>
 
-        <button type="button" class="btn-submit">
+        <!-- Evento click para llamar a la función de inicio de sesión -->
+        <button type="button" class="btn-submit" (click)="iniciarSesion()">
           Iniciar sesión
         </button>
 
