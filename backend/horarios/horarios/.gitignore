@@ -37,3 +37,7 @@ bin/
 
 ### Secretos ###
 application-local.properties
+
+### Otros ###
+bin/
+application-local.properties
