@@ -1,6 +1,5 @@
 <div class="layout-wrapper">
 
-  <!-- BARRA LATERAL IZQUIERDA (SIDEBAR) -->
   <aside class="sidebar">
     <div class="sidebar-top">
       <div class="user-avatar-btn" title="Perfil Administrador">
@@ -12,7 +11,6 @@
     </div>
 
     <nav class="sidebar-menu">
-      <!-- 1. Panel de control (Inicio) -->
       <button type="button" class="sidebar-btn active" title="Panel de control">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -20,7 +18,6 @@
         </svg>
       </button>
 
-      <!-- 2. Docentes -->
       <button type="button" class="sidebar-btn" title="Docentes">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M17 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -29,7 +26,6 @@
         </svg>
       </button>
 
-      <!-- 3. Gestión de bases de datos -->
       <button type="button" class="sidebar-btn" (click)="navegarA('/gestion-bases-datos')" title="Gestión de bases de datos">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
@@ -42,11 +38,9 @@
     <div class="sidebar-corner-decor"></div>
   </aside>
 
-  <!-- CONTENIDO PRINCIPAL -->
   <main class="main-content">
     <div class="dashboard-container">
 
-      <!-- TARJETA DE BIENVENIDA -->
       <section class="welcome-card">
         <div class="welcome-text">
           <span class="badge-role">{{ rol }}</span>
@@ -55,7 +49,6 @@
         </div>
       </section>
 
-      <!-- MÉTRICAS RÁPIDAS -->
       <section class="metrics-grid">
         <div class="metric-card" *ngFor="let m of metricas">
           <div class="metric-info">
@@ -65,7 +58,6 @@
         </div>
       </section>
 
-      <!-- MÓDULOS PRINCIPALES DE GESTIÓN -->
       <h2 class="section-title">¿Qué deseas gestionar hoy?</h2>
 
       <section class="modules-grid">
@@ -87,7 +79,6 @@
     </div>
   </main>
 
-  <!-- DETALLES VISUALES LATERALES DERECHOS -->
   <aside class="right-decor-panel">
     <div class="circle-top-outline"></div>
     <div class="circle-middle-orange"></div>
