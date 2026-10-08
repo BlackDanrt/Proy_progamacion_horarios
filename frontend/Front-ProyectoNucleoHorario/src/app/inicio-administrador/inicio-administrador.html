@@ -1,0 +1,97 @@
+<div class="layout-wrapper">
+
+  <!-- BARRA LATERAL IZQUIERDA (SIDEBAR) -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="user-avatar-btn" title="Perfil Administrador">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <!-- 1. Panel de control (Inicio) -->
+      <button type="button" class="sidebar-btn active" title="Panel de control">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </button>
+
+      <!-- 2. Docentes -->
+      <button type="button" class="sidebar-btn" title="Docentes">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M17 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M9 21v-2a4 4 0 0 1 4-4h1"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+        </svg>
+      </button>
+
+      <!-- 3. Gestión de bases de datos -->
+      <button type="button" class="sidebar-btn" (click)="navegarA('/gestion-bases-datos')" title="Gestión de bases de datos">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+        </svg>
+      </button>
+    </nav>
+
+    <div class="sidebar-corner-decor"></div>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="main-content">
+    <div class="dashboard-container">
+
+      <!-- TARJETA DE BIENVENIDA -->
+      <section class="welcome-card">
+        <div class="welcome-text">
+          <span class="badge-role">{{ rol }}</span>
+          <h1>¡Bienvenido de nuevo, {{ nombreAdmin }}!</h1>
+          <p>Selecciona un módulo del menú lateral o utiliza los accesos directos principales para la gestión del sistema.</p>
+        </div>
+      </section>
+
+      <!-- MÉTRICAS RÁPIDAS -->
+      <section class="metrics-grid">
+        <div class="metric-card" *ngFor="let m of metricas">
+          <div class="metric-info">
+            <span class="metric-title">{{ m.titulo }}</span>
+            <span class="metric-value">{{ m.valor }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- MÓDULOS PRINCIPALES DE GESTIÓN -->
+      <h2 class="section-title">¿Qué deseas gestionar hoy?</h2>
+
+      <section class="modules-grid">
+        <div class="module-card" *ngFor="let item of accesosDirectos" (click)="navegarA(item.ruta)">
+          <div class="module-header">
+            <span class="module-badge">{{ item.badge }}</span>
+          </div>
+          <h3>{{ item.titulo }}</h3>
+          <p>{{ item.descripcion }}</p>
+          <div class="module-footer">
+            <span>Acceder al módulo</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- DETALLES VISUALES LATERALES DERECHOS -->
+  <aside class="right-decor-panel">
+    <div class="circle-top-outline"></div>
+    <div class="circle-middle-orange"></div>
+    <div class="circle-bottom-green"></div>
+  </aside>
+
+</div>
