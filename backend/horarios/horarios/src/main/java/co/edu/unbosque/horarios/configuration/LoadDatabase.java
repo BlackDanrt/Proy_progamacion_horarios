@@ -8,16 +8,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-//import co.edu.unbosque.horarios.entity.Usuario;
-//import co.edu.unbosque.horarios.entity.Usuario.Role;
-//import co.edu.unbosque.horarios.repository.UsuarioRepository;
+import co.edu.unbosque.horarios.entity.Administrador;
+import co.edu.unbosque.horarios.repository.AdministradorRepository;
 
 /**
- * Clase de configuración encargada de inicializar
- * datos predeterminados en la base de datos.
+ * Clase de configuración encargada de inicializar datos predeterminados en la
+ * base de datos.
  * 
- * En este caso, se asegura de crear o actualizar
- * un usuario administrador al iniciar la aplicación.
+ * En este caso, se asegura de crear o actualizar un usuario administrador al
+ * iniciar la aplicación.
  * 
  * @version 1.0
  */
@@ -25,14 +24,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class LoadDatabase {
 
 	/**
-	 * Logger utilizado para registrar mensajes
-	 * relacionados con la carga de datos iniciales.
+	 * Logger utilizado para registrar mensajes relacionados con la carga de datos
+	 * iniciales.
 	 */
 	private static final Logger log = LoggerFactory.getLogger(LoadDatabase.class);
 
 	/**
-	 * Contraseña predeterminada obtenida
-	 * desde el archivo de configuración.
+	 * Contraseña predeterminada obtenida desde el archivo de configuración.
 	 */
 	@Value("${app.default.user.password}")
 	private String defaultPassword;
@@ -40,41 +38,41 @@ public class LoadDatabase {
 	/**
 	 * Inicializa la base de datos con un usuario administrador.
 	 * 
-	 * Si el usuario administrador no existe,
-	 * se crea automáticamente. Si ya existe,
+	 * Si el usuario administrador no existe, se crea automáticamente. Si ya existe,
 	 * se actualizan sus datos principales.
 	 * 
-	 * @param userRepo repositorio de usuarios.
+	 * @param adminRepo       repositorio de administradores.
 	 * @param passwordEncoder codificador de contraseñas.
 	 * @return CommandLineRunner que ejecuta la inicialización.
 	 */
-//	@Bean
-//	CommandLineRunner initDatabase(UsuarioRepository userRepo, PasswordEncoder passwordEncoder) {
-//		return args -> {
-//
-//			/**
-//			 * Busca el usuario administrador por correo.
-//			 * Si no existe, crea una nueva instancia.
-//			 */
-//			Usuario admin = userRepo.findByCorreo("administrador@gmail.com").orElse(new Usuario());
-//
-//			admin.setNombre("AdministradorPokedes");
-//			admin.setCorreo("administrador@gmail.com");
-//			admin.setContrasenia(passwordEncoder.encode(defaultPassword));
-//			admin.setRol(Role.ADMINISTRADOR);
-//			admin.setActivado(true);
-//
-//			/**
-//			 * Guarda o actualiza el usuario administrador
-//			 * en la base de datos.
-//			 */
-//			userRepo.save(admin);
-//
-//			/**
-//			 * Registra un mensaje indicando que el administrador
-//			 * fue inicializado correctamente.
-//			 */
-//			log.info("ADMINISTRADOR listo.");
-//		};
-//	}
+	@Bean
+	CommandLineRunner initDatabase(AdministradorRepository adminRepo, PasswordEncoder passwordEncoder) {
+		return args -> {
+
+			/**
+			 * Busca el usuario administrador por correo. Si no existe, crea una nueva
+			 * instancia.
+			 */
+			Administrador admin = adminRepo.findByCorreo("administrador@gmail.com").orElse(new Administrador());
+
+			admin.setNombre("Administrador");
+			admin.setApellido("Sistema");
+			admin.setDocumento(123456789L);
+			admin.setCorreo("administrador@gmail.com");
+			admin.setContrasenia(passwordEncoder.encode(defaultPassword));
+			admin.setCodigoAdministrador("ADMIN-001");
+			admin.setEstado(true);
+
+			/**
+			 * Guarda o actualiza el usuario administrador en la base de datos.
+			 */
+			adminRepo.save(admin);
+
+			/**
+			 * Registra un mensaje indicando que el administrador fue inicializado
+			 * correctamente.
+			 */
+			log.info("ADMINISTRADOR listo.");
+		};
+	}
 }
