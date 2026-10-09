@@ -31,8 +31,11 @@ export class Loginn {
   iniciarSesion(): void {
     if (this.pestanaActiva === 'docente') {
       this.router.navigate(['/registro-profesor']);
-    } else {
-      console.log('Ingreso como administrador');
+    }else if (this.pestanaActiva === 'administrador'){
+      this.router.navigate(['/inicio-administrador']);
+    }
+    else {
+      console.log('Ingreso invalido');
     }
   }
 }

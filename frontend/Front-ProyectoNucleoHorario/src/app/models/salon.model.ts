@@ -1,6 +1,8 @@
+import {Bloque} from '../enums/bloque.enum';
+
 export interface SalonModel {
   id: number;
-  bloque: string;
+  bloque: Bloque;
   numeroSalon: number;
   capacidad: number;
   tieneComputadores: boolean;
