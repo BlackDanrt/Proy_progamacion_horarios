@@ -1,6 +1,5 @@
 package co.edu.unbosque.horarios.controller;
 
-import co.edu.unbosque.horarios.repository.FranjaHorariaRepository;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +38,7 @@ public class SalonController {
 		try {
 			lista = salonSer.findByBloque(bloque);
 			return lista.isEmpty() ? new ResponseEntity<>(lista, HttpStatus.NO_CONTENT)
-				: new ResponseEntity<>(lista, HttpStatus.ACCEPTED);
+				: new ResponseEntity<>(lista, HttpStatus.OK);
 		} catch (Exception e) {
 			return new ResponseEntity<List<SalonDTO>>(lista, HttpStatus.BAD_REQUEST);
 		}
@@ -51,7 +50,7 @@ public class SalonController {
 		try {
 			lista = salonSer.findByCapacidad(capacidad);
 			return lista.isEmpty() ? new ResponseEntity<>(lista, HttpStatus.NO_CONTENT)
-				: new ResponseEntity<>(lista, HttpStatus.ACCEPTED);
+				: new ResponseEntity<>(lista, HttpStatus.OK);
 		} catch (Exception e) {
 			return new ResponseEntity<List<SalonDTO>>(lista, HttpStatus.BAD_REQUEST);
 		}
@@ -63,7 +62,7 @@ public class SalonController {
 		try {
 			lista = salonSer.findByTieneSillasMoviles(tieneSillasMoviles);
 			return lista.isEmpty() ? new ResponseEntity<>(lista, HttpStatus.NO_CONTENT)
-				: new ResponseEntity<>(lista, HttpStatus.ACCEPTED);
+				: new ResponseEntity<>(lista, HttpStatus.OK);
 		} catch (Exception e) {
 			return new ResponseEntity<List<SalonDTO>>(lista, HttpStatus.BAD_REQUEST);
 		}
@@ -75,25 +74,23 @@ public class SalonController {
 		try {
 			lista = salonSer.findByTieneComputadores(tieneComputadores);
 			return lista.isEmpty() ? new ResponseEntity<>(lista, HttpStatus.NO_CONTENT)
-				: new ResponseEntity<>(lista, HttpStatus.ACCEPTED);
+				: new ResponseEntity<>(lista, HttpStatus.OK);
 		} catch (Exception e) {
 			return new ResponseEntity<List<SalonDTO>>(lista, HttpStatus.BAD_REQUEST);
 		}
 	}
 	
-	/* 
-	 * @GetMapping("/buscarporbloque")
-	public ResponseEntity<SalonDTO> buscarPorBloqueAndNumeroSalon(@RequestParam Bloque bloque, int numeroSalon) {
-		List<SalonDTO> lista = new ArrayList<>();
+	@GetMapping("/buscarporbloquenumero")
+	public ResponseEntity<SalonDTO> buscarPorBloqueAndNumeroSalon(@RequestParam Bloque bloque, @RequestParam int numeroSalon) {
+		SalonDTO salonDTO = new SalonDTO();
 		try {
-			lista = salonSer.findByBloqueAndNumeroSalon(bloque, numeroSalon);
-			return lista.isEmpty() ? new ResponseEntity<>(lista, HttpStatus.NO_CONTENT)
-				: new ResponseEntity<>(lista, HttpStatus.ACCEPTED);
+			salonDTO = salonSer.findByBloqueAndNumeroSalon(bloque, numeroSalon);
+			return salonDTO == null ? new ResponseEntity<>(salonDTO, HttpStatus.NO_CONTENT)
+				: new ResponseEntity<>(salonDTO, HttpStatus.OK);
 		} catch (Exception e) {
-			return new ResponseEntity<List<SalonDTO>>(lista, HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<SalonDTO>(salonDTO, HttpStatus.BAD_REQUEST);
 		}
 	}
-	 */
 	
 	@PostMapping("/crear")
 	public ResponseEntity<String> crearSalon(@RequestBody SalonDTO salonDTO) {
@@ -117,7 +114,7 @@ public class SalonController {
 	}
 	
 	@DeleteMapping("/eliminar")
-	public ResponseEntity<String> eliminarSalon(@RequestParam Bloque bloque, int numeroSalon) {
+	public ResponseEntity<String> eliminarSalon(@RequestParam Bloque bloque, @RequestParam int numeroSalon) {
 		try {
 			int status = salonSer.deleteByBloqueAndNumeroSalon(bloque, numeroSalon);
 			return (status == 0) ? new ResponseEntity<>("Salón eliminado exitosamente", HttpStatus.ACCEPTED)
