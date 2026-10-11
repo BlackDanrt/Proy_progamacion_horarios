@@ -31,6 +31,42 @@ public class AdministradorController {
 		// TODO Auto-generated constructor stub
 	}
 	
+	@GetMapping("/buscarporcodigo")
+	public ResponseEntity<List<AdministradorDTO>> buscarPorCodigoAdministrador(@RequestParam String codigoAdministrador) {
+		List<AdministradorDTO> lista = new ArrayList<>();
+		try {
+			lista = administradorSer.findByCodigoAdministrador(codigoAdministrador);
+			return lista.isEmpty() ? new ResponseEntity<>(lista, HttpStatus.NO_CONTENT)
+				: new ResponseEntity<>(lista, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<List<AdministradorDTO>>(lista, HttpStatus.BAD_REQUEST);
+		}
+	}
+	
+	@GetMapping("/buscarporcorreo")
+	public ResponseEntity<List<AdministradorDTO>> buscarPorCorreo(@RequestParam String correo) {
+		List<AdministradorDTO> lista = new ArrayList<>();
+		try {
+			lista = administradorSer.findByCorreo(correo);
+			return lista.isEmpty() ? new ResponseEntity<>(lista, HttpStatus.NO_CONTENT)
+				: new ResponseEntity<>(lista, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<List<AdministradorDTO>>(lista, HttpStatus.BAD_REQUEST);
+		}
+	}
+	
+	@GetMapping("/buscarpordocumento")
+	public ResponseEntity<List<AdministradorDTO>> buscarPorDocumento(@RequestParam long documento) {
+		List<AdministradorDTO> lista = new ArrayList<>();
+		try {
+			lista = administradorSer.findByDocumento(documento);
+			return lista.isEmpty() ? new ResponseEntity<>(lista, HttpStatus.NO_CONTENT)
+				: new ResponseEntity<>(lista, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<List<AdministradorDTO>>(lista, HttpStatus.BAD_REQUEST);
+		}
+	}
+	
 	@GetMapping("/mostrartodo")
 	public ResponseEntity<List<AdministradorDTO>> mostrarTodo() {
 		List<AdministradorDTO> lista = new ArrayList<>();
