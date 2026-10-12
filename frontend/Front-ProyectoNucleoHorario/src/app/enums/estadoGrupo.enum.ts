@@ -1,0 +1,6 @@
+export enum EstadoGrupo {
+  ACTIVO = 'ACTIVO',
+  INACTIVO = 'INACTIVO',
+  CANCELADO = 'CANCELADO',
+  COMPLETO = 'COMPLETO'
+}

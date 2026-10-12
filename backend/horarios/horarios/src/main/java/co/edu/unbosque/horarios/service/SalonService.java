@@ -204,7 +204,7 @@ public class SalonService implements CRUDOperation<SalonDTO> {
                 bloque, numeroSalon);
     }
 
-    public void deleteByBloqueAndNumeroSalon(
+    public int deleteByBloqueAndNumeroSalon(
             Bloque bloque, int numeroSalon) {
 
         LanzadorDeException.verificarBloque(bloque);
@@ -212,11 +212,12 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 
         if (!salonRep.existsByBloqueAndNumeroSalon(
                 bloque, numeroSalon)) {
-            return;
+            return 1;
         }
 
         salonRep.deleteByBloqueAndNumeroSalon(
                 bloque, numeroSalon);
+        return 0;
     }
 
     public SalonRepository getSalonRep() {

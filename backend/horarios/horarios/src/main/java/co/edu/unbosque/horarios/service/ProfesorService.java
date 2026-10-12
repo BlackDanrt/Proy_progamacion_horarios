@@ -211,10 +211,10 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
         return lista;
     }
 
-    public List<ProfesorDTO> findByEspecialidad(Asignatura asignatura) {
+    public List<ProfesorDTO> findByEspecialidad(AsignaturaDTO asignaturaDTO) {
 
-        LanzadorDeException.verificarAsignatura(
-                mapper.map(asignatura, AsignaturaDTO.class));
+    	Asignatura asignatura = mapper.map(asignaturaDTO, Asignatura.class);
+        LanzadorDeException.verificarAsignatura(asignaturaDTO);
 
         List<ProfesorDTO> lista = new ArrayList<>();
 
@@ -229,10 +229,10 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
     }
 
     public List<ProfesorDTO> findByDisponibilidad(
-            FranjaHoraria franjaHoraria) {
+            FranjaHorariaDTO franjaHorariaDTO) {
 
-        LanzadorDeException.verificarFranjaHoraria(
-                mapper.map(franjaHoraria, FranjaHorariaDTO.class));
+    	FranjaHoraria franjaHoraria = mapper.map(franjaHorariaDTO, FranjaHoraria.class);
+        LanzadorDeException.verificarFranjaHoraria(franjaHorariaDTO);
 
         List<ProfesorDTO> lista = new ArrayList<>();
 

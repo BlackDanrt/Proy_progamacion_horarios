@@ -1,0 +1,246 @@
+<div class="layout-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="user-avatar-btn" title="Perfil">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <button type="button" class="sidebar-btn" title="Inicio">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </button>
+
+      <button type="button" class="sidebar-btn active" title="Horarios / Calendario">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </button>
+
+      <button type="button" class="sidebar-btn" title="Docentes">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M17 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M9 21v-2a4 4 0 0 1 4-4h1"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        </svg>
+      </button>
+
+      <button type="button" class="sidebar-btn" title="Cursos / Materias">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      </button>
+
+      <button type="button" class="sidebar-btn" title="Mensajes">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </button>
+
+      <button type="button" class="sidebar-btn" title="Configuración">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </nav>
+
+    <div class="sidebar-corner-decor"></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="registro-container">
+
+      <div class="card-panel">
+        <h2 class="card-titulo">Registro de profesor</h2>
+        <div class="decorador-linea"></div>
+
+        <form class="grid-form" (submit)="$event.preventDefault()">
+
+          <div class="form-field">
+            <label>Nombre completo</label>
+            <div class="input-group">
+              <span class="icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </span>
+              <input type="text" [(ngModel)]="nombreCompleto" name="nombreCompleto" placeholder="">
+              <span class="edit-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Correo institucional</label>
+            <div class="input-group">
+              <span class="icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </span>
+              <input type="email" [(ngModel)]="correoInstitucional" name="correoInstitucional" placeholder="">
+              <span class="edit-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Especialidad</label>
+            <div class="input-group">
+              <span class="icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+              </span>
+              <input type="text" [(ngModel)]="especialidad" name="especialidad" placeholder="">
+              <span class="edit-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Tipo de vinculación</label>
+            <div class="input-group select-group">
+              <select [(ngModel)]="tipoVinculacion" name="tipoVinculacion">
+                <option *ngFor="let opcion of opcionesVinculacion" [value]="opcion">
+                  {{ opcion }}
+                </option>
+              </select>
+              <span class="chevron-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="card-panel">
+        <h2 class="card-titulo">Disponibilidad horaria semanal</h2>
+        <div class="decorador-linea"></div>
+
+        <!-- Toolbar de Navegación de Fecha -->
+        <div class="horario-toolbar">
+
+          <div class="fecha-selector">
+            <button type="button" class="btn-nav" (click)="cambiarSemana(-1)" title="Semana anterior">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
+            <div class="fecha-badge-container">
+              <label class="fecha-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>{{ rangoSemanaTexto }}</span>
+
+                <input
+                  type="date"
+                  class="input-date-hidden"
+                  [value]="fechaInputPicker"
+                  (change)="alSeleccionarFecha($event)">
+              </label>
+            </div>
+
+            <button type="button" class="btn-nav" (click)="cambiarSemana(1)" title="Semana siguiente">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <div class="convenciones">
+            <div class="item-convencion">
+              <span class="box-disponible"></span>
+              <span>Disponible</span>
+            </div>
+            <div class="item-convencion">
+              <span class="box-seleccionado"></span>
+              <span>Seleccionado</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="tabla-container">
+          <table class="tabla-horario">
+            <thead>
+            <tr>
+              <th class="th-hora">Hora</th>
+              <th *ngFor="let dia of diasSemana">{{ dia }}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let h of horas; let hIdx = index">
+              <td class="td-hora">{{ h.horaInicio }} – {{ h.horaFin }}</td>
+              <td
+                *ngFor="let dia of diasSemana; let dIdx = index"
+                class="td-bloque"
+                (click)="toggleCelda(dIdx, hIdx)">
+                <div
+                  class="bloque-slot"
+                  [class.activo]="isCeldaSeleccionada(dIdx, hIdx)">
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer-acciones">
+          <button type="button" class="btn-guardar" (click)="guardarDisponibilidad()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span>Guardar disponibilidad</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <aside class="right-decor-panel">
+    <div class="circle-top-outline"></div>
+    <div class="circle-middle-orange"></div>
+    <div class="circle-bottom-green"></div>
+  </aside>
+
+</div>

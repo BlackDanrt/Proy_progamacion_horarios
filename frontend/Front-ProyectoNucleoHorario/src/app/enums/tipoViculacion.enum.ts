@@ -1,0 +1,5 @@
+export enum TipoVinculacion {
+  TIEMPO_COMPLETO = 'TIEMPO_COMPLETO',
+  MEDIO_TIEMPO = 'MEDIO_TIEMPO',
+  CATEDRA = 'CATEDRA'
+}

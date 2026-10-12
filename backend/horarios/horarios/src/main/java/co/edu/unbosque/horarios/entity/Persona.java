@@ -1,6 +1,12 @@
 package co.edu.unbosque.horarios.entity;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
@@ -11,7 +17,12 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 @MappedSuperclass
-public abstract class Persona {
+public abstract class Persona implements UserDetails {
+
+	/**
+	 * Identificador de serialización de la clase.
+	 */
+	private static final long serialVersionUID = 1L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -124,4 +135,41 @@ public abstract class Persona {
 				+ correo + "";
 	}
 
+	// Métodos de UserDetails
+	
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+		String rol = (this instanceof Profesor) ? "PROFESOR" : "ADMINISTRADOR";
+		return List.of(new SimpleGrantedAuthority("ROLE_" + rol));
+	}
+
+	@Override
+	public String getPassword() {
+		return this.contrasenia;
+	}
+
+	@Override
+	public String getUsername() {
+		return this.correo;
+	}
+
+	@Override
+	public boolean isAccountNonExpired() {
+		return true;
+	}
+
+	@Override
+	public boolean isAccountNonLocked() {
+		return true;
+	}
+
+	@Override
+	public boolean isCredentialsNonExpired() {
+		return true;
+	}
+
+	@Override
+	public boolean isEnabled() {
+		return true;
+	}
 }

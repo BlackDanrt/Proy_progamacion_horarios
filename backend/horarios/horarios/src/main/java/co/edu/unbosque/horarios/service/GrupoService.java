@@ -8,7 +8,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.dto.GrupoDTO;
+import co.edu.unbosque.horarios.dto.ProfesorDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.entity.Grupo;
 import co.edu.unbosque.horarios.entity.Profesor;
@@ -267,8 +269,9 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	 * @return lista de grupos encontrados.
 	 */
 	public List<GrupoDTO> findByAsignatura(
-			Asignatura asignatura) {
+			AsignaturaDTO asignaturaDTO) {
 
+		Asignatura asignatura = mapper.map(asignaturaDTO, Asignatura.class);
 		List<Grupo> encontrados =
 				grupoRep.findByAsignatura(
 						asignatura);
@@ -292,8 +295,9 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	 * @return lista de grupos encontrados.
 	 */
 	public List<GrupoDTO> findByProfesor(
-			Profesor profesor) {
-
+			ProfesorDTO profesorDTO) {
+		
+		Profesor profesor = mapper.map(profesorDTO, Profesor.class);
 		LanzadorDeException.verificarProfesor(
 				profesor);
 
