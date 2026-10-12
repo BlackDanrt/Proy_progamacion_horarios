@@ -1,6 +1,5 @@
 package co.edu.unbosque.horarios.security;
 
-// --------------- PENDIENTE POR MODIFICAR
 import java.util.List;
 
 import org.springframework.context.annotation.Bean;
@@ -21,8 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import co.edu.unbosque.horarios.security.JwtAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
@@ -57,9 +54,8 @@ public class SecurityConfig {
 		http.csrf(csrf -> csrf.disable()).cors(Customizer.withDefaults())
 				.authorizeHttpRequests(
 						auth -> auth.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-								.requestMatchers("/pokemon/auth/**", "/usuario/login", "/swagger-ui/**",
-										"/v3/api-docs/**", "/usuario/traducir", "/pokemon/auth/enviar-codigo", "/error")
-								.permitAll().anyRequest().access((authentication, context) -> {
+								.requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
+								.anyRequest().access((authentication, context) -> {
 									var authObj = authentication.get();
 
 									if (authObj == null || !authObj.isAuthenticated()
@@ -77,26 +73,17 @@ public class SecurityConfig {
 									}
 
 									String path = context.getRequest().getServletPath();
-									boolean isAdminOnly = path.equals("/ataque/banear")
-											|| path.equals("/pokemon/cargar") || path.equals("/pokemon/cargarbd")
-											|| path.equals("/usuario/mostrartodo")
-											|| path.equals("/usuario/buscarpornombre")
-											|| path.equals("/usuario/buscarporcorreo")
-											|| path.equals("/usuario/buscarporrol") || path.equals("/usuario/crear")
-											|| path.equals("/usuario/actualizar") || path.equals("/usuario/eliminar")
-											|| path.equals("/auditoria/mostrartodo")
-											|| path.equals("/pokemon/actualizar-configuracion")
-											|| path.equals("/inventario/listar-todo");
+
+									boolean isAdminOnly = path.startsWith("/administrador") || path.contains("/crear")
+											|| path.contains("/actualizar") || path.contains("/eliminar");
 
 									if (isAdminOnly) {
 										return new AuthorizationDecision(false);
 									}
 
-									boolean isUsuarioAllowed = path.startsWith("/captura/")
-											|| path.startsWith("/combate/") || path.startsWith("/centropokemon/")
-											|| path.startsWith("/tienda/") || path.startsWith("/inventario/")
-											|| path.startsWith("/item/") || path.startsWith("/pokemon/")
-											|| path.startsWith("/usuario/genero") || path.startsWith("/centropokemon");
+									boolean isUsuarioAllowed = path.startsWith("/grupo")
+											|| path.startsWith("/franjahoraria") || path.startsWith("/asignatura")
+											|| path.startsWith("/salon") || path.startsWith("/profesor");
 
 									return new AuthorizationDecision(isUsuarioAllowed);
 								}))
