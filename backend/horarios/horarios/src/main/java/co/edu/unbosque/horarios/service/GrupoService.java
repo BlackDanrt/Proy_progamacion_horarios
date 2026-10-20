@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.dto.GrupoDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
+import co.edu.unbosque.horarios.dto.SalonDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.entity.Grupo;
 import co.edu.unbosque.horarios.entity.Profesor;
@@ -94,7 +95,16 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		LanzadorDeException.verificarNumeroGrupoDuplicado(
 				grupoRep.existsByNumeroGrupo(
 						data.getNumeroGrupo()));
-
+		
+		LanzadorDeException.verificarAsignatura(
+				mapper.map(data.getAsignatura(), AsignaturaDTO.class));
+		
+		LanzadorDeException.verificarSalon(
+				mapper.map(data.getSalon(), SalonDTO.class));
+		
+		LanzadorDeException.verificarSesiones(
+				data.getSesiones().size());
+		
 		Grupo entity = mapper.map(data, Grupo.class);
 
 		grupoRep.save(entity);
@@ -181,9 +191,16 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 
 		LanzadorDeException.verificarProfesor(
 				data.getProfesor());
-
-
-
+		
+		LanzadorDeException.verificarAsignatura(
+				mapper.map(data.getAsignatura(), AsignaturaDTO.class));
+		
+		LanzadorDeException.verificarSalon(
+				mapper.map(data.getSalon(), SalonDTO.class));
+		
+		LanzadorDeException.verificarSesiones(
+				data.getSesiones().size());
+		
 		LanzadorDeException.verificarEstadoGrupo(
 				data.getEstado());
 
@@ -228,7 +245,9 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 
 		temp.setEstado(
 				data.getEstado());
-
+		
+		temp.setSalon(
+				data.getSalon());
 		grupoRep.save(temp);
 
 		return 0;

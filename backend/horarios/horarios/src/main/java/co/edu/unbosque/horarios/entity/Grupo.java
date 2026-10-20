@@ -37,7 +37,7 @@ public class Grupo {
 	@Min(value = 1, message = "La capacidad mínima debe ser al menos 1")
 	private int capacidadMinima;
 
-	@Min(value = 1, message = "La capacidad máxima debe ser al menos 1")
+	@Min(value = 40, message = "La capacidad máxima es de 40")
 	private int capacidadMaxima;
 
 	@ManyToOne
