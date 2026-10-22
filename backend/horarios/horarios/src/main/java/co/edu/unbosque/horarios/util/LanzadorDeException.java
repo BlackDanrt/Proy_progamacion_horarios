@@ -1,5 +1,6 @@
 package co.edu.unbosque.horarios.util;
 
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -13,21 +14,30 @@ import co.edu.unbosque.horarios.dto.ProfesorDTO;
 import co.edu.unbosque.horarios.dto.SalonDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
+import co.edu.unbosque.horarios.entity.Grupo;
 import co.edu.unbosque.horarios.entity.Profesor;
 
 import co.edu.unbosque.horarios.exception.AdministradorInvalidoException;
 import co.edu.unbosque.horarios.exception.AsignaturaInvalidaException;
+import co.edu.unbosque.horarios.exception.BloqueAlmuerzoInvalidoException;
 import co.edu.unbosque.horarios.exception.BloqueInvalidoException;
 import co.edu.unbosque.horarios.exception.CapacidadInvalidaException;
+import co.edu.unbosque.horarios.exception.CapacidadMaximaExcedidaException;
 import co.edu.unbosque.horarios.exception.CapacidadMaximaInvalidaException;
 import co.edu.unbosque.horarios.exception.CapacidadMinimaInvalidaException;
+import co.edu.unbosque.horarios.exception.CapacidadSalonInsuficienteException;
 import co.edu.unbosque.horarios.exception.CapacidadesInvalidasException;
+import co.edu.unbosque.horarios.exception.CargaHorariaExcedidaException;
 import co.edu.unbosque.horarios.exception.CodigoAdministradorInvalidoException;
+import co.edu.unbosque.horarios.exception.ConflictoHorarioProfesorException;
+import co.edu.unbosque.horarios.exception.ConflictoHorarioSalonException;
 import co.edu.unbosque.horarios.exception.ContraseniaInvalidaException;
 import co.edu.unbosque.horarios.exception.CorreoInvalidoException;
 import co.edu.unbosque.horarios.exception.DiaInvalidoException;
+import co.edu.unbosque.horarios.exception.DiasConsecutivosInvalidoException;
 import co.edu.unbosque.horarios.exception.DisponibilidadHorariaInvalidaException;
 import co.edu.unbosque.horarios.exception.DocumentoInvalidoException;
+import co.edu.unbosque.horarios.exception.DuracionSesionInvalidaException;
 import co.edu.unbosque.horarios.exception.EscalafonInvalidoException;
 import co.edu.unbosque.horarios.exception.EspecialidadesInvalidasException;
 import co.edu.unbosque.horarios.exception.EstadoGrupoInvalidoException;
@@ -44,8 +54,13 @@ import co.edu.unbosque.horarios.exception.NumeroCreditosInvalidoException;
 import co.edu.unbosque.horarios.exception.NumeroGrupoInvalidoException;
 import co.edu.unbosque.horarios.exception.NumeroSalonInvalidoException;
 import co.edu.unbosque.horarios.exception.ProfesorInvalidoException;
+import co.edu.unbosque.horarios.exception.ProfesorNoCalificadoException;
+import co.edu.unbosque.horarios.exception.ProfesorNoDisponibleException;
+import co.edu.unbosque.horarios.exception.RangoHorarioInvalidoException;
+import co.edu.unbosque.horarios.exception.RequisitosSalonInvalidosException;
 import co.edu.unbosque.horarios.exception.SalonDuplicadoException;
 import co.edu.unbosque.horarios.exception.SalonInvalidoException;
+import co.edu.unbosque.horarios.exception.SesionesFrecuenciaInvalidaException;
 import co.edu.unbosque.horarios.exception.SesionesInvalidasException;
 import co.edu.unbosque.horarios.exception.TipoVinculacionInvalidaException;
 import co.edu.unbosque.horarios.util.enums.Bloque;
@@ -554,5 +569,206 @@ public class LanzadorDeException {
 			throw new SalonDuplicadoException(
 					"El salón ya se encuentra registrado para ese bloque");
 		}
+	}
+	
+
+	
+	
+	
+	public static void verificarRangoHorarioInstitucional(Dia dia, LocalTime horaInicio, LocalTime horaFin) {
+
+	    LocalTime inicioJornada = LocalTime.of(7, 0);
+	    LocalTime finJornadaSemana = LocalTime.of(22, 0);
+	    LocalTime finJornadaSabado = LocalTime.of(13, 0);
+
+	    LocalTime finPermitido = (dia == Dia.SABADO) ? finJornadaSabado : finJornadaSemana;
+
+	    if (horaInicio.isBefore(inicioJornada) || horaFin.isAfter(finPermitido)) {
+	        throw new RangoHorarioInvalidoException(
+	            dia == Dia.SABADO
+	                ? "El sábado solo se pueden asignar clases entre las 7:00 AM y la 1:00 PM"
+	                : "De lunes a viernes solo se pueden asignar clases entre las 7:00 AM y las 10:00 PM");
+	    }
+	}
+
+	public static void verificarBloqueAlmuerzo(LocalTime horaInicio, LocalTime horaFin) {
+
+	    LocalTime inicioAlmuerzo = LocalTime.of(12, 0);
+	    LocalTime finAlmuerzo = LocalTime.of(13, 0);
+
+	    boolean seSolapa = horaInicio.isBefore(finAlmuerzo) && horaFin.isAfter(inicioAlmuerzo);
+
+	    if (seSolapa) {
+	        throw new BloqueAlmuerzoInvalidoException(
+	            "No se pueden asignar clases entre las 12:00 M y la 1:00 PM");
+	    }
+	}
+
+	public static void verificarDuracionSesion(LocalTime horaInicio, LocalTime horaFin) {
+
+	    long minutos = Duration.between(horaInicio, horaFin).toMinutes();
+
+	    if (minutos != 120) {
+	        throw new DuracionSesionInvalidaException(
+	            "Cada sesión de clase debe durar exactamente 2 horas");
+	    }
+	}
+
+	public static void verificarDisponibilidadProfesorParaSesiones(
+	        List<FranjaHoraria> disponibilidadProfesor,
+	        List<FranjaHoraria> sesionesGrupo) {
+
+	    for (FranjaHoraria sesion : sesionesGrupo) {
+
+	        boolean cubierta = disponibilidadProfesor.stream().anyMatch(franja ->
+	                franja.getDia() == sesion.getDia()
+	                        && !sesion.getHoraInicio().isBefore(franja.getHoraInicio())
+	                        && !sesion.getHoraFin().isAfter(franja.getHoraFin()));
+
+	        if (!cubierta) {
+	            throw new ProfesorNoDisponibleException(
+	                "El profesor no tiene disponibilidad horaria para la sesión del día "
+	                    + sesion.getDia() + " de " + sesion.getHoraInicio() + " a " + sesion.getHoraFin());
+	        }
+	    }
+	}
+
+	public static void verificarProfesorCalificado(
+	        List<Asignatura> especialidadesProfesor,
+	        Asignatura asignatura) {
+
+	    boolean calificado = especialidadesProfesor.stream()
+	            .anyMatch(a -> a.getId() == asignatura.getId());
+
+	    if (!calificado) {
+	        throw new ProfesorNoCalificadoException(
+	            "El profesor no tiene la especialidad requerida para dictar la asignatura "
+	                + asignatura.getNombre());
+	    }
+	}
+
+	public static void verificarSinConflictoHorarioProfesor(
+	        List<Grupo> gruposDelProfesor,
+	        List<FranjaHoraria> nuevasSesiones,
+	        long idGrupoActual) {
+
+	    for (Grupo grupo : gruposDelProfesor) {
+
+	        if (grupo.getId() == idGrupoActual) continue;
+
+	        for (FranjaHoraria existente : grupo.getSesiones()) {
+	            for (FranjaHoraria nueva : nuevasSesiones) {
+
+	                boolean mismoDia = existente.getDia() == nueva.getDia();
+	                boolean seSolapan = nueva.getHoraInicio().isBefore(existente.getHoraFin())
+	                        && nueva.getHoraFin().isAfter(existente.getHoraInicio());
+
+	                if (mismoDia && seSolapan) {
+	                    throw new ConflictoHorarioProfesorException(
+	                        "El profesor ya tiene una clase asignada el día " + existente.getDia()
+	                            + " entre " + existente.getHoraInicio() + " y " + existente.getHoraFin());
+	                }
+	            }
+	        }
+	    }
+	}
+
+	public static void verificarSinConflictoHorarioSalon(
+	        List<Grupo> gruposDelSalon,
+	        List<FranjaHoraria> nuevasSesiones,
+	        long idGrupoActual) {
+
+	    for (Grupo grupo : gruposDelSalon) {
+
+	        if (grupo.getId() == idGrupoActual) continue;
+
+	        for (FranjaHoraria existente : grupo.getSesiones()) {
+	            for (FranjaHoraria nueva : nuevasSesiones) {
+
+	                boolean mismoDia = existente.getDia() == nueva.getDia();
+	                boolean seSolapan = nueva.getHoraInicio().isBefore(existente.getHoraFin())
+	                        && nueva.getHoraFin().isAfter(existente.getHoraInicio());
+
+	                if (mismoDia && seSolapan) {
+	                    throw new ConflictoHorarioSalonException(
+	                        "El salón ya está ocupado el día " + existente.getDia()
+	                            + " entre " + existente.getHoraInicio() + " y " + existente.getHoraFin());
+	                }
+	            }
+	        }
+	    }
+	}
+
+	public static void verificarCapacidadSalon(int capacidadSalon, int capacidadMaximaGrupo) {
+
+	    if (capacidadSalon < capacidadMaximaGrupo) {
+	        throw new CapacidadSalonInsuficienteException(
+	            "La capacidad del salón (" + capacidadSalon
+	                + ") es menor a la capacidad máxima del grupo (" + capacidadMaximaGrupo + ")");
+	    }
+	}
+
+	public static void verificarRequisitosSalon(
+	        boolean requiereComputadores, boolean tieneComputadores,
+	        boolean requiereSillasMoviles, boolean tieneSillasMoviles) {
+
+	    if (requiereComputadores && !tieneComputadores) {
+	        throw new RequisitosSalonInvalidosException(
+	            "La asignatura requiere un salón con computadores");
+	    }
+
+	    if (requiereSillasMoviles && !tieneSillasMoviles) {
+	        throw new RequisitosSalonInvalidosException(
+	            "La asignatura requiere un salón con sillas móviles");
+	    }
+	}
+
+	public static void verificarCargaHorariaProfesor(
+	        int horasMaximasSemanales, int horasYaAsignadas, int horasNuevoGrupo) {
+
+	    if (horasYaAsignadas + horasNuevoGrupo > horasMaximasSemanales) {
+	        throw new CargaHorariaExcedidaException(
+	            "El profesor superaría sus horas máximas semanales ("
+	                + horasMaximasSemanales + "h) al asignarle este grupo");
+	    }
+	}
+
+	public static void verificarSesionesFrecuencia(int numeroSesiones, int frecuenciaSemanal) {
+
+	    if (numeroSesiones != frecuenciaSemanal) {
+	        throw new SesionesFrecuenciaInvalidaException(
+	            "El número de sesiones del grupo (" + numeroSesiones
+	                + ") debe coincidir con la frecuencia semanal de la asignatura (" + frecuenciaSemanal + ")");
+	    }
+	}
+
+	public static void verificarDiasNoConsecutivos(List<FranjaHoraria> sesiones) {
+
+	    if (sesiones.size() < 2 || sesiones.size() > 3) {
+	        return; 
+	    }
+
+	    List<Dia> dias = sesiones.stream().map(FranjaHoraria::getDia).sorted().toList();
+
+	    for (int i = 0; i < dias.size() - 1; i++) {
+	        if (dias.get(i + 1).ordinal() - dias.get(i).ordinal() == 1) {
+	            throw new DiasConsecutivosInvalidoException(
+	                "Las sesiones de este grupo no deberían quedar en días consecutivos ("
+	                    + dias.get(i) + " y " + dias.get(i + 1) + ")");
+	        }
+	    }
+	}
+
+	public static void verificarCapacidadMaximaInstitucional(int capacidadMaxima) {
+
+	    final int CAPACIDAD_MAXIMA_INSTITUCIONAL = 40;
+	    final double TOLERANCIA = 0.10;
+	    int limite = (int) Math.floor(CAPACIDAD_MAXIMA_INSTITUCIONAL * (1 + TOLERANCIA)); // 44
+
+	    if (capacidadMaxima > limite) {
+	        throw new CapacidadMaximaExcedidaException(
+	            "La capacidad máxima no puede superar " + limite
+	                + " estudiantes (40 + 10% de tolerancia)");
+	    }
 	}
 }

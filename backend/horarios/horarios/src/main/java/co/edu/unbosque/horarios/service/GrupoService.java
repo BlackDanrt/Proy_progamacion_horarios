@@ -105,6 +105,29 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		LanzadorDeException.verificarSesiones(
 				data.getSesiones().size());
 		
+		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima());
+		LanzadorDeException.verificarCapacidadSalon(data.getSalon().getCapacidad(), data.getCapacidadMaxima());
+		LanzadorDeException.verificarRequisitosSalon(
+		    data.getAsignatura().isRequiereComputadores(), data.getSalon().isTieneComputadores(),
+		    data.getAsignatura().isRequiereSillasMoviles(), data.getSalon().isTieneSillasMoviles());
+		LanzadorDeException.verificarSesionesFrecuencia(data.getSesiones().size(), data.getAsignatura().getFrecuenciaSemanal());
+		LanzadorDeException.verificarDiasNoConsecutivos(data.getSesiones());
+		LanzadorDeException.verificarProfesorCalificado(data.getProfesor().getEspecialidades(), data.getAsignatura());
+		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(data.getProfesor().getDisponibilidadHoraria(), data.getSesiones());
+
+		LanzadorDeException.verificarSinConflictoHorarioProfesor(
+		    grupoRep.findByProfesor(data.getProfesor()), data.getSesiones(), data.getId());
+
+		LanzadorDeException.verificarSinConflictoHorarioSalon(
+		    grupoRep.findBySalon(data.getSalon()), data.getSesiones(), data.getId());
+
+		int horasYaAsignadas = grupoRep.findByProfesor(data.getProfesor()).stream()
+		        .filter(g -> g.getId() != data.getId())
+		        .mapToInt(g -> g.getSesiones().size() * 2)
+		        .sum();
+		LanzadorDeException.verificarCargaHorariaProfesor(
+		        data.getProfesor().getHorasMaximasSemanales(), horasYaAsignadas, data.getSesiones().size() * 2);
+		
 		Grupo entity = mapper.map(data, Grupo.class);
 
 		grupoRep.save(entity);
@@ -203,7 +226,30 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		
 		LanzadorDeException.verificarEstadoGrupo(
 				data.getEstado());
+		
+		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima());
+		LanzadorDeException.verificarCapacidadSalon(data.getSalon().getCapacidad(), data.getCapacidadMaxima());
+		LanzadorDeException.verificarRequisitosSalon(
+		    data.getAsignatura().isRequiereComputadores(), data.getSalon().isTieneComputadores(),
+		    data.getAsignatura().isRequiereSillasMoviles(), data.getSalon().isTieneSillasMoviles());
+		LanzadorDeException.verificarSesionesFrecuencia(data.getSesiones().size(), data.getAsignatura().getFrecuenciaSemanal());
+		LanzadorDeException.verificarDiasNoConsecutivos(data.getSesiones());
+		LanzadorDeException.verificarProfesorCalificado(data.getProfesor().getEspecialidades(), data.getAsignatura());
+		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(data.getProfesor().getDisponibilidadHoraria(), data.getSesiones());
 
+		LanzadorDeException.verificarSinConflictoHorarioProfesor(
+		    grupoRep.findByProfesor(data.getProfesor()), data.getSesiones(), data.getId());
+
+		LanzadorDeException.verificarSinConflictoHorarioSalon(
+		    grupoRep.findBySalon(data.getSalon()), data.getSesiones(), data.getId());
+
+		int horasYaAsignadas = grupoRep.findByProfesor(data.getProfesor()).stream()
+		        .filter(g -> g.getId() != data.getId())
+		        .mapToInt(g -> g.getSesiones().size() * 2)
+		        .sum();
+		LanzadorDeException.verificarCargaHorariaProfesor(
+		        data.getProfesor().getHorasMaximasSemanales(), horasYaAsignadas, data.getSesiones().size() * 2);
+		
 		Optional<Grupo> encontrado =
 				grupoRep.findById(id);
 

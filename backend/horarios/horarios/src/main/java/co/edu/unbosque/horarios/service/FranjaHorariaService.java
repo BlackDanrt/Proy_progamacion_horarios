@@ -77,7 +77,14 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 		LanzadorDeException.verificarHorario(
 				data.getHoraInicio(),
 				data.getHoraFin());
-
+		
+		LanzadorDeException.verificarRangoHorarioInstitucional(
+				data.getDia(), data.getHoraInicio(), data.getHoraFin());
+		LanzadorDeException.verificarBloqueAlmuerzo(
+				data.getHoraInicio(), data.getHoraFin());
+		LanzadorDeException.verificarDuracionSesion(
+				data.getHoraInicio(), data.getHoraFin());
+		
 		FranjaHoraria entity =
 				mapper.map(data, FranjaHoraria.class);
 
@@ -161,6 +168,13 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 		LanzadorDeException.verificarHorario(
 				data.getHoraInicio(),
 				data.getHoraFin());
+		
+		LanzadorDeException.verificarRangoHorarioInstitucional(
+				data.getDia(), data.getHoraInicio(), data.getHoraFin());
+		LanzadorDeException.verificarBloqueAlmuerzo(
+				data.getHoraInicio(), data.getHoraFin());
+		LanzadorDeException.verificarDuracionSesion(
+				data.getHoraInicio(), data.getHoraFin());
 
 		Optional<FranjaHoraria> encontrado =
 				franjaHorariaRep.findById(id);
