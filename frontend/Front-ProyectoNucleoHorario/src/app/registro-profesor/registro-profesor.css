@@ -5,6 +5,7 @@
   margin: 0;
   padding: 0;
 }
+
 .layout-wrapper {
   display: flex;
   width: 100vw;
@@ -14,6 +15,7 @@
   overflow-x: hidden;
   position: relative;
 }
+
 .sidebar {
   width: 85px;
   background-color: #17522d;
@@ -30,6 +32,8 @@
   margin-bottom: 24px;
 }
 
+
+
 .user-avatar-btn {
   width: 44px;
   height: 44px;
@@ -38,6 +42,12 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+.user-avatar-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .sidebar-menu {
@@ -60,6 +70,21 @@
   position: relative;
   transition: color 0.2s ease, background-color 0.2s ease;
 }
+
+.sidebar-btn {
+  width: 100%;
+  height: 52px;
+  background: transparent;
+  border: none;
+  color: #a3c2b0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
 
 .sidebar-btn:hover {
   color: #ffffff;
@@ -91,6 +116,7 @@
   background: linear-gradient(135deg, transparent 50%, #f25100 50%);
   opacity: 0.85;
 }
+
 .main-content {
   flex: 1;
   padding: 24px 20px;
@@ -106,6 +132,7 @@
   flex-direction: column;
   gap: 24px;
 }
+
 .card-panel {
   background-color: #ffffff;
   border-radius: 8px;
@@ -129,6 +156,7 @@
   border-radius: 2px;
   margin-bottom: 20px;
 }
+
 .grid-form {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -139,6 +167,10 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.form-field-full {
+  grid-column: 1 / -1;
 }
 
 .form-field label {
@@ -165,7 +197,7 @@
 .input-group input,
 .input-group select {
   width: 100%;
-  padding: 10px 38px 10px 40px;
+  padding: 10px 14px 10px 40px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 14px;
@@ -181,19 +213,9 @@
   box-shadow: 0 0 0 3px rgba(39, 129, 58, 0.12);
 }
 
-.edit-icon {
-  position: absolute;
-  right: 12px;
-  color: #27813a;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
 .select-group select {
   appearance: none;
   cursor: pointer;
-  padding-left: 14px;
 }
 
 .chevron-icon {
@@ -204,6 +226,7 @@
   display: flex;
   align-items: center;
 }
+
 .horario-toolbar {
   display: flex;
   justify-content: space-between;
@@ -301,6 +324,7 @@
   border-radius: 3px;
   background-color: #f25100;
 }
+
 .tabla-container {
   overflow-x: auto;
   border-radius: 6px;
@@ -356,6 +380,17 @@
   background-color: #f8fafc;
 }
 
+.bloque-deshabilitado {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.texto-almuerzo {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
 .bloque-slot {
   width: 100%;
   height: 22px;
@@ -398,6 +433,7 @@
 .btn-guardar:active {
   transform: scale(0.98);
 }
+
 .right-decor-panel {
   width: 140px;
   position: relative;
@@ -409,6 +445,7 @@
   pointer-events: none;
   flex-shrink: 0;
 }
+
 .circle-top-outline {
   width: 160px;
   height: 160px;
@@ -419,6 +456,7 @@
   right: -50px;
   opacity: 0.75;
 }
+
 .circle-middle-orange {
   width: 52px;
   height: 52px;
@@ -426,6 +464,7 @@
   border-radius: 50%;
   margin-top: 210px;
 }
+
 .circle-bottom-green {
   width: 32px;
   height: 32px;
@@ -433,6 +472,7 @@
   border-radius: 50%;
   margin-top: 48px;
 }
+
 @media (max-width: 992px) {
   .right-decor-panel {
     display: none;
