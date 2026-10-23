@@ -34,7 +34,6 @@ import co.edu.unbosque.horarios.exception.ConflictoHorarioSalonException;
 import co.edu.unbosque.horarios.exception.ContraseniaInvalidaException;
 import co.edu.unbosque.horarios.exception.CorreoInvalidoException;
 import co.edu.unbosque.horarios.exception.DiaInvalidoException;
-import co.edu.unbosque.horarios.exception.DiasConsecutivosInvalidoException;
 import co.edu.unbosque.horarios.exception.DisponibilidadHorariaInvalidaException;
 import co.edu.unbosque.horarios.exception.DocumentoInvalidoException;
 import co.edu.unbosque.horarios.exception.DuracionSesionInvalidaException;
@@ -739,23 +738,6 @@ public class LanzadorDeException {
 	        throw new SesionesFrecuenciaInvalidaException(
 	            "El número de sesiones del grupo (" + numeroSesiones
 	                + ") debe coincidir con la frecuencia semanal de la asignatura (" + frecuenciaSemanal + ")");
-	    }
-	}
-
-	public static void verificarDiasNoConsecutivos(List<FranjaHoraria> sesiones) {
-
-	    if (sesiones.size() < 2 || sesiones.size() > 3) {
-	        return; 
-	    }
-
-	    List<Dia> dias = sesiones.stream().map(FranjaHoraria::getDia).sorted().toList();
-
-	    for (int i = 0; i < dias.size() - 1; i++) {
-	        if (dias.get(i + 1).ordinal() - dias.get(i).ordinal() == 1) {
-	            throw new DiasConsecutivosInvalidoException(
-	                "Las sesiones de este grupo no deberían quedar en días consecutivos ("
-	                    + dias.get(i) + " y " + dias.get(i + 1) + ")");
-	        }
 	    }
 	}
 

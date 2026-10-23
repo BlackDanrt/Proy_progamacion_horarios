@@ -111,7 +111,6 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		    data.getAsignatura().isRequiereComputadores(), data.getSalon().isTieneComputadores(),
 		    data.getAsignatura().isRequiereSillasMoviles(), data.getSalon().isTieneSillasMoviles());
 		LanzadorDeException.verificarSesionesFrecuencia(data.getSesiones().size(), data.getAsignatura().getFrecuenciaSemanal());
-		LanzadorDeException.verificarDiasNoConsecutivos(data.getSesiones());
 		LanzadorDeException.verificarProfesorCalificado(data.getProfesor().getEspecialidades(), data.getAsignatura());
 		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(data.getProfesor().getDisponibilidadHoraria(), data.getSesiones());
 
@@ -233,7 +232,6 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		    data.getAsignatura().isRequiereComputadores(), data.getSalon().isTieneComputadores(),
 		    data.getAsignatura().isRequiereSillasMoviles(), data.getSalon().isTieneSillasMoviles());
 		LanzadorDeException.verificarSesionesFrecuencia(data.getSesiones().size(), data.getAsignatura().getFrecuenciaSemanal());
-		LanzadorDeException.verificarDiasNoConsecutivos(data.getSesiones());
 		LanzadorDeException.verificarProfesorCalificado(data.getProfesor().getEspecialidades(), data.getAsignatura());
 		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(data.getProfesor().getDisponibilidadHoraria(), data.getSesiones());
 
