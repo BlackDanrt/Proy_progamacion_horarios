@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.dto.GrupoDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
+import co.edu.unbosque.horarios.dto.SalonDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.entity.Grupo;
 import co.edu.unbosque.horarios.entity.Profesor;
@@ -94,7 +95,38 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		LanzadorDeException.verificarNumeroGrupoDuplicado(
 				grupoRep.existsByNumeroGrupo(
 						data.getNumeroGrupo()));
+		
+		LanzadorDeException.verificarAsignatura(
+				mapper.map(data.getAsignatura(), AsignaturaDTO.class));
+		
+		LanzadorDeException.verificarSalon(
+				mapper.map(data.getSalon(), SalonDTO.class));
+		
+		LanzadorDeException.verificarSesiones(
+				data.getSesiones().size());
+		
+		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima());
+		LanzadorDeException.verificarCapacidadSalon(data.getSalon().getCapacidad(), data.getCapacidadMaxima());
+		LanzadorDeException.verificarRequisitosSalon(
+		    data.getAsignatura().isRequiereComputadores(), data.getSalon().isTieneComputadores(),
+		    data.getAsignatura().isRequiereSillasMoviles(), data.getSalon().isTieneSillasMoviles());
+		LanzadorDeException.verificarSesionesFrecuencia(data.getSesiones().size(), data.getAsignatura().getFrecuenciaSemanal());
+		LanzadorDeException.verificarProfesorCalificado(data.getProfesor().getEspecialidades(), data.getAsignatura());
+		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(data.getProfesor().getDisponibilidadHoraria(), data.getSesiones());
 
+		LanzadorDeException.verificarSinConflictoHorarioProfesor(
+		    grupoRep.findByProfesor(data.getProfesor()), data.getSesiones(), data.getId());
+
+		LanzadorDeException.verificarSinConflictoHorarioSalon(
+		    grupoRep.findBySalon(data.getSalon()), data.getSesiones(), data.getId());
+
+		int horasYaAsignadas = grupoRep.findByProfesor(data.getProfesor()).stream()
+		        .filter(g -> g.getId() != data.getId())
+		        .mapToInt(g -> g.getSesiones().size() * 2)
+		        .sum();
+		LanzadorDeException.verificarCargaHorariaProfesor(
+		        data.getProfesor().getHorasMaximasSemanales(), horasYaAsignadas, data.getSesiones().size() * 2);
+		
 		Grupo entity = mapper.map(data, Grupo.class);
 
 		grupoRep.save(entity);
@@ -181,12 +213,41 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 
 		LanzadorDeException.verificarProfesor(
 				data.getProfesor());
-
-
-
+		
+		LanzadorDeException.verificarAsignatura(
+				mapper.map(data.getAsignatura(), AsignaturaDTO.class));
+		
+		LanzadorDeException.verificarSalon(
+				mapper.map(data.getSalon(), SalonDTO.class));
+		
+		LanzadorDeException.verificarSesiones(
+				data.getSesiones().size());
+		
 		LanzadorDeException.verificarEstadoGrupo(
 				data.getEstado());
+		
+		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima());
+		LanzadorDeException.verificarCapacidadSalon(data.getSalon().getCapacidad(), data.getCapacidadMaxima());
+		LanzadorDeException.verificarRequisitosSalon(
+		    data.getAsignatura().isRequiereComputadores(), data.getSalon().isTieneComputadores(),
+		    data.getAsignatura().isRequiereSillasMoviles(), data.getSalon().isTieneSillasMoviles());
+		LanzadorDeException.verificarSesionesFrecuencia(data.getSesiones().size(), data.getAsignatura().getFrecuenciaSemanal());
+		LanzadorDeException.verificarProfesorCalificado(data.getProfesor().getEspecialidades(), data.getAsignatura());
+		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(data.getProfesor().getDisponibilidadHoraria(), data.getSesiones());
 
+		LanzadorDeException.verificarSinConflictoHorarioProfesor(
+		    grupoRep.findByProfesor(data.getProfesor()), data.getSesiones(), data.getId());
+
+		LanzadorDeException.verificarSinConflictoHorarioSalon(
+		    grupoRep.findBySalon(data.getSalon()), data.getSesiones(), data.getId());
+
+		int horasYaAsignadas = grupoRep.findByProfesor(data.getProfesor()).stream()
+		        .filter(g -> g.getId() != data.getId())
+		        .mapToInt(g -> g.getSesiones().size() * 2)
+		        .sum();
+		LanzadorDeException.verificarCargaHorariaProfesor(
+		        data.getProfesor().getHorasMaximasSemanales(), horasYaAsignadas, data.getSesiones().size() * 2);
+		
 		Optional<Grupo> encontrado =
 				grupoRep.findById(id);
 
@@ -228,7 +289,9 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 
 		temp.setEstado(
 				data.getEstado());
-
+		
+		temp.setSalon(
+				data.getSalon());
 		grupoRep.save(temp);
 
 		return 0;
