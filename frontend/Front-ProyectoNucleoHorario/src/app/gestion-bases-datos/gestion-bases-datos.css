@@ -28,7 +28,7 @@
 }
 
 .sidebar-top {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .user-avatar-btn {
@@ -41,12 +41,17 @@
   cursor: pointer;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.user-avatar-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .sidebar-menu {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
 }
 
@@ -146,6 +151,7 @@
   font-size: 16px;
   font-weight: 700;
 }
+
 .search-bar-container {
   width: 100%;
 }
@@ -210,11 +216,6 @@
   margin-right: 6px;
 }
 
-.th-actions {
-  text-align: right;
-  padding-right: 24px;
-}
-
 .data-table td {
   padding: 14px 18px;
   border-bottom: 1px solid #f1f5f9;
@@ -230,6 +231,7 @@
 .td-especialidad, .td-carga {
   color: #475569;
 }
+
 .badge-role {
   display: inline-block;
   padding: 4px 10px;
@@ -247,8 +249,10 @@
   background-color: #ffedd5;
   color: #c2410c;
 }
+
 .td-actions {
   text-align: right;
+  padding-right: 24px;
 }
 
 .actions-group {
@@ -272,7 +276,6 @@
 }
 
 .btn-edit { color: #22c55e; }
-.btn-copy { color: #f97316; }
 .btn-delete { color: #ef4444; }
 
 .pagination-footer {
@@ -337,3 +340,6 @@
 .next-btn {
   color: #64748b;
 }
+.btn-view { color: #0284c7; }
+.btn-edit { color: #22c55e; }
+.btn-delete { color: #ef4444; }

@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
 
 interface BloqueHorario {
   horaInicio: string;
@@ -13,10 +14,13 @@ interface BloqueHorario {
   styleUrl: './registro-profesor.css',
 })
 export class RegistroProfesor implements OnInit {
+  @Input() esAdministrador: boolean = false;
+
   nombreCompleto: string = '';
   correoInstitucional: string = '';
   especialidad: string = '';
   tipoVinculacion: string = 'Tiempo completo';
+  contrasenia: string = '';
 
   opcionesVinculacion: string[] = [
     'Tiempo completo',
@@ -25,51 +29,59 @@ export class RegistroProfesor implements OnInit {
     'Ocasional'
   ];
 
-  // Matriz de Días (Lunes a Sábado)
   diasSemana: string[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-  // BLOQUES HORARIOS (7:00 AM a 10:00 PM con almuerzo de 1:00 PM a 2:00 PM)
   horas: BloqueHorario[] = [
     { horaInicio: '07:00', horaFin: '09:00' },
     { horaInicio: '09:00', horaFin: '11:00' },
     { horaInicio: '11:00', horaFin: '13:00' },
-    { horaInicio: '13:00', horaFin: '14:00', esAlmuerzo: true }, // Franja no seleccionable
+    { horaInicio: '13:00', horaFin: '14:00', esAlmuerzo: true },
     { horaInicio: '14:00', horaFin: '16:00' },
     { horaInicio: '16:00', horaFin: '18:00' },
     { horaInicio: '18:00', horaFin: '20:00' },
     { horaInicio: '20:00', horaFin: '22:00' }
   ];
 
-  // Inicia vacío: aquí se guardarán las celdas marcadas manualmente
   celdasSeleccionadas: Set<string> = new Set<string>();
 
   fechaActualNavegacion: Date = new Date();
   rangoSemanaTexto: string = '';
   fechaInputPicker: string = '';
 
-  ngOnInit(): void {
-    // Solo actualiza la semana actual al cargar
-    this.actualizarRangoSemana();
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
 
-    // NOTA: Se eliminó la carga previa de seleccionadasIniciales
-    // para que el profesor inicie desde cero y seleccione sus horarios.
+  ngOnInit(): void {
+    const urlActual: string = this.router.url.toLowerCase();
+    if (urlActual.includes('admin') || urlActual.includes('administrador')) {
+      this.esAdministrador = true;
+    }
+
+    this.route.queryParams.subscribe((params) => {
+      if (params['esAdmin'] === 'true') {
+        this.esAdministrador = true;
+      }
+    });
+
+    this.actualizarRangoSemana();
   }
 
-  // --- MÉTODOS DEL CALENDARIO ---
   actualizarRangoSemana(): void {
-    const fecha = new Date(this.fechaActualNavegacion);
-    const diaSemana = fecha.getDay();
+    const fecha: Date = new Date(this.fechaActualNavegacion);
+    const diaSemana: number = fecha.getDay();
 
-    const diferenciaLunes = fecha.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
+    const diferenciaLunes: number = fecha.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
 
-    const lunes = new Date(fecha.setDate(diferenciaLunes));
-    const domingo = new Date(lunes);
+    const lunes: Date = new Date(fecha.setDate(diferenciaLunes));
+    const domingo: Date = new Date(lunes);
     domingo.setDate(lunes.getDate() + 6);
 
     const opcionesDiaMes: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
-    const stringLunes = lunes.toLocaleDateString('es-ES', opcionesDiaMes);
-    const stringDomingo = domingo.toLocaleDateString('es-ES', opcionesDiaMes);
-    const anio = domingo.getFullYear();
+    const stringLunes: string = lunes.toLocaleDateString('es-ES', opcionesDiaMes);
+    const stringDomingo: string = domingo.toLocaleDateString('es-ES', opcionesDiaMes);
+    const anio: number = domingo.getFullYear();
 
     this.rangoSemanaTexto = `${stringLunes} – ${stringDomingo}, ${anio}`;
     this.fechaInputPicker = lunes.toISOString().split('T')[0];
@@ -80,23 +92,23 @@ export class RegistroProfesor implements OnInit {
     this.actualizarRangoSemana();
   }
 
-  alSeleccionarFecha(event: any): void {
-    const valorFecha = event.target.value;
+  alSeleccionarFecha(event: Event): void {
+    const inputElement: HTMLInputElement = event.target as HTMLInputElement;
+    const valorFecha: string = inputElement.value;
+
     if (valorFecha) {
-      const partes = valorFecha.split('-');
+      const partes: string[] = valorFecha.split('-');
       this.fechaActualNavegacion = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
       this.actualizarRangoSemana();
     }
   }
 
-  // --- MÉTODOS DE SELECCIÓN DE GRILLA ---
   toggleCelda(diaIndex: number, horaIndex: number): void {
-    // Si es la franja de almuerzo, ignorar el clic
     if (this.horas[horaIndex].esAlmuerzo) {
       return;
     }
 
-    const clave = `${diaIndex}-${horaIndex}`;
+    const clave: string = `${diaIndex}-${horaIndex}`;
     if (this.celdasSeleccionadas.has(clave)) {
       this.celdasSeleccionadas.delete(clave);
     } else {
@@ -108,8 +120,21 @@ export class RegistroProfesor implements OnInit {
     return this.celdasSeleccionadas.has(`${diaIndex}-${horaIndex}`);
   }
 
+  navegarA(ruta: string): void {
+    this.router.navigate([ruta]);
+  }
+
   guardarDisponibilidad(): void {
-    console.log('Semana:', this.rangoSemanaTexto);
-    console.log('Bloques horarios seleccionados por el usuario:', Array.from(this.celdasSeleccionadas));
+    const datosEnvio = {
+      nombre: this.nombreCompleto,
+      correo: this.correoInstitucional,
+      especialidad: this.especialidad,
+      tipoVinculacion: this.tipoVinculacion,
+      contrasenia: this.esAdministrador ? this.contrasenia : null,
+      semana: this.rangoSemanaTexto,
+      horarios: Array.from(this.celdasSeleccionadas)
+    };
+
+    console.log('Registro guardado:', datosEnvio);
   }
 }

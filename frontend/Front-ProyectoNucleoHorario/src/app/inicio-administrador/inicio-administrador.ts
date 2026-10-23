@@ -23,7 +23,7 @@ export class InicioAdministrador {
     { titulo: 'Docentes Activos', valor: '48', icono: 'users' },
     { titulo: 'Asignaturas', valor: '32', icono: 'book' },
     { titulo: 'Aulas Asignadas', valor: '18', icono: 'building' },
-    { titulo: 'Bases de Datos', valor: '10', icono: 'database' }
+    { titulo: 'Personas en la Base de Datos', valor: '10', icono: 'database' }
   ];
 
   accesosDirectos: TarjetaAcceso[] = [
