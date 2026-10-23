@@ -11,6 +11,7 @@ import { RegistroProfesor } from './registro-profesor/registro-profesor';
 import { InicioAdministrador } from './inicio-administrador/inicio-administrador';
 import { GestionBasesDatos } from './gestion-bases-datos/gestion-bases-datos';
 import { SeleccionCrearRegistro } from './seleccion-crear-registro/seleccion-crear-registro';
+import { CrearAdministrador } from './crear-administrador/crear-administrador';
 
 @NgModule({
   declarations: [
@@ -20,6 +21,7 @@ import { SeleccionCrearRegistro } from './seleccion-crear-registro/seleccion-cre
     InicioAdministrador,
     GestionBasesDatos,
     SeleccionCrearRegistro,
+    CrearAdministrador,
   ],
   imports: [BrowserModule, AppRoutingModule, RouterModule, FormsModule, HttpClientModule],
   providers: [provideBrowserGlobalErrorListeners()],
