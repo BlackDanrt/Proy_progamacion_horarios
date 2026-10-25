@@ -1,5 +1,6 @@
 package co.edu.unbosque.horarios.controller;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,8 +21,13 @@ import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
 import co.edu.unbosque.horarios.service.ProfesorService;
+import co.edu.unbosque.horarios.util.LanzadorDeException;
+import co.edu.unbosque.horarios.util.enums.Dia;
 import co.edu.unbosque.horarios.util.enums.Escalafon;
+import co.edu.unbosque.horarios.util.enums.Especialidad;
 import co.edu.unbosque.horarios.util.enums.TipoVinculacion;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Content;
 
 @RestController
 @RequestMapping("/profesor")
@@ -120,15 +126,58 @@ public class ProfesorController {
 
 
 	@PostMapping("/crear")
-	public ResponseEntity<String> crearProfesor(@RequestBody ProfesorDTO profesorDTO) {
-		try {
-			profesorSer.create(profesorDTO);
-			return new ResponseEntity<>("Profesor creado con éxito", HttpStatus.CREATED);
-		} catch (Exception e) {
-			return new ResponseEntity<>("Error al crear el profesor: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-		}
-	}
+	public ResponseEntity<String> crearProfesor(
+	        @RequestParam String nombre,
+	        @RequestParam String apellido,
+	        @RequestParam String correo,
+	        @RequestParam long documento,
+	        @RequestParam String contrasenia,
+	        @RequestParam TipoVinculacion tipoVinculacion,
+	        @RequestParam Escalafon escalafon,
+	        @RequestParam List<Especialidad> especialidades,
+	        @RequestParam int horasMaximasSemanales) {
+	    try {
+	        ProfesorDTO profesorDTO = new ProfesorDTO();
+	        profesorDTO.setNombre(nombre);
+	        profesorDTO.setApellido(apellido);
+	        profesorDTO.setCorreo(correo);
+	        profesorDTO.setDocumento(documento);
+	        profesorDTO.setContrasenia(contrasenia);
+	        profesorDTO.setTipoVinculacion(tipoVinculacion);
+	        profesorDTO.setEscalafon(escalafon);
+	        profesorDTO.setEspecialidades(especialidades);
+	        profesorDTO.setHorasMaximasSemanales(horasMaximasSemanales);
+	        profesorDTO.setDisponibilidadHoraria(null);
 
+	        profesorSer.create(profesorDTO);
+	        return new ResponseEntity<>("Profesor creado con éxito", HttpStatus.CREATED);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>("Error al crear el profesor: " + e.getMessage(),
+	                HttpStatus.BAD_REQUEST);
+	    }
+	}
+	
+	@PutMapping("/asignardisponibilidadhoraria")
+	public ResponseEntity<String> asignarDisponibilidadHoraria(
+			@RequestParam long idProfesor, 
+			@RequestParam Dia dia, 
+			@RequestParam LocalTime horaInicio, 
+			@RequestParam LocalTime horaFin) {
+		
+		try {
+			boolean asignado = profesorSer.asignarDisponibilidadHoraria(idProfesor, dia, horaInicio, horaFin);
+			if(asignado) {
+				return new ResponseEntity<>("Disponibilidad horaria agregada con éxito", HttpStatus.CREATED);
+			} else {
+				return new ResponseEntity<>("No existe ningún profesor con el ID ingresado", HttpStatus.NOT_FOUND);
+			}
+		} catch (Exception e) {
+			return new ResponseEntity<>("Error al asignar la disponibilidad horaria: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+		}
+	
+	}
+	
+	
 	@PutMapping("/actualizar")
 	public ResponseEntity<String> actualizarProfesor(@RequestBody ProfesorDTO profesorDTO) {
 		try {

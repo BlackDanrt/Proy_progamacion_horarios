@@ -65,6 +65,7 @@ import co.edu.unbosque.horarios.exception.TipoVinculacionInvalidaException;
 import co.edu.unbosque.horarios.util.enums.Bloque;
 import co.edu.unbosque.horarios.util.enums.Dia;
 import co.edu.unbosque.horarios.util.enums.Escalafon;
+import co.edu.unbosque.horarios.util.enums.Especialidad;
 import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
 import co.edu.unbosque.horarios.util.enums.TipoVinculacion;
 
@@ -150,7 +151,7 @@ public class LanzadorDeException {
 		}
 
 		Pattern pattern = Pattern.compile(
-				"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$");
+				"^[A-Za-z0-9._%+-]+@unbosque\\.edu\\.co$");
 
 		Matcher matcher =
 				pattern.matcher(correo);
@@ -160,7 +161,7 @@ public class LanzadorDeException {
 		}
 
 		throw new CorreoInvalidoException(
-				"El correo electrónico ingresado no es válido");
+				"El correo electrónico ingresado no es válido (asegurese que termina en @unbosque.edu.co)");
 	}
 
 	public static void verificarId(Long id) {
@@ -328,10 +329,10 @@ public class LanzadorDeException {
 					"La frecuencia semanal debe ser mayor que cero");
 		}
 
-		if (frecuenciaSemanal > 7) {
+		if (frecuenciaSemanal > 6) {
 
 			throw new FrecuenciaSemanalInvalidaException(
-					"La frecuencia semanal no puede ser mayor a 7");
+					"La frecuencia semanal no puede ser mayor a 6");
 		}
 	}
 
@@ -364,42 +365,58 @@ public class LanzadorDeException {
 		}
 	}
 
-	public static void verificarHoraInicio(
-			LocalTime horaInicio) {
+	public static void verificarHoraInicio(LocalTime horaInicio) {
 
-		if (horaInicio == null) {
+	    if (horaInicio == null) {
+	        throw new HoraInicioInvalidaException(
+	                "La hora de inicio no puede ser nula");
+	    }
 
-			throw new HoraInicioInvalidaException(
-					"La hora de inicio no puede ser nula");
-		}
+	    if (horaInicio.isBefore(LocalTime.of(7, 0))) {
+	        throw new HoraInicioInvalidaException(
+	                "La hora de inicio no puede ser antes de las 7:00 a. m.");
+	    }
+
+	    if (horaInicio.isAfter(LocalTime.of(20, 0))) {
+	        throw new HoraInicioInvalidaException(
+	                "La hora de inicio no puede ser después de las 8:00 p. m.");
+	    }
 	}
 
-	public static void verificarHoraFin(
-			LocalTime horaFin) {
+	public static void verificarHoraFin(LocalTime horaFin) {
 
-		if (horaFin == null) {
+	    if (horaFin == null) {
+	        throw new HoraFinInvalidaException(
+	                "La hora de fin no puede ser nula");
+	    }
 
-			throw new HoraFinInvalidaException(
-					"La hora de fin no puede ser nula");
-		}
+	    if (horaFin.isBefore(LocalTime.of(9, 0))) {
+	        throw new HoraFinInvalidaException(
+	                "La hora de fin no puede ser antes de las 9:00 a. m.");
+	    }
+
+	    if (horaFin.isAfter(LocalTime.of(22, 0))) {
+	        throw new HoraFinInvalidaException(
+	                "La hora de fin no puede ser después de las 10:00 p. m.");
+	    }
 	}
-
+	
 	public static void verificarHorario(
-			LocalTime horaInicio,
-			LocalTime horaFin) {
+	        LocalTime horaInicio,
+	        LocalTime horaFin) {
 
-		if (horaInicio == null
-				|| horaFin == null) {
+	    if (horaInicio == null || horaFin == null) {
+	        throw new HorarioInvalidoException(
+	                "Las horas de inicio y fin no pueden ser nulas");
+	    }
 
-			throw new HorarioInvalidoException(
-					"Las horas de inicio y fin no pueden ser nulas");
-		}
+	    verificarHoraInicio(horaInicio);
+	    verificarHoraFin(horaFin);
 
-		if (!horaInicio.isBefore(horaFin)) {
-
-			throw new HorarioInvalidoException(
-					"La hora de inicio debe ser anterior a la hora de fin");
-		}
+	    if (!horaInicio.isBefore(horaFin)) {
+	        throw new HorarioInvalidoException(
+	                "La hora de inicio debe ser anterior a la hora de fin");
+	    }
 	}
 
 	public static void verificarGrupo(
@@ -423,23 +440,21 @@ public class LanzadorDeException {
 	}
 
 	public static void verificarCapacidadMinima(
-			int capacidadMinima) {
+	        int capacidadMinima) {
 
-		if (capacidadMinima <= 0) {
-
-			throw new CapacidadMinimaInvalidaException(
-					"La capacidad mínima debe ser mayor que cero");
-		}
+	    if (capacidadMinima < 10) {
+	        throw new CapacidadMinimaInvalidaException(
+	                "La capacidad mínima no puede ser menor que 10");
+	    }
 	}
 
 	public static void verificarCapacidadMaxima(
-			int capacidadMaxima) {
+	        int capacidadMaxima) {
 
-		if (capacidadMaxima <= 0) {
-
-			throw new CapacidadMaximaInvalidaException(
-					"La capacidad máxima debe ser mayor que cero");
-		}
+	    if (capacidadMaxima > 40) {
+	        throw new CapacidadMaximaInvalidaException(
+	                "La capacidad máxima no puede ser mayor que 40");
+	    }
 	}
 
 	public static void verificarCapacidades(
@@ -463,14 +478,17 @@ public class LanzadorDeException {
 		}
 	}
 
-	public static void verificarSesiones(
-			int sesiones) {
+	public static void verificarSesiones(int sesiones) {
 
-		if (sesiones <= 0) {
+	    if (sesiones < 0) {
+	        throw new SesionesInvalidasException(
+	                "El número de sesiones no puede ser menor que 0");
+	    }
 
-			throw new SesionesInvalidasException(
-					"El número de sesiones debe ser mayor que cero");
-		}
+	    if (sesiones > 3) {
+	        throw new SesionesInvalidasException(
+	                "El número de sesiones no puede ser mayor que 3");
+	    }
 	}
 
 	public static void verificarEstadoGrupo(
@@ -514,14 +532,21 @@ public class LanzadorDeException {
 		}
 	}
 
-	public static void verificarHorasMaximasSemanales(int horasMaximasSemanales) {
-		if (horasMaximasSemanales <= 0) {
-			throw new HorasMaximasSemanalesInvalidasException(
-					"Las horas máximas semanales deben ser mayores que cero");
-		}
+	public static void verificarHorasMaximasSemanales(
+	        int horasMaximasSemanales) {
+
+	    if (horasMaximasSemanales <= 0) {
+	        throw new HorasMaximasSemanalesInvalidasException(
+	                "Las horas máximas semanales deben ser mayores que cero");
+	    }
+
+	    if (horasMaximasSemanales > 40) {
+	        throw new HorasMaximasSemanalesInvalidasException(
+	                "Las horas máximas semanales no pueden ser mayores a 40");
+	    }
 	}
 
-	public static void verificarEspecialidades(List<Asignatura> especialidades) {
+	public static void verificarEspecialidades(List<Especialidad> especialidades) {
 		if (especialidades == null || especialidades.isEmpty()) {
 			throw new EspecialidadesInvalidasException(
 					"Las especialidades no pueden ser nulas o estar vacías");
@@ -557,10 +582,16 @@ public class LanzadorDeException {
 	}
 
 	public static void verificarCapacidad(int capacidad) {
-		if (capacidad <= 0) {
-			throw new CapacidadInvalidaException(
-					"La capacidad debe ser mayor que cero");
-		}
+
+	    if (capacidad <= 0) {
+	        throw new CapacidadInvalidaException(
+	                "La capacidad debe ser mayor que cero");
+	    }
+
+	    if (capacidad > 40) {
+	        throw new CapacidadInvalidaException(
+	                "La capacidad no puede ser mayor a 40");
+	    }
 	}
 
 	public static void verificarSalonDuplicado(boolean duplicado) {
@@ -569,9 +600,6 @@ public class LanzadorDeException {
 					"El salón ya se encuentra registrado para ese bloque");
 		}
 	}
-	
-
-	
 	
 	
 	public static void verificarRangoHorarioInstitucional(Dia dia, LocalTime horaInicio, LocalTime horaFin) {
@@ -629,20 +657,6 @@ public class LanzadorDeException {
 	                "El profesor no tiene disponibilidad horaria para la sesión del día "
 	                    + sesion.getDia() + " de " + sesion.getHoraInicio() + " a " + sesion.getHoraFin());
 	        }
-	    }
-	}
-
-	public static void verificarProfesorCalificado(
-	        List<Asignatura> especialidadesProfesor,
-	        Asignatura asignatura) {
-
-	    boolean calificado = especialidadesProfesor.stream()
-	            .anyMatch(a -> a.getId() == asignatura.getId());
-
-	    if (!calificado) {
-	        throw new ProfesorNoCalificadoException(
-	            "El profesor no tiene la especialidad requerida para dictar la asignatura "
-	                + asignatura.getNombre());
 	    }
 	}
 

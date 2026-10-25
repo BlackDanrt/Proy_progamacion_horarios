@@ -1,5 +1,6 @@
 package co.edu.unbosque.horarios.service;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,8 +15,10 @@ import co.edu.unbosque.horarios.dto.ProfesorDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.entity.Profesor;
+import co.edu.unbosque.horarios.repository.FranjaHorariaRepository;
 import co.edu.unbosque.horarios.repository.ProfesorRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
+import co.edu.unbosque.horarios.util.enums.Dia;
 import co.edu.unbosque.horarios.util.enums.Escalafon;
 import co.edu.unbosque.horarios.util.enums.TipoVinculacion;
 
@@ -24,6 +27,9 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 
     @Autowired
     private ProfesorRepository profesorRep;
+    
+    @Autowired
+    private FranjaHorariaRepository franjaRep;
 
     @Autowired
     private ModelMapper mapper;
@@ -58,8 +64,6 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
                 data.getHorasMaximasSemanales());
         LanzadorDeException.verificarEspecialidades(
                 data.getEspecialidades());
-        LanzadorDeException.verificarDisponibilidadHoraria(
-                data.getDisponibilidadHoraria());
 
         LanzadorDeException.verificarDocumentoDuplicado(
                 profesorRep.existsByDocumento(data.getDocumento()));
@@ -246,6 +250,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 
         return lista;
     }
+    
+
 
     public boolean findDocumentoAlreadyTaken(long documento) {
         return profesorRep.existsByDocumento(documento);
@@ -264,6 +270,35 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
         }
 
         profesorRep.deleteByDocumento(documento);
+    }
+    
+    public boolean asignarDisponibilidadHoraria(long id, Dia dia, LocalTime horaInicio, LocalTime horaFin) {
+
+        LanzadorDeException.verificarId(id);
+        LanzadorDeException.verificarDia(dia);
+        LanzadorDeException.verificarHoraInicio(horaInicio);
+        LanzadorDeException.verificarHoraFin(horaFin);
+
+        if (!horaFin.isAfter(horaInicio)) {
+            throw new IllegalArgumentException("La hora de fin debe ser posterior a la hora de inicio");
+        }
+
+        Optional<Profesor> encontrado = profesorRep.findById(id);
+        if (encontrado.isEmpty()) {
+            return false;
+        }
+
+        Profesor profesor = encontrado.get();
+
+        FranjaHoraria franja = franjaRep.save(new FranjaHoraria(dia, horaInicio, horaFin));
+
+        if (profesor.getDisponibilidadHoraria() == null) {
+            profesor.setDisponibilidadHoraria(new ArrayList<>());
+        }
+        profesor.getDisponibilidadHoraria().add(franja);
+
+        profesorRep.save(profesor);
+        return true;
     }
 
     public ProfesorRepository getProfesorRep() {
