@@ -12,6 +12,7 @@ import { InicioAdministrador } from './inicio-administrador/inicio-administrador
 import { GestionBasesDatos } from './gestion-bases-datos/gestion-bases-datos';
 import { SeleccionCrearRegistro } from './seleccion-crear-registro/seleccion-crear-registro';
 import { CrearAdministrador } from './crear-administrador/crear-administrador';
+import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
 
 @NgModule({
   declarations: [
@@ -22,6 +23,7 @@ import { CrearAdministrador } from './crear-administrador/crear-administrador';
     GestionBasesDatos,
     SeleccionCrearRegistro,
     CrearAdministrador,
+    AsignacionHorarios,
   ],
   imports: [BrowserModule, AppRoutingModule, RouterModule, FormsModule, HttpClientModule],
   providers: [provideBrowserGlobalErrorListeners()],
