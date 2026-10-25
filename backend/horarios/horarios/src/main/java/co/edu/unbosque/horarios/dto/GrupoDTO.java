@@ -7,6 +7,7 @@ import java.util.Objects;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.entity.Profesor;
+import co.edu.unbosque.horarios.entity.Salon;
 import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
 
 public class GrupoDTO {
@@ -19,20 +20,23 @@ public class GrupoDTO {
 	private Profesor profesor;
 	private List<FranjaHoraria> sesiones = new ArrayList<>();
 	private EstadoGrupo estado;
+	private Salon salon;
 
 	public GrupoDTO() {
 		// TODO Auto-generated constructor stub
 	}
 
 	public GrupoDTO(Asignatura asignatura, int numeroGrupo, int capacidadMinima, int capacidadMaxima, Profesor profesor,
-			EstadoGrupo estado) {
+			List<FranjaHoraria> sesiones, EstadoGrupo estado, Salon salon) {
 		super();
 		this.asignatura = asignatura;
 		this.numeroGrupo = numeroGrupo;
 		this.capacidadMinima = capacidadMinima;
 		this.capacidadMaxima = capacidadMaxima;
 		this.profesor = profesor;
+		this.sesiones = sesiones;
 		this.estado = estado;
+		this.salon = salon;
 	}
 
 	public long getId() {
@@ -99,9 +103,18 @@ public class GrupoDTO {
 		this.estado = estado;
 	}
 
+	public Salon getSalon() {
+		return salon;
+	}
+
+	public void setSalon(Salon salon) {
+		this.salon = salon;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(asignatura, capacidadMaxima, capacidadMinima, estado, id, numeroGrupo, profesor, sesiones);
+		return Objects.hash(asignatura, Integer.valueOf(capacidadMaxima), Integer.valueOf(capacidadMinima), estado,
+				Long.valueOf(id), Integer.valueOf(numeroGrupo), profesor, salon, sesiones);
 	}
 
 	@Override
@@ -116,14 +129,15 @@ public class GrupoDTO {
 		return Objects.equals(asignatura, other.asignatura) && capacidadMaxima == other.capacidadMaxima
 				&& capacidadMinima == other.capacidadMinima && estado == other.estado && id == other.id
 				&& numeroGrupo == other.numeroGrupo && Objects.equals(profesor, other.profesor)
-				&& Objects.equals(sesiones, other.sesiones);
+				&& Objects.equals(salon, other.salon) && Objects.equals(sesiones, other.sesiones);
 	}
 
 	@Override
 	public String toString() {
 		return "GrupoDTO [id=" + id + ", asignatura=" + asignatura + ", numeroGrupo=" + numeroGrupo
 				+ ", capacidadMinima=" + capacidadMinima + ", capacidadMaxima=" + capacidadMaxima + ", profesor="
-				+ profesor + ", sesiones=" + sesiones + ", estado=" + estado + "]";
+				+ profesor.getId() + ", sesiones=" + sesiones.size() + ", estado=" + estado + ", salon=" + salon.getId()
+				+ "]";
 	}
 
 }

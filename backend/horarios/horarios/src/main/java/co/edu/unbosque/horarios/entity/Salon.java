@@ -36,7 +36,7 @@ public class Salon {
 	private int numeroSalon;
 	
 	@Min(value = 1, message = "La capacidad del salón debe ser de al menos 1")
-	@Max(value = 40, message = "la capacidad del salón no puede ser más de 40")
+	@Max(value = 44, message = "la capacidad del salón no puede ser más de 44")
 	private int capacidad;
 	
 	@Column(name = "tiene_computadores")

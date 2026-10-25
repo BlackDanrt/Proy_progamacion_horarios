@@ -62,6 +62,9 @@ export class GestionBasesDatos {
   cerrarModalRegistro(): void {
     this.mostrarModalRegistro = false;
   }
+  visualizarHorario(idDocente: number): void {
+    this.router.navigate(['/consulta-horario'], { queryParams: { id: idDocente } });
+  }
 
   actualizarRegistro(id: number): void {
     console.log('Actualizar registro ID:', id);

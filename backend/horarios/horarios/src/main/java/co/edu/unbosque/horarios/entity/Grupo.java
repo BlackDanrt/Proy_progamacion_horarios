@@ -17,6 +17,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 @Entity
@@ -37,12 +38,16 @@ public class Grupo {
 	@Min(value = 1, message = "La capacidad mínima debe ser al menos 1")
 	private int capacidadMinima;
 
-	@Min(value = 1, message = "La capacidad máxima debe ser al menos 1")
+	@Max(value = 44, message = "La capacidad máxima es de 44")
 	private int capacidadMaxima;
 
 	@ManyToOne
 	@JoinColumn(name = "profesor_id", nullable = false)
 	private Profesor profesor;
+
+	@ManyToOne
+	@JoinColumn(name = "salon_id", nullable = false)
+	private Salon salon;
 
 	@ManyToMany
 	@JoinTable(name = "grupo_franja", joinColumns = @JoinColumn(name = "grupo_id"), inverseJoinColumns = @JoinColumn(name = "franja_id"))
@@ -59,13 +64,15 @@ public class Grupo {
 	public Grupo(Asignatura asignatura, int numeroGrupo,
 			@Min(value = 1, message = "La capacidad mínima debe ser al menos 1") int capacidadMinima,
 			@Min(value = 1, message = "La capacidad máxima debe ser al menos 1") int capacidadMaxima, Profesor profesor,
-			EstadoGrupo estado) {
+			Salon salon, List<FranjaHoraria> sesiones, EstadoGrupo estado) {
 		super();
 		this.asignatura = asignatura;
 		this.numeroGrupo = numeroGrupo;
 		this.capacidadMinima = capacidadMinima;
 		this.capacidadMaxima = capacidadMaxima;
 		this.profesor = profesor;
+		this.salon = salon;
+		this.sesiones = sesiones;
 		this.estado = estado;
 	}
 
@@ -133,10 +140,18 @@ public class Grupo {
 		this.estado = estado;
 	}
 
+	public Salon getSalon() {
+		return salon;
+	}
+
+	public void setSalon(Salon salon) {
+		this.salon = salon;
+	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(asignatura, Integer.valueOf(capacidadMaxima), Integer.valueOf(capacidadMinima), estado,
-				Long.valueOf(id), Integer.valueOf(numeroGrupo), profesor, sesiones);
+				Long.valueOf(id), Integer.valueOf(numeroGrupo), profesor, salon);
 	}
 
 	@Override
@@ -151,14 +166,14 @@ public class Grupo {
 		return Objects.equals(asignatura, other.asignatura) && capacidadMaxima == other.capacidadMaxima
 				&& capacidadMinima == other.capacidadMinima && estado == other.estado && id == other.id
 				&& numeroGrupo == other.numeroGrupo && Objects.equals(profesor, other.profesor)
-				&& Objects.equals(sesiones, other.sesiones);
+				&& Objects.equals(salon, other.salon);
 	}
 
 	@Override
 	public String toString() {
 		return "Grupo [id=" + id + ", asignatura=" + asignatura + ", numeroGrupo=" + numeroGrupo + ", capacidadMinima="
-				+ capacidadMinima + ", capacidadMaxima=" + capacidadMaxima + ", profesor=" + profesor + ", sesiones="
-				+ sesiones + ", estado=" + estado + "]";
+				+ capacidadMinima + ", capacidadMaxima=" + capacidadMaxima + ", profesor=" + profesor.getId()
+				+ ", salon=" + salon.getId() + ", sesiones=" + sesiones.size() + ", estado=" + estado + "]";
 	}
 
 }

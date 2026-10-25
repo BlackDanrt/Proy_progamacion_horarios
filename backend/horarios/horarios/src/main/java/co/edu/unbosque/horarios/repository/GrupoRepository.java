@@ -8,6 +8,7 @@ import org.springframework.data.repository.CrudRepository;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.entity.Grupo;
 import co.edu.unbosque.horarios.entity.Profesor;
+import co.edu.unbosque.horarios.entity.Salon;
 import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
 
 /**
@@ -50,6 +51,13 @@ public interface GrupoRepository extends CrudRepository<Grupo, Long> {
 	 */
 	public List<Grupo> findByEstado(EstadoGrupo estado);
 
+	/**
+	 * Busca los grupos por un salón específico
+	 * * @param salon El salon de los grupos a buscar.
+	 * @return Una lista con los grupos encontrados.
+	 */
+	public List<Grupo> findBySalon(Salon salon);
+	
 	/**
 	 * Verifica la existencia de un grupo mediante su número.
 	 * * @param numeroGrupo El número del grupo a comprobar.

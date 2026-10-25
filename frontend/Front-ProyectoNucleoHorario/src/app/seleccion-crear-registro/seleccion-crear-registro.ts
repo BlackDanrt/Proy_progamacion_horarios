@@ -15,9 +15,9 @@ export class SeleccionCrearRegistro {
   seleccionarTipo(tipo: 'docente' | 'administrador'): void {
     this.cerrarModal();
     if (tipo === 'docente') {
-      this.router.navigate(['/registro-profesor']);
+      this.router.navigate(['/registro-profesor'], { queryParams: { esAdmin: 'true' } });
     } else {
-      this.router.navigate(['/registro-administrador']);
+      this.router.navigate(['/crear-administrador']);
     }
   }
 

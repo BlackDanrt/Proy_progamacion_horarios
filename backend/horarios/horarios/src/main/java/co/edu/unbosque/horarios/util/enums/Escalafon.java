@@ -1,6 +1,9 @@
 package co.edu.unbosque.horarios.util.enums;
 
 public enum Escalafon {
-	TEMPORAL,
-	TEMPORAL_2
+	PROFESOR_AUXILIAR_I,
+	PROFESOR_AUXILIAR_II,
+	PROFESOR_ASISTENTE,
+	PROFESOR_ASOCIADO,
+	PROFESOR_TITULAR
 }
