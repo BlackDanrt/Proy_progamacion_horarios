@@ -31,7 +31,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 
 @RestController
 @RequestMapping("/profesor")
-@CrossOrigin(origins = {"*"})
+@CrossOrigin(origins = { "http://localhost:8080", "*" })
 public class ProfesorController {
 
 	@Autowired

@@ -19,7 +19,7 @@ import co.edu.unbosque.horarios.security.JwtUtil;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = {"*"})
+@CrossOrigin(origins = { "http://localhost:8080", "*" })
 public class AuthController {
 
 	/** Gestor encargado de la autenticación de los usuarios. */

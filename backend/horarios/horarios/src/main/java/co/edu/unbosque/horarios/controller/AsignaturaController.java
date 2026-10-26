@@ -21,7 +21,7 @@ import co.edu.unbosque.horarios.service.AsignaturaService;
 
 @RestController
 @RequestMapping("/asignatura")
-@CrossOrigin(origins = {"*"})
+@CrossOrigin(origins = { "http://localhost:8080", "*" })
 public class AsignaturaController {
 	
 	@Autowired

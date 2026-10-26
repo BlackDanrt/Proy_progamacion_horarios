@@ -21,7 +21,7 @@ import co.edu.unbosque.horarios.service.AdministradorService;
 
 @RestController
 @RequestMapping("/administrador")
-@CrossOrigin(origins = {"*"})
+@CrossOrigin(origins = { "http://localhost:8080", "*" })
 public class AdministradorController {
 
 	@Autowired

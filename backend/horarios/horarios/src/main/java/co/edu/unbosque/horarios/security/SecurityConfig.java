@@ -98,7 +98,7 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration
-				.setAllowedOrigins(List.of("http://localhost:4200", "https://ubiquitous-monstera-1bcf49.netlify.app"));
+				.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "https://ubiquitous-monstera-1bcf49.netlify.app"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration
 				.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
