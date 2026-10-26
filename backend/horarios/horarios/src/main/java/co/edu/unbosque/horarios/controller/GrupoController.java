@@ -24,7 +24,7 @@ import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
 
 @RestController
 @RequestMapping("/grupo")
-@CrossOrigin(origins = {"*"})
+@CrossOrigin(origins = { "http://localhost:8080", "*" })
 public class GrupoController {
 	
 	@Autowired

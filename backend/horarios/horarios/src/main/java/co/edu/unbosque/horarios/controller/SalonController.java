@@ -22,7 +22,7 @@ import co.edu.unbosque.horarios.util.enums.Bloque;
 
 @RestController
 @RequestMapping("/salon")
-@CrossOrigin(origins = {"*"})
+@CrossOrigin(origins = { "http://localhost:8080", "*" })
 public class SalonController {
 
 	@Autowired
