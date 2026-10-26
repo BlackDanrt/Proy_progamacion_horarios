@@ -6,6 +6,7 @@ import { InicioAdministrador } from './inicio-administrador/inicio-administrador
 import { GestionBasesDatos } from './gestion-bases-datos/gestion-bases-datos';
 import { CrearAdministrador } from './crear-administrador/crear-administrador';
 import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
+import { ConsultaHorario } from './consulta-horario/consulta-horario';
 
 const routes: Routes = [
   { path: '',                     component: Loginn },
@@ -15,6 +16,8 @@ const routes: Routes = [
   { path: 'gestion-bases-datos',  component: GestionBasesDatos },
   { path: 'crear-administrador',  component: CrearAdministrador },
   { path: 'horarios',             component: AsignacionHorarios },
+  { path: 'consulta-horario',     component: ConsultaHorario },
+  { path: 'mi-horario',           component: ConsultaHorario, data: { modo: 'docente' } },
 ];
 
 @NgModule({
