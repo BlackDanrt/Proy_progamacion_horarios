@@ -16,7 +16,7 @@
 	<name>horarios</name>
 	<description>Proyecto horarios</description>
 	<properties>
-		<java.version>25</java.version>
+		<java.version>21</java.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -113,13 +113,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
-
-		<!-- Proyecto local pokemon -->
-		<dependency>
-			<groupId>co.edu.unbosque</groupId>
-			<artifactId>pokemon</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
+		
 	</dependencies>
 
 	<build>
