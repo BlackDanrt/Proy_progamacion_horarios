@@ -269,7 +269,7 @@
   color: #64748b;
 }
 
-/* CALENDARIO */
+/* CALENDARIO Y TABLA */
 .calendar-grid-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -291,6 +291,7 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  table-layout: fixed; /* Mantiene la proporción equitativa de las columnas */
 }
 
 .schedule-table th, .schedule-table td {
@@ -300,7 +301,7 @@
 }
 
 .time-col-header {
-  width: 70px;
+  width: 110px;
   background: #f8fafc;
 }
 
@@ -313,6 +314,12 @@
   vertical-align: middle;
   height: 60px;
   white-space: nowrap;
+}
+
+.time-cell-almuerzo {
+  color: #94a3b8;
+  background-color: #fafafa;
+  font-style: italic;
 }
 
 .day-header {
@@ -340,23 +347,48 @@
 
 .slot-cell:hover { background: #fafaf9; }
 
-/* Celda resaltada al arrastrar encima */
 .slot-cell.drag-over {
   background: #f0fdf4;
   outline: 2px dashed #16a34a;
   outline-offset: -3px;
 }
 
-/* BLOQUE DE CLASE */
+/* FRANJA DE ALMUERZO DESHABILITADA */
+.slot-almuerzo {
+  background-color: #fafafa;
+  cursor: not-allowed;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.bloque-almuerzo {
+  font-size: 11px;
+  font-weight: 500;
+  color: #cbd5e1;
+  border: 1px dashed #e2e8f0;
+  border-radius: 4px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  pointer-events: none;
+}
+
+/* BLOQUE DE CLASE (Adaptable a varias líneas para nombres largos) */
 .event-pill {
   position: relative;
   background: #f8fafc;
   border-left: 4px solid #16a34a;
   border-radius: 4px;
-  padding: 6px 8px;
+  padding: 6px 8px 6px 8px;
   font-size: 11px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   cursor: grab;
+  /* Eliminamos la altura fija (height: 44px) y el overflow: hidden para permitir multilínea */
+  height: auto;
+  min-height: 44px;
+  overflow: visible;
 }
 
 .event-pill:active { cursor: grabbing; }
@@ -366,19 +398,26 @@
   color: #0f172a;
   font-weight: 600;
   margin-bottom: 2px;
-  padding-right: 12px;
+  padding-right: 14px; /* Espacio para que el botón de cerrar '×' no tape el texto */
+  /* Eliminamos white-space: nowrap y text-overflow para que baje de línea */
+  white-space: normal;
+  overflow: visible;
+  word-break: break-word; /* Evita que palabras muy largas rompan el diseño */
 }
 
 .event-pill span {
+  display: block;
   color: #64748b;
   font-size: 10px;
+  white-space: normal;
+  overflow: visible;
 }
 
-/* Botón quitar clase */
+/* Botón quitar clase reposicionado ligeramente para nombres multilínea */
 .btn-quitar {
   position: absolute;
-  top: 2px;
-  right: 4px;
+  top: 4px;
+  right: 6px;
   border: none;
   background: transparent;
   color: #94a3b8;
@@ -390,7 +429,6 @@
 
 .event-pill:hover .btn-quitar { display: block; }
 .btn-quitar:hover { color: #dc2626; }
-
 /* LEYENDA */
 .calendar-legend {
   display: flex;
@@ -419,4 +457,168 @@
   font-size: 11px;
   color: #475569;
   font-weight: 500;
+}
+
+/* BOTÓN MÁS (+) Y ENCABEZADO DEL PANEL ASIGNATURAS */
+.panel-header-asig {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.panel-header-asig h3 {
+  margin-bottom: 0 !important;
+}
+
+.btn-add-asig {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #17522d;
+  color: #ffffff;
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-add-asig:hover {
+  background-color: #f25100;
+  transform: scale(1.05);
+}
+
+/* OVERLAY Y VENTANA MODAL */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-card-small {
+  background: #ffffff;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.modal-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.btn-close-modal {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.btn-close-modal:hover {
+  color: #0f172a;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  outline: none;
+  background-color: #f8fafc;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #17522d;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(23, 82, 45, 0.1);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-cancelar {
+  padding: 8px 16px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancelar:hover {
+  background: #e2e8f0;
+}
+
+.btn-agregar {
+  padding: 8px 18px;
+  background: #17522d;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-agregar:hover {
+  background: #124023;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
