@@ -1,13 +1,23 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
-interface Asignatura {
+// Interfaces
+export interface Asignatura {
+  id?: number;
   nombre: string;
   aula: string;
   bloque: string;
   docente: string;
-  color: string;
-  bgLight: string;
+  color?: string;
+  bgLight?: string;
+  dia?: string;
+  hora?: string;
+}
+
+export interface BloqueCalendario {
+  nombre: string;
+  fecha: string;
+  clave: string;
 }
 
 @Component({
@@ -16,94 +26,169 @@ interface Asignatura {
   templateUrl: './asignacion-horarios.html',
   styleUrls: ['./asignacion-horarios.css']
 })
-export class AsignacionHorarios {
+export class AsignacionHorarios implements OnInit {
 
-  constructor(private router: Router) {}
+  // Control de visibilidad de la modal
+  mostrarModalAsignatura: boolean = false;
 
-  dias = [
-    { clave: 'lunes', nombre: 'LUNES', fecha: '12/05' },
-    { clave: 'martes', nombre: 'MARTES', fecha: '13/05' },
-    { clave: 'miercoles', nombre: 'MIÉRCOLES', fecha: '14/05' },
-    { clave: 'jueves', nombre: 'JUEVES', fecha: '15/05' },
-    { clave: 'viernes', nombre: 'VIERNES', fecha: '16/05' },
-  ];
+  // Listas desplegables para los selectores
+  listaMaterias: string[] = ['Desarrollo de sistemas de información 1', 'Principios de sistemas de información', 'Desarrollo de sistemas de información 2', 'Desarrollo de sistemas de información 3', 'Estructura de datos',
+    'Estructuras de sistemas', 'Bases de datos 1','Infraestructura TI 1', 'Modelizacion informacional'
+  ,'Proyecto núcleo 1', 'Ingenieria de software 1','Bases de datos 2',
+    'Infraestructura TI 2',
+    'Ingeniería de software',
+    'Complejidad algorítmica',
+    'Infraestructura TI 3',
+    'Modelos y simulación de sistemas de información',
+    'Proyecto núcleo 2',
+    'Ingeniería de software 3',
+    'Lenguajes de dominio específico',
+    'Seguridad de la información',
+    'Labor social',
+    'Electiva de profundización en ingeniería de sistemas 1',
+    'Política, sociedad y ciudadanía',
+    'Preparación para la vida laboral',
+    'Gestión de tecnología e innovación',
+    'Diseño de proyectos de ingeniería',
+    'Sistemas inteligentes',
+    'Electiva de profundización en ingeniería de sistemas 2',
+    'Electiva de profundización en ingeniería de sistemas 3'];
 
-  horasBloques = [
-    '08:00 - 09:00',
-    '09:00 - 10:00',
-    '10:00 - 11:00',
-    '11:00 - 12:00',
-    '12:00 - 13:00',
-    '13:00 - 14:00',
-    '14:00 - 15:00',
-    '15:00 - 16:00',
-  ];
+  listaBloques: string[] = ['A', 'B', 'F'];
+  salonesDisponibles: string[] = [];
+
+  // Mapeo dinámico de salones por bloque
+  mapaSalones: { [key: string]: string[] } = {
+    'A': ['A402', 'A403', 'A405'],
+    'B': ['B210', 'B211', 'B212', 'B213', 'B313'],
+    'F': ['F201', 'F202']
+  };
+
+  // Modelo temporal vinculado al formulario modal
+  nuevaAsignatura: Asignatura = {
+    nombre: '',
+    docente: '',
+    bloque: '',
+    aula: ''
+  };
 
   asignaturasDisponibles: Asignatura[] = [
     { nombre: 'Desarrollo de sistemas de información 1', aula: 'B313', bloque: 'Bloque B', docente: 'Ana López', color: '#16a34a', bgLight: '#dcfce7' },
     { nombre: 'Estructuras de datos', aula: 'B210', bloque: 'Bloque B', docente: 'Carlos Pérez', color: '#2563eb', bgLight: '#dbeafe' },
     { nombre: 'Modelización Informacional', aula: 'A402', bloque: 'Bloque A', docente: 'María Gómez', color: '#9333ea', bgLight: '#f3e8ff' },
-    { nombre: 'Bases de Datos 1', aula: 'A403', bloque: 'Bloque A', docente: 'Javier Ruiz', color: '#f97316', bgLight: '#ffedd5' },
-    { nombre: 'Proyecto núcleo 1', aula: 'A402', bloque: 'Bloque A', docente: 'Laura Torres', color: '#eab308', bgLight: '#fef9c3' },
-    { nombre: 'Seguridad de la información', aula: 'B313', bloque: 'Bloque B', docente: 'Pedro Díaz', color: '#0d9488', bgLight: '#ccfbf1' },
+    { nombre: 'Bases de Datos 1', aula: 'A403', bloque: 'Bloque A', docente: 'Javier Ruiz', color: '#ea580c', bgLight: '#ffedd5' },
+    { nombre: 'Proyecto núcleo 1', aula: 'A402', bloque: 'Bloque A', docente: 'Laura Torres', color: '#eab308', bgLight: '#fef9c3' }
   ];
 
-  // Clases ubicadas en el horario. Clave: "dia|hora"
-  horario: { [clave: string]: any } = {};
+  dias: BloqueCalendario[] = [
+    { nombre: 'LUNES', fecha: '12/05', clave: 'LUNES' },
+    { nombre: 'MARTES', fecha: '13/05', clave: 'MARTES' },
+    { nombre: 'MIÉRCOLES', fecha: '14/05', clave: 'MIERCOLES' },
+    { nombre: 'JUEVES', fecha: '15/05', clave: 'JUEVES' },
+    { nombre: 'VIERNES', fecha: '16/05', clave: 'VIERNES' },
+    { nombre: 'SABADO', fecha: '17/05', clave: 'SABADO' }
+  ];
+
+  horasBloques: string[] = [
+    '07:00 - 09:00',
+    '09:00 - 11:00',
+    '11:00 - 13:00',
+    '14:00 - 16:00',
+    '16:00 - 18:00',
+    '18:00 - 20:00',
+    '20:00 - 22:00'
+  ];
 
   celdaActiva: string | null = null;
 
-  private arrastrando: { tipo: 'asignatura' | 'clase'; asig?: Asignatura; origen?: string } | null = null;
+  // Arreglo que almacena las clases ya ubicadas en la grilla del calendario
+  clasesAsignadas: Asignatura[] = [];
 
-  ngOnInit(): void {
-    this.cargarEjemplo();
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {}
+
+  // --- LÓGICA DEL MODAL ---
+  abrirModalCrear(): void {
+    this.nuevaAsignatura = {
+      nombre: '',
+      docente: '',
+      bloque: '',
+      aula: ''
+    };
+    this.salonesDisponibles = [];
+    this.mostrarModalAsignatura = true;
   }
 
-  private cargarEjemplo(): void {
-    const ponerClase = (dia: string, hora: string, nombreAsig: string) => {
-      const a = this.asignaturasDisponibles.find(x => x.nombre.toLowerCase() === nombreAsig.toLowerCase());
-      if (a) {
-        this.horario[`${dia}|${hora}`] = {
-          nombre: a.nombre, aula: a.aula, bloque: a.bloque, color: a.color, docente: a.docente
-        };
-      }
+  cerrarModalCrear(): void {
+    this.mostrarModalAsignatura = false;
+  }
+
+  onBloqueChange(): void {
+    const bloqueSeleccionado: string = this.nuevaAsignatura.bloque;
+    if (bloqueSeleccionado && this.mapaSalones[bloqueSeleccionado]) {
+      this.salonesDisponibles = this.mapaSalones[bloqueSeleccionado];
+    } else {
+      this.salonesDisponibles = [];
+    }
+    this.nuevaAsignatura.aula = '';
+  }
+
+  agregarNuevaAsignatura(): void {
+    if (
+      !this.nuevaAsignatura.docente ||
+      !this.nuevaAsignatura.nombre ||
+      !this.nuevaAsignatura.bloque ||
+      !this.nuevaAsignatura.aula
+    ) {
+      alert('Por favor complete todos los campos.');
+      return;
+    }
+
+    const coloresPill = [
+      { color: '#16a34a', bgLight: '#dcfce7' },
+      { color: '#2563eb', bgLight: '#dbeafe' },
+      { color: '#9333ea', bgLight: '#f3e8ff' },
+      { color: '#ea580c', bgLight: '#ffedd5' }
+    ];
+    const colorRandom = coloresPill[Math.floor(Math.random() * coloresPill.length)];
+
+    const nueva: Asignatura = {
+      nombre: this.nuevaAsignatura.nombre,
+      docente: this.nuevaAsignatura.docente,
+      bloque: `Bloque ${this.nuevaAsignatura.bloque}`,
+      aula: this.nuevaAsignatura.aula,
+      color: colorRandom.color,
+      bgLight: colorRandom.bgLight
     };
 
-    ponerClase('lunes', '08:00 - 09:00', 'Desarrollo de sistemas de información 1');
-    ponerClase('viernes', '08:00 - 09:00', 'Seguridad de la información');
-    ponerClase('martes', '09:00 - 10:00', 'Desarrollo de sistemas de información 1');
-    ponerClase('jueves', '09:00 - 10:00', 'Estructuras de datos');
-    ponerClase('lunes', '10:00 - 11:00', 'Estructuras de datos');
-    ponerClase('martes', '10:00 - 11:00', 'Estructuras de datos');
-    ponerClase('miercoles', '10:00 - 11:00', 'Desarrollo de sistemas de información 1');
-    ponerClase('lunes', '12:00 - 13:00', 'Modelización Informacional');
-    ponerClase('viernes', '12:00 - 13:00', 'Proyecto núcleo 1');
-    ponerClase('miercoles', '13:00 - 14:00', 'Proyecto núcleo 1');
-    ponerClase('martes', '14:00 - 15:00', 'Seguridad de la información');
+    this.asignaturasDisponibles.push(nueva);
+    this.cerrarModalCrear();
   }
 
-  getClase(dia: string, hora: string) {
-    return this.horario[`${dia}|${hora}`] || null;
+  navegarA(ruta: string): void {
+    this.router.navigate([ruta]);
   }
 
-  // ===== DRAG & DROP =====
+  guardarCambios(): void {
+    console.log('Cambios guardados:', this.clasesAsignadas);
+  }
 
-  // Arrastrar desde la lista de asignaturas
+  // --- MÉTODOS DE ARRASTRAR Y SOLTAR (DRAG & DROP) ---
+
   onDragStartAsignatura(event: DragEvent, asig: Asignatura): void {
-    this.arrastrando = { tipo: 'asignatura', asig };
-    event.dataTransfer!.effectAllowed = 'copy';
-    event.dataTransfer!.setData('text/plain', asig.nombre); // necesario en Firefox
+    event.dataTransfer?.setData('text/plain', JSON.stringify(asig));
   }
 
-  // Arrastrar una clase que ya está en el horario (para moverla)
   onDragStartClase(event: DragEvent, dia: string, hora: string): void {
-    this.arrastrando = { tipo: 'clase', origen: `${dia}|${hora}` };
-    event.dataTransfer!.effectAllowed = 'move';
-    event.dataTransfer!.setData('text/plain', `${dia}|${hora}`);
+    const clase = this.getClase(dia, hora);
+    if (clase) {
+      event.dataTransfer?.setData('text/plain', JSON.stringify(clase));
+    }
   }
 
   onDragOver(event: DragEvent, dia: string, hora: string): void {
-    event.preventDefault(); // obligatorio para permitir el drop
+    event.preventDefault();
     this.celdaActiva = `${dia}|${hora}`;
   }
 
@@ -114,40 +199,30 @@ export class AsignacionHorarios {
   onDrop(event: DragEvent, dia: string, hora: string): void {
     event.preventDefault();
     this.celdaActiva = null;
-    if (!this.arrastrando) return;
 
-    const destino = `${dia}|${hora}`;
+    const data = event.dataTransfer?.getData('text/plain');
+    if (data) {
+      const asignatura = JSON.parse(data);
 
-    if (this.arrastrando.tipo === 'asignatura' && this.arrastrando.asig) {
-      const a = this.arrastrando.asig;
-      this.horario[destino] = {
-        nombre: a.nombre, aula: a.aula, bloque: a.bloque, color: a.color, docente: a.docente
-      };
-    } else if (this.arrastrando.origen && this.arrastrando.origen !== destino) {
-      const origen = this.arrastrando.origen;
-      const clase = this.horario[origen];
-      const claseDestino = this.horario[destino];
-      this.horario[destino] = clase;
-      if (claseDestino) {
-        this.horario[origen] = claseDestino; // intercambia
-      } else {
-        delete this.horario[origen];         // mueve
+      if (asignatura.dia && asignatura.hora) {
+        this.quitarClase(asignatura.dia, asignatura.hora);
       }
+
+      this.quitarClase(dia, hora);
+
+      this.clasesAsignadas.push({
+        ...asignatura,
+        dia: dia,
+        hora: hora
+      });
     }
-    this.arrastrando = null;
+  }
+
+  getClase(dia: string, hora: string): any {
+    return this.clasesAsignadas.find(c => c.dia === dia && c.hora === hora) || null;
   }
 
   quitarClase(dia: string, hora: string): void {
-    delete this.horario[`${dia}|${hora}`];
-  }
-
-  guardarCambios(): void {
-    // Aquí luego puedes enviar this.horario al backend
-    console.log('Horario a guardar:', JSON.stringify(this.horario, null, 2));
-    alert('Cambios guardados (por ahora solo en consola).');
-  }
-
-  navegarA(ruta: string): void {
-    this.router.navigate([ruta]);
+    this.clasesAsignadas = this.clasesAsignadas.filter(c => !(c.dia === dia && c.hora === hora));
   }
 }
