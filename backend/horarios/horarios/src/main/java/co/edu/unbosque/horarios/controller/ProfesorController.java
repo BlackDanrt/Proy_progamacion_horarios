@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
+import co.edu.unbosque.horarios.service.FranjaHorariaService;
 import co.edu.unbosque.horarios.service.ProfesorService;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.Dia;
@@ -36,6 +37,9 @@ public class ProfesorController {
 
 	@Autowired
 	private ProfesorService profesorSer;
+	
+	@Autowired
+	private FranjaHorariaService franjaSer;
 	
 	public ProfesorController() {
 		// TODO Auto-generated constructor stub
@@ -178,15 +182,69 @@ public class ProfesorController {
 	}
 	
 	
-	@PutMapping("/actualizar")
-	public ResponseEntity<String> actualizarProfesor(@RequestBody ProfesorDTO profesorDTO) {
+	@PutMapping("/actualizarinformacion")
+	public ResponseEntity<String> actualizarInformacionProfesor(
+			@RequestParam long id,
+			@RequestParam String nombre,
+			@RequestParam String apellido,
+			@RequestParam long documento,
+			@RequestParam String correo,
+			@RequestParam String contrasenia,
+			@RequestParam TipoVinculacion tipoVinculacion,
+			@RequestParam Escalafon escalafon,
+			@RequestParam List<Especialidad> especialidades,
+			@RequestParam int horasMaximasSemanales
+			) {
 		try {
-			int status = profesorSer.updateById(profesorDTO.getId(), profesorDTO);
-			return (status == 0) ? new ResponseEntity<>("Profesor actualizado exitosamente", HttpStatus.ACCEPTED)
-					: new ResponseEntity<>("Profesor no encontrado o error al actualizar", HttpStatus.NOT_FOUND);
+			ProfesorDTO profesor = new ProfesorDTO();
+			profesor.setId(id);
+			profesor.setNombre(nombre);
+			profesor.setApellido(apellido);
+			profesor.setDocumento(documento);
+			profesor.setCorreo(correo);
+			profesor.setContrasenia(contrasenia);
+			profesor.setTipoVinculacion(tipoVinculacion);
+			profesor.setEscalafon(escalafon);
+			profesor.setEspecialidades(especialidades);
+			profesor.setHorasMaximasSemanales(horasMaximasSemanales);
+			
+			int status = profesorSer.updateById(id, profesor);
+			return (status == 1) ? new ResponseEntity<>("Profesor actualizado exitosamente", HttpStatus.ACCEPTED)
+					: new ResponseEntity<>("Profesor no encontrado", HttpStatus.NOT_FOUND);
 		} catch (Exception e) {
 			return new ResponseEntity<>("Error al actualizar el profesor: " + e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
+	}
+	
+	@PutMapping("/actualizardisponibilidadhoraria")
+	public ResponseEntity<String> actualizarDisponibilidadHorariaProfesor(
+			@RequestParam long idProfesor,
+			@RequestParam long idFranjaHoraria,
+			@RequestParam Dia dia,
+			@RequestParam LocalTime horaInicio,
+			@RequestParam LocalTime horaFin
+			
+			) {
+		try {
+			FranjaHorariaDTO franjaHoraria = new FranjaHorariaDTO();
+			franjaHoraria.setId(idFranjaHoraria);
+			franjaHoraria.setDia(dia);
+			franjaHoraria.setHoraInicio(horaInicio);
+			franjaHoraria.setHoraFin(horaFin);
+			
+			franjaSer.updateById(idFranjaHoraria, franjaHoraria);
+			boolean actualizado = profesorSer.updateDisponibilidadHoraria(idProfesor, franjaHoraria);
+			
+			if (actualizado) {
+				return new ResponseEntity<>("Disponibilildad horaria actualizada exitosamente", HttpStatus.ACCEPTED);
+			} else {
+				return new ResponseEntity<>("Profesor o disponibilidad horaria no encontrados ", HttpStatus.NOT_FOUND);
+			}
+			
+		} catch(Exception e) {
+			return new ResponseEntity<>("Error al actualizar la disponibilidad horaria: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+		}
+		
 	}
 
 
