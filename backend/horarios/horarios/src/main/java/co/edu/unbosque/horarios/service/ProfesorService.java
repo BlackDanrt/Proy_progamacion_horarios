@@ -21,6 +21,7 @@ import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.Dia;
 import co.edu.unbosque.horarios.util.enums.Escalafon;
 import co.edu.unbosque.horarios.util.enums.TipoVinculacion;
+import jakarta.transaction.Transactional;
 
 @Service
 public class ProfesorService implements CRUDOperation<ProfesorDTO> {
@@ -111,7 +112,7 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		Optional<Profesor> encontrado = profesorRep.findById(id);
 
 		if (encontrado.isEmpty()) {
-			return 1;
+			return 0;
 		}
 
 		LanzadorDeException.verificarNombre(data.getNombre());
@@ -148,7 +149,7 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 
 		profesorRep.save(profesor);
 
-		return 0;
+		return 1;
 	}
 
 	public ProfesorDTO findByDocumento(long documento) {
@@ -285,6 +286,41 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 
 		profesorRep.save(profesor);
 		return true;
+	}
+	
+	@Transactional
+	public boolean updateDisponibilidadHoraria(long idProfesor, FranjaHorariaDTO franjaDTO) {
+
+	    LanzadorDeException.verificarFranjaHoraria(franjaDTO);
+
+	    Optional<Profesor> encontrado = profesorRep.findById(idProfesor);
+
+	    if (encontrado.isEmpty()) {
+	        return false;
+	    }
+
+	    Profesor profesor = encontrado.get();
+
+	    FranjaHoraria franja = profesor.getDisponibilidadHoraria()
+	            .stream()
+	            .filter(f -> f.getId() == franjaDTO.getId())
+	            .findFirst()
+	            .orElse(null);
+
+	    if (franja == null) {
+	        return false;
+	    }
+
+	    LanzadorDeException.verificarDia(franjaDTO.getDia());
+	    LanzadorDeException.verificarHoraInicio(franjaDTO.getHoraInicio());
+	    LanzadorDeException.verificarHoraFin(franjaDTO.getHoraFin());
+	    LanzadorDeException.verificarHorario(franjaDTO.getHoraInicio(), franjaDTO.getHoraFin());
+
+	    franja.setDia(franjaDTO.getDia());
+	    franja.setHoraInicio(franjaDTO.getHoraInicio());
+	    franja.setHoraFin(franjaDTO.getHoraFin());
+
+	    return true;
 	}
 
 	public ProfesorRepository getProfesorRep() {
