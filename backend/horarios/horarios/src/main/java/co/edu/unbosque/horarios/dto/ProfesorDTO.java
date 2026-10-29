@@ -4,26 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.entity.Persona;
 import co.edu.unbosque.horarios.util.enums.Escalafon;
 import co.edu.unbosque.horarios.util.enums.Especialidad;
 import co.edu.unbosque.horarios.util.enums.TipoVinculacion;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.persistence.JoinColumn;
 
 /**
  * Representa los datos de un profesor, incluyendo su información personal,
@@ -31,39 +19,27 @@ import jakarta.persistence.JoinColumn;
  *
  * @author Prisma Web
  */
-@Entity
-@Table(name = "Profesor")
 public class ProfesorDTO extends Persona {
 
 	/**
 	 * Tipo de vinculación laboral del profesor.
 	 */
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
 	private TipoVinculacion tipoVinculacion;
 
 	/**
 	 * Escalafón académico del profesor.
 	 */
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
 	private Escalafon escalafon;
 
 	/**
 	 * Lista de especialidades del profesor.
 	 */
-	@ElementCollection(targetClass = Especialidad.class, fetch = FetchType.EAGER)
-	@CollectionTable(name = "profesor_especialidad", joinColumns = @JoinColumn(name = "profesor_id"))
-	@Enumerated(EnumType.STRING)
-	@Column(name = "especialidad", nullable = false)
 	private List<Especialidad> especialidades = new ArrayList<>();
 
 	/**
 	 * Lista de franjas horarias en las que el profesor está disponible.
 	 */
-	@ManyToMany
-	@JoinTable(name = "profesor_franja", joinColumns = @JoinColumn(name = "profesor_id"), inverseJoinColumns = @JoinColumn(name = "franja_id"))
-	private List<FranjaHoraria> disponibilidadHoraria = new ArrayList<>();
+	private List<FranjaHorariaDTO> disponibilidadHoraria = new ArrayList<>();
 
 	/**
 	 * Número máximo de horas que el profesor puede trabajar por semana.
@@ -75,15 +51,16 @@ public class ProfesorDTO extends Persona {
 	/**
 	 * Constructor vacío de la clase.
 	 */
-	public ProfesorDTO() {}
+	public ProfesorDTO() {
+	}
 
 	/**
 	 * Construye un profesor con sus datos personales.
 	 *
-	 * @param nombre nombre del profesor.
-	 * @param apellido apellido del profesor.
-	 * @param documento número de documento del profesor.
-	 * @param correo correo electrónico del profesor.
+	 * @param nombre      nombre del profesor.
+	 * @param apellido    apellido del profesor.
+	 * @param documento   número de documento del profesor.
+	 * @param correo      correo electrónico del profesor.
 	 * @param contrasenia contraseña del profesor.
 	 */
 	public ProfesorDTO(@NotBlank(message = "El nombre no puede estar vacío") String nombre,
@@ -96,14 +73,14 @@ public class ProfesorDTO extends Persona {
 	/**
 	 * Construye un profesor con sus datos laborales y disponibilidad.
 	 *
-	 * @param tipoVinculacion tipo de vinculación laboral.
-	 * @param escalafon escalafón académico.
-	 * @param especialidades lista de especialidades del profesor.
+	 * @param tipoVinculacion       tipo de vinculación laboral.
+	 * @param escalafon             escalafón académico.
+	 * @param especialidades        lista de especialidades del profesor.
 	 * @param disponibilidadHoraria lista de franjas horarias disponibles.
 	 * @param horasMaximasSemanales máximo de horas de trabajo por semana.
 	 */
 	public ProfesorDTO(TipoVinculacion tipoVinculacion, Escalafon escalafon, List<Especialidad> especialidades,
-			List<FranjaHoraria> disponibilidadHoraria,
+			List<FranjaHorariaDTO> disponibilidadHoraria,
 			@Min(value = 1, message = "Debe tener al menos 1 hora semanal") @Max(value = 40, message = "No puede superar las 40 horas semanales") int horasMaximasSemanales) {
 		super();
 		this.tipoVinculacion = tipoVinculacion;
@@ -116,14 +93,14 @@ public class ProfesorDTO extends Persona {
 	/**
 	 * Construye un profesor con sus datos personales, laborales y disponibilidad.
 	 *
-	 * @param nombre nombre del profesor.
-	 * @param apellido apellido del profesor.
-	 * @param documento número de documento del profesor.
-	 * @param correo correo electrónico del profesor.
-	 * @param contrasenia contraseña del profesor.
-	 * @param tipoVinculacion tipo de vinculación laboral.
-	 * @param escalafon escalafón académico.
-	 * @param especialidades lista de especialidades del profesor.
+	 * @param nombre                nombre del profesor.
+	 * @param apellido              apellido del profesor.
+	 * @param documento             número de documento del profesor.
+	 * @param correo                correo electrónico del profesor.
+	 * @param contrasenia           contraseña del profesor.
+	 * @param tipoVinculacion       tipo de vinculación laboral.
+	 * @param escalafon             escalafón académico.
+	 * @param especialidades        lista de especialidades del profesor.
 	 * @param disponibilidadHoraria lista de franjas horarias disponibles.
 	 * @param horasMaximasSemanales máximo de horas de trabajo por semana.
 	 */
@@ -132,7 +109,7 @@ public class ProfesorDTO extends Persona {
 			@NotBlank(message = "El correo no puede estar vacío") @Email(message = "El correo no es válido") String correo,
 			@NotBlank(message = "La contraseña no puede estar vacía") String contrasenia,
 			TipoVinculacion tipoVinculacion, Escalafon escalafon, List<Especialidad> especialidades,
-			List<FranjaHoraria> disponibilidadHoraria,
+			List<FranjaHorariaDTO> disponibilidadHoraria,
 			@Min(value = 1, message = "Debe tener al menos 1 hora semanal") @Max(value = 40, message = "No puede superar las 40 horas semanales") int horasMaximasSemanales) {
 		super(nombre, apellido, documento, correo, contrasenia);
 		this.tipoVinculacion = tipoVinculacion;
@@ -201,7 +178,7 @@ public class ProfesorDTO extends Persona {
 	 *
 	 * @return lista de franjas horarias disponibles.
 	 */
-	public List<FranjaHoraria> getDisponibilidadHoraria() {
+	public List<FranjaHorariaDTO> getDisponibilidadHoraria() {
 		return disponibilidadHoraria;
 	}
 
@@ -210,7 +187,7 @@ public class ProfesorDTO extends Persona {
 	 *
 	 * @param disponibilidadHoraria lista de franjas horarias disponibles.
 	 */
-	public void setDisponibilidadHoraria(List<FranjaHoraria> disponibilidadHoraria) {
+	public void setDisponibilidadHoraria(List<FranjaHorariaDTO> disponibilidadHoraria) {
 		this.disponibilidadHoraria = disponibilidadHoraria;
 	}
 
@@ -250,7 +227,8 @@ public class ProfesorDTO extends Persona {
 	 * Compara este profesor con otro objeto para determinar si son iguales.
 	 *
 	 * @param obj objeto con el que se compara el profesor.
-	 * @return true si ambos objetos tienen los mismos atributos; false en caso contrario.
+	 * @return true si ambos objetos tienen los mismos atributos; false en caso
+	 *         contrario.
 	 */
 	@Override
 	public boolean equals(Object obj) {
@@ -275,7 +253,7 @@ public class ProfesorDTO extends Persona {
 	 */
 	@Override
 	public String toString() {
-		return "ProfesorDTO [tipoVinculacion=" + tipoVinculacion + ", escalafon=" + escalafon + ", especialidades="
+		return super.toString() + "ProfesorDTO [tipoVinculacion=" + tipoVinculacion + ", escalafon=" + escalafon + ", especialidades="
 				+ especialidades + ", disponibilidadHoraria=" + disponibilidadHoraria + ", horasMaximasSemanales="
 				+ horasMaximasSemanales + "]";
 	}

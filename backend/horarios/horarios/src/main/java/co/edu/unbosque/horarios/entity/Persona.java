@@ -4,6 +4,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,13 +20,15 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * Representa la clase base abstracta de las personas del sistema de gestión
- * de horarios. Contiene los datos personales y las credenciales de acceso.
+ * Representa la clase base abstracta de las personas del sistema de gestión de
+ * horarios. Contiene los datos personales y las credenciales de acceso.
  * Implementa UserDetails para permitir la integración con Spring Security.
  *
  * @author Prisma Web
  */
 @MappedSuperclass
+@JsonIgnoreProperties({ "password", "username", "authorities", "enabled", "accountNonExpired", "accountNonLocked",
+		"credentialsNonExpired" })
 public abstract class Persona implements UserDetails {
 
 	/**
@@ -71,6 +76,7 @@ public abstract class Persona implements UserDetails {
 	 */
 	@Column(nullable = false)
 	@NotBlank(message = "La contraseña no puede estar vacía")
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private String contrasenia;
 
 	/**
@@ -83,10 +89,10 @@ public abstract class Persona implements UserDetails {
 	/**
 	 * Construye una persona con sus datos personales y credenciales de acceso.
 	 *
-	 * @param nombre nombre de la persona.
-	 * @param apellido apellido de la persona.
-	 * @param documento número de documento de identidad.
-	 * @param correo correo electrónico de la persona.
+	 * @param nombre      nombre de la persona.
+	 * @param apellido    apellido de la persona.
+	 * @param documento   número de documento de identidad.
+	 * @param correo      correo electrónico de la persona.
 	 * @param contrasenia contraseña de acceso al sistema.
 	 */
 	public Persona(@NotBlank(message = "El nombre no puede estar vacío") String nombre,
@@ -210,8 +216,8 @@ public abstract class Persona implements UserDetails {
 	}
 
 	/**
-	 * Calcula el código hash de la persona utilizando el correo
-	 * electrónico y el número de documento.
+	 * Calcula el código hash de la persona utilizando el correo electrónico y el
+	 * número de documento.
 	 *
 	 * @return código hash de la persona.
 	 */
@@ -224,8 +230,8 @@ public abstract class Persona implements UserDetails {
 	 * Compara esta persona con otro objeto para determinar si son iguales.
 	 *
 	 * @param obj objeto con el que se compara la persona.
-	 * @return true si ambos objetos tienen el mismo correo y documento
-	 *         y pertenecen a la misma clase; false en caso contrario.
+	 * @return true si ambos objetos tienen el mismo correo y documento y pertenecen
+	 *         a la misma clase; false en caso contrario.
 	 */
 	@Override
 	public boolean equals(Object obj) {
@@ -240,21 +246,21 @@ public abstract class Persona implements UserDetails {
 	}
 
 	/**
-	 * Devuelve una representación en texto de la persona con sus datos
-	 * personales y su correo electrónico.
+	 * Devuelve una representación en texto de la persona con sus datos personales y
+	 * su correo electrónico.
 	 *
 	 * @return cadena con la información de la persona.
 	 */
 	@Override
 	public String toString() {
 		return "Persona [nombre=" + nombre + ", apellido=" + apellido + ", documento=" + documento + ", correo="
-				+ correo + "";
+				+ correo + "]";
 	}
 
 	/**
-	 * Obtiene los permisos de acceso correspondientes al tipo de persona.
-	 * Asigna el rol PROFESOR si la persona es una instancia de Profesor;
-	 * en caso contrario, asigna el rol ADMINISTRADOR.
+	 * Obtiene los permisos de acceso correspondientes al tipo de persona. Asigna el
+	 * rol PROFESOR si la persona es una instancia de Profesor; en caso contrario,
+	 * asigna el rol ADMINISTRADOR.
 	 *
 	 * @return colección de autoridades asignadas a la persona.
 	 */
@@ -265,8 +271,8 @@ public abstract class Persona implements UserDetails {
 	}
 
 	/**
-	 * Obtiene la contraseña utilizada por Spring Security para autenticar
-	 * a la persona.
+	 * Obtiene la contraseña utilizada por Spring Security para autenticar a la
+	 * persona.
 	 *
 	 * @return contraseña de la persona.
 	 */
@@ -276,8 +282,8 @@ public abstract class Persona implements UserDetails {
 	}
 
 	/**
-	 * Obtiene el nombre de usuario utilizado para la autenticación.
-	 * En este sistema corresponde al correo electrónico.
+	 * Obtiene el nombre de usuario utilizado para la autenticación. En este sistema
+	 * corresponde al correo electrónico.
 	 *
 	 * @return correo electrónico de la persona.
 	 */

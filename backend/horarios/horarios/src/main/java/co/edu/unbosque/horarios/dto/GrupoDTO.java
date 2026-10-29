@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import co.edu.unbosque.horarios.entity.Asignatura;
-import co.edu.unbosque.horarios.entity.FranjaHoraria;
-import co.edu.unbosque.horarios.entity.Profesor;
-import co.edu.unbosque.horarios.entity.Salon;
 import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
 
 /**
@@ -26,7 +22,7 @@ public class GrupoDTO {
 	/**
 	 * Asignatura asociada al grupo.
 	 */
-	private Asignatura asignatura;
+	private AsignaturaDTO asignatura;
 
 	/**
 	 * Número que identifica al grupo de una asignatura.
@@ -46,12 +42,12 @@ public class GrupoDTO {
 	/**
 	 * Profesor encargado del grupo.
 	 */
-	private Profesor profesor;
+	private ProfesorDTO profesor;
 
 	/**
 	 * Lista de franjas horarias correspondientes a las sesiones del grupo.
 	 */
-	private List<FranjaHoraria> sesiones = new ArrayList<>();
+	private List<FranjaHorariaDTO> sesiones = new ArrayList<>();
 
 	/**
 	 * Estado actual del grupo.
@@ -61,7 +57,7 @@ public class GrupoDTO {
 	/**
 	 * Salón asignado al grupo.
 	 */
-	private Salon salon;
+	private SalonDTO salon;
 
 	/**
 	 * Constructor vacío de la clase.
@@ -71,20 +67,20 @@ public class GrupoDTO {
 	}
 
 	/**
-	 * Construye un grupo con su asignatura, capacidades, profesor,
-	 * sesiones, estado y salón asignado.
+	 * Construye un grupo con su asignatura, capacidades, profesor, sesiones, estado
+	 * y salón asignado.
 	 *
-	 * @param asignatura asignatura asociada al grupo.
-	 * @param numeroGrupo número del grupo.
+	 * @param asignatura      asignatura asociada al grupo.
+	 * @param numeroGrupo     número del grupo.
 	 * @param capacidadMinima cantidad mínima de estudiantes.
 	 * @param capacidadMaxima cantidad máxima de estudiantes.
-	 * @param profesor profesor encargado del grupo.
-	 * @param sesiones lista de sesiones del grupo.
-	 * @param estado estado actual del grupo.
-	 * @param salon salón asignado al grupo.
+	 * @param profesor        profesor encargado del grupo.
+	 * @param sesiones        lista de sesiones del grupo.
+	 * @param estado          estado actual del grupo.
+	 * @param salon           salón asignado al grupo.
 	 */
-	public GrupoDTO(Asignatura asignatura, int numeroGrupo, int capacidadMinima, int capacidadMaxima, Profesor profesor,
-			List<FranjaHoraria> sesiones, EstadoGrupo estado, Salon salon) {
+	public GrupoDTO(AsignaturaDTO asignatura, int numeroGrupo, int capacidadMinima, int capacidadMaxima,
+			ProfesorDTO profesor, List<FranjaHorariaDTO> sesiones, EstadoGrupo estado, SalonDTO salon) {
 		super();
 		this.asignatura = asignatura;
 		this.numeroGrupo = numeroGrupo;
@@ -119,7 +115,7 @@ public class GrupoDTO {
 	 *
 	 * @return asignatura del grupo.
 	 */
-	public Asignatura getAsignatura() {
+	public AsignaturaDTO getAsignatura() {
 		return asignatura;
 	}
 
@@ -128,7 +124,7 @@ public class GrupoDTO {
 	 *
 	 * @param asignatura asignatura del grupo.
 	 */
-	public void setAsignatura(Asignatura asignatura) {
+	public void setAsignatura(AsignaturaDTO asignatura) {
 		this.asignatura = asignatura;
 	}
 
@@ -191,7 +187,7 @@ public class GrupoDTO {
 	 *
 	 * @return profesor del grupo.
 	 */
-	public Profesor getProfesor() {
+	public ProfesorDTO getProfesor() {
 		return profesor;
 	}
 
@@ -200,7 +196,7 @@ public class GrupoDTO {
 	 *
 	 * @param profesor profesor del grupo.
 	 */
-	public void setProfesor(Profesor profesor) {
+	public void setProfesor(ProfesorDTO profesor) {
 		this.profesor = profesor;
 	}
 
@@ -209,7 +205,7 @@ public class GrupoDTO {
 	 *
 	 * @return lista de franjas horarias del grupo.
 	 */
-	public List<FranjaHoraria> getSesiones() {
+	public List<FranjaHorariaDTO> getSesiones() {
 		return sesiones;
 	}
 
@@ -218,7 +214,7 @@ public class GrupoDTO {
 	 *
 	 * @param sesiones lista de franjas horarias del grupo.
 	 */
-	public void setSesiones(List<FranjaHoraria> sesiones) {
+	public void setSesiones(List<FranjaHorariaDTO> sesiones) {
 		this.sesiones = sesiones;
 	}
 
@@ -245,7 +241,7 @@ public class GrupoDTO {
 	 *
 	 * @return salón del grupo.
 	 */
-	public Salon getSalon() {
+	public SalonDTO getSalon() {
 		return salon;
 	}
 
@@ -254,7 +250,7 @@ public class GrupoDTO {
 	 *
 	 * @param salon salón del grupo.
 	 */
-	public void setSalon(Salon salon) {
+	public void setSalon(SalonDTO salon) {
 		this.salon = salon;
 	}
 
@@ -273,7 +269,8 @@ public class GrupoDTO {
 	 * Compara este grupo con otro objeto para determinar si son iguales.
 	 *
 	 * @param obj objeto con el que se compara el grupo.
-	 * @return true si ambos objetos tienen los mismos atributos; false en caso contrario.
+	 * @return true si ambos objetos tienen los mismos atributos; false en caso
+	 *         contrario.
 	 */
 	@Override
 	public boolean equals(Object obj) {
@@ -299,8 +296,9 @@ public class GrupoDTO {
 	public String toString() {
 		return "GrupoDTO [id=" + id + ", asignatura=" + asignatura + ", numeroGrupo=" + numeroGrupo
 				+ ", capacidadMinima=" + capacidadMinima + ", capacidadMaxima=" + capacidadMaxima + ", profesor="
-				+ profesor.getId() + ", sesiones=" + sesiones.size() + ", estado=" + estado + ", salon=" + salon.getId()
-				+ "]";
+				+ (profesor != null ? profesor.getId() : null) + ", sesiones="
+				+ (sesiones != null ? sesiones.size() : 0) + ", estado=" + estado + ", salon="
+				+ (salon != null ? salon.getId() : null) + "]";
 	}
 
 }

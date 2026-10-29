@@ -25,295 +25,281 @@ import co.edu.unbosque.horarios.util.enums.TipoVinculacion;
 @Service
 public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 
-    @Autowired
-    private ProfesorRepository profesorRep;
-    
-    @Autowired
-    private FranjaHorariaRepository franjaRep;
-
-    @Autowired
-    private ModelMapper mapper;
+	@Autowired
+	private ProfesorRepository profesorRep;
 
-    public ProfesorService() {
-        // Constructor vacío
-    }
+	@Autowired
+	private FranjaHorariaRepository franjaRep;
 
-    @Override
-    public long count() {
-        return profesorRep.count();
-    }
-
-    @Override
-    public boolean exist(Long id) {
-        LanzadorDeException.verificarId(id);
-        return profesorRep.existsById(id);
-    }
+	@Autowired
+	private ModelMapper mapper;
 
-    @Override
-    public int create(ProfesorDTO data) {
+	public ProfesorService() {
+		// Constructor vacío
+	}
 
-        LanzadorDeException.verificarProfesor(data);
-        LanzadorDeException.verificarNombre(data.getNombre());
-        LanzadorDeException.verificarApellido(data.getApellido());
-        LanzadorDeException.verificarDocumento(data.getDocumento());
-        LanzadorDeException.verificarCorreoElectronico(data.getCorreo());
-        LanzadorDeException.verificarContrasena(data.getContrasenia());
-        LanzadorDeException.verificarTipoVinculacion(data.getTipoVinculacion());
-        LanzadorDeException.verificarEscalafon(data.getEscalafon());
-        LanzadorDeException.verificarHorasMaximasSemanales(
-                data.getHorasMaximasSemanales());
-        LanzadorDeException.verificarEspecialidades(
-                data.getEspecialidades());
+	@Override
+	public long count() {
+		return profesorRep.count();
+	}
 
-        LanzadorDeException.verificarDocumentoDuplicado(
-                profesorRep.existsByDocumento(data.getDocumento()));
+	@Override
+	public boolean exist(Long id) {
+		LanzadorDeException.verificarId(id);
+		return profesorRep.existsById(id);
+	}
 
-        LanzadorDeException.verificarCorreoDuplicado(
-                profesorRep.existsByCorreo(data.getCorreo()));
+	@Override
+	public int create(ProfesorDTO data) {
 
-        Profesor profesor = mapper.map(data, Profesor.class);
+		LanzadorDeException.verificarProfesor(data);
+		LanzadorDeException.verificarNombre(data.getNombre());
+		LanzadorDeException.verificarApellido(data.getApellido());
+		LanzadorDeException.verificarDocumento(data.getDocumento());
+		LanzadorDeException.verificarCorreoElectronico(data.getCorreo());
+		LanzadorDeException.verificarContrasena(data.getContrasenia());
+		LanzadorDeException.verificarTipoVinculacion(data.getTipoVinculacion());
+		LanzadorDeException.verificarEscalafon(data.getEscalafon());
+		LanzadorDeException.verificarHorasMaximasSemanales(data.getHorasMaximasSemanales());
+		LanzadorDeException.verificarEspecialidades(data.getEspecialidades());
 
-        profesorRep.save(profesor);
+		LanzadorDeException.verificarDocumentoDuplicado(profesorRep.existsByDocumento(data.getDocumento()));
 
-        return 0;
-    }
+		LanzadorDeException.verificarCorreoDuplicado(profesorRep.existsByCorreo(data.getCorreo()));
 
-    @Override
-    public List<ProfesorDTO> getAll() {
+		Profesor profesor = mapper.map(data, Profesor.class);
 
-        List<ProfesorDTO> lista = new ArrayList<>();
+		profesorRep.save(profesor);
 
-        Iterable<Profesor> profesores = profesorRep.findAll();
+		return 0;
+	}
 
-        for (Profesor profesor : profesores) {
-            lista.add(mapper.map(profesor, ProfesorDTO.class));
-        }
+	@Override
+	public List<ProfesorDTO> getAll() {
 
-        return lista;
-    }
+		List<ProfesorDTO> lista = new ArrayList<>();
 
-    @Override
-    public int deleteById(Long id) {
+		Iterable<Profesor> profesores = profesorRep.findAll();
 
-        LanzadorDeException.verificarId(id);
+		for (Profesor profesor : profesores) {
+			lista.add(mapper.map(profesor, ProfesorDTO.class));
+		}
 
-        if (!profesorRep.existsById(id)) {
-            return 1;
-        }
+		return lista;
+	}
 
-        profesorRep.deleteById(id);
+	@Override
+	public int deleteById(Long id) {
 
-        return 0;
-    }
+		LanzadorDeException.verificarId(id);
 
-    @Override
-    public int updateById(Long id, ProfesorDTO data) {
+		if (!profesorRep.existsById(id)) {
+			return 1;
+		}
 
-        LanzadorDeException.verificarId(id);
-        LanzadorDeException.verificarProfesor(data);
+		profesorRep.deleteById(id);
 
-        Optional<Profesor> encontrado = profesorRep.findById(id);
+		return 0;
+	}
 
-        if (encontrado.isEmpty()) {
-            return 1;
-        }
+	@Override
+	public int updateById(Long id, ProfesorDTO data) {
 
-        LanzadorDeException.verificarNombre(data.getNombre());
-        LanzadorDeException.verificarApellido(data.getApellido());
-        LanzadorDeException.verificarDocumento(data.getDocumento());
-        LanzadorDeException.verificarCorreoElectronico(data.getCorreo());
-        LanzadorDeException.verificarContrasena(data.getContrasenia());
-        LanzadorDeException.verificarTipoVinculacion(
-                data.getTipoVinculacion());
-        LanzadorDeException.verificarEscalafon(data.getEscalafon());
-        LanzadorDeException.verificarHorasMaximasSemanales(
-                data.getHorasMaximasSemanales());
-        LanzadorDeException.verificarEspecialidades(
-                data.getEspecialidades());
-        LanzadorDeException.verificarDisponibilidadHoraria(
-                data.getDisponibilidadHoraria());
+		LanzadorDeException.verificarId(id);
+		LanzadorDeException.verificarProfesor(data);
 
-        Profesor profesorActual = encontrado.get();
+		Optional<Profesor> encontrado = profesorRep.findById(id);
 
-        if (profesorActual.getDocumento() != data.getDocumento()) {
-            LanzadorDeException.verificarDocumentoDuplicado(
-                    profesorRep.existsByDocumento(data.getDocumento()));
-        }
+		if (encontrado.isEmpty()) {
+			return 1;
+		}
 
-        if (!profesorActual.getCorreo().equals(data.getCorreo())) {
-            LanzadorDeException.verificarCorreoDuplicado(
-                    profesorRep.existsByCorreo(data.getCorreo()));
-        }
+		LanzadorDeException.verificarNombre(data.getNombre());
+		LanzadorDeException.verificarApellido(data.getApellido());
+		LanzadorDeException.verificarDocumento(data.getDocumento());
+		LanzadorDeException.verificarCorreoElectronico(data.getCorreo());
+		LanzadorDeException.verificarContrasena(data.getContrasenia());
+		LanzadorDeException.verificarTipoVinculacion(data.getTipoVinculacion());
+		LanzadorDeException.verificarEscalafon(data.getEscalafon());
+		LanzadorDeException.verificarHorasMaximasSemanales(data.getHorasMaximasSemanales());
+		LanzadorDeException.verificarEspecialidades(data.getEspecialidades());
 
-        Profesor profesor = mapper.map(data, Profesor.class);
+		List<FranjaHoraria> disponibilidad = new ArrayList<>();
+		if (data.getDisponibilidadHoraria() != null) {
+			for (FranjaHorariaDTO franjaDTO : data.getDisponibilidadHoraria()) {
+				disponibilidad.add(mapper.map(franjaDTO, FranjaHoraria.class));
+			}
+		}
+		LanzadorDeException.verificarDisponibilidadHoraria(disponibilidad);
 
-        profesor.setId(id);
+		Profesor profesorActual = encontrado.get();
 
-        profesorRep.save(profesor);
+		if (profesorActual.getDocumento() != data.getDocumento()) {
+			LanzadorDeException.verificarDocumentoDuplicado(profesorRep.existsByDocumento(data.getDocumento()));
+		}
 
-        return 0;
-    }
+		if (!profesorActual.getCorreo().equals(data.getCorreo())) {
+			LanzadorDeException.verificarCorreoDuplicado(profesorRep.existsByCorreo(data.getCorreo()));
+		}
 
-    public ProfesorDTO findByDocumento(long documento) {
+		Profesor profesor = mapper.map(data, Profesor.class);
 
-        LanzadorDeException.verificarDocumento(documento);
+		profesor.setId(id);
 
-        Optional<Profesor> encontrado =
-                profesorRep.findByDocumento(documento);
+		profesorRep.save(profesor);
 
-        if (encontrado.isEmpty()) {
-            return null;
-        }
+		return 0;
+	}
 
-        return mapper.map(encontrado.get(), ProfesorDTO.class);
-    }
+	public ProfesorDTO findByDocumento(long documento) {
 
-    public ProfesorDTO findByCorreo(String correo) {
+		LanzadorDeException.verificarDocumento(documento);
 
-        LanzadorDeException.verificarCorreoElectronico(correo);
+		Optional<Profesor> encontrado = profesorRep.findByDocumento(documento);
 
-        Optional<Profesor> encontrado =
-                profesorRep.findByCorreo(correo);
+		if (encontrado.isEmpty()) {
+			return null;
+		}
 
-        if (encontrado.isEmpty()) {
-            return null;
-        }
+		return mapper.map(encontrado.get(), ProfesorDTO.class);
+	}
 
-        return mapper.map(encontrado.get(), ProfesorDTO.class);
-    }
+	public ProfesorDTO findByCorreo(String correo) {
 
-    public List<ProfesorDTO> findByTipoVinculacion(
-            TipoVinculacion tipoVinculacion) {
+		LanzadorDeException.verificarCorreoElectronico(correo);
 
-        LanzadorDeException.verificarTipoVinculacion(tipoVinculacion);
+		Optional<Profesor> encontrado = profesorRep.findByCorreo(correo);
 
-        List<ProfesorDTO> lista = new ArrayList<>();
+		if (encontrado.isEmpty()) {
+			return null;
+		}
 
-        List<Profesor> profesores =
-                profesorRep.findByTipoVinculacion(tipoVinculacion);
+		return mapper.map(encontrado.get(), ProfesorDTO.class);
+	}
 
-        for (Profesor profesor : profesores) {
-            lista.add(mapper.map(profesor, ProfesorDTO.class));
-        }
+	public List<ProfesorDTO> findByTipoVinculacion(TipoVinculacion tipoVinculacion) {
 
-        return lista;
-    }
+		LanzadorDeException.verificarTipoVinculacion(tipoVinculacion);
 
-    public List<ProfesorDTO> findByEscalafon(Escalafon escalafon) {
+		List<ProfesorDTO> lista = new ArrayList<>();
 
-        LanzadorDeException.verificarEscalafon(escalafon);
+		List<Profesor> profesores = profesorRep.findByTipoVinculacion(tipoVinculacion);
 
-        List<ProfesorDTO> lista = new ArrayList<>();
+		for (Profesor profesor : profesores) {
+			lista.add(mapper.map(profesor, ProfesorDTO.class));
+		}
 
-        List<Profesor> profesores =
-                profesorRep.findByEscalafon(escalafon);
+		return lista;
+	}
 
-        for (Profesor profesor : profesores) {
-            lista.add(mapper.map(profesor, ProfesorDTO.class));
-        }
+	public List<ProfesorDTO> findByEscalafon(Escalafon escalafon) {
 
-        return lista;
-    }
+		LanzadorDeException.verificarEscalafon(escalafon);
 
-    public List<ProfesorDTO> findByEspecialidad(AsignaturaDTO asignaturaDTO) {
+		List<ProfesorDTO> lista = new ArrayList<>();
 
-    	Asignatura asignatura = mapper.map(asignaturaDTO, Asignatura.class);
-        LanzadorDeException.verificarAsignatura(asignaturaDTO);
+		List<Profesor> profesores = profesorRep.findByEscalafon(escalafon);
 
-        List<ProfesorDTO> lista = new ArrayList<>();
+		for (Profesor profesor : profesores) {
+			lista.add(mapper.map(profesor, ProfesorDTO.class));
+		}
 
-        List<Profesor> profesores =
-                profesorRep.findByEspecialidadesContaining(asignatura);
+		return lista;
+	}
 
-        for (Profesor profesor : profesores) {
-            lista.add(mapper.map(profesor, ProfesorDTO.class));
-        }
+	public List<ProfesorDTO> findByEspecialidad(AsignaturaDTO asignaturaDTO) {
 
-        return lista;
-    }
+		Asignatura asignatura = mapper.map(asignaturaDTO, Asignatura.class);
+		LanzadorDeException.verificarAsignatura(asignaturaDTO);
 
-    public List<ProfesorDTO> findByDisponibilidad(
-            FranjaHorariaDTO franjaHorariaDTO) {
+		List<ProfesorDTO> lista = new ArrayList<>();
 
-    	FranjaHoraria franjaHoraria = mapper.map(franjaHorariaDTO, FranjaHoraria.class);
-        LanzadorDeException.verificarFranjaHoraria(franjaHorariaDTO);
+		List<Profesor> profesores = profesorRep.findByEspecialidadesContaining(asignatura);
 
-        List<ProfesorDTO> lista = new ArrayList<>();
+		for (Profesor profesor : profesores) {
+			lista.add(mapper.map(profesor, ProfesorDTO.class));
+		}
 
-        List<Profesor> profesores =
-                profesorRep.findByDisponibilidadHorariaContaining(
-                        franjaHoraria);
+		return lista;
+	}
 
-        for (Profesor profesor : profesores) {
-            lista.add(mapper.map(profesor, ProfesorDTO.class));
-        }
+	public List<ProfesorDTO> findByDisponibilidad(FranjaHorariaDTO franjaHorariaDTO) {
 
-        return lista;
-    }
-    
+		FranjaHoraria franjaHoraria = mapper.map(franjaHorariaDTO, FranjaHoraria.class);
+		LanzadorDeException.verificarFranjaHoraria(franjaHorariaDTO);
 
+		List<ProfesorDTO> lista = new ArrayList<>();
 
-    public boolean findDocumentoAlreadyTaken(long documento) {
-        return profesorRep.existsByDocumento(documento);
-    }
+		List<Profesor> profesores = profesorRep.findByDisponibilidadHorariaContaining(franjaHoraria);
 
-    public boolean findCorreoAlreadyTaken(String correo) {
-        return profesorRep.existsByCorreo(correo);
-    }
+		for (Profesor profesor : profesores) {
+			lista.add(mapper.map(profesor, ProfesorDTO.class));
+		}
 
-    public void deleteByDocumento(long documento) {
+		return lista;
+	}
 
-        LanzadorDeException.verificarDocumento(documento);
+	public boolean findDocumentoAlreadyTaken(long documento) {
+		return profesorRep.existsByDocumento(documento);
+	}
 
-        if (!profesorRep.existsByDocumento(documento)) {
-            return;
-        }
+	public boolean findCorreoAlreadyTaken(String correo) {
+		return profesorRep.existsByCorreo(correo);
+	}
 
-        profesorRep.deleteByDocumento(documento);
-    }
-    
-    public boolean asignarDisponibilidadHoraria(long id, Dia dia, LocalTime horaInicio, LocalTime horaFin) {
+	public void deleteByDocumento(long documento) {
 
-        LanzadorDeException.verificarId(id);
-        LanzadorDeException.verificarDia(dia);
-        LanzadorDeException.verificarHoraInicio(horaInicio);
-        LanzadorDeException.verificarHoraFin(horaFin);
+		LanzadorDeException.verificarDocumento(documento);
 
-        if (!horaFin.isAfter(horaInicio)) {
-            throw new IllegalArgumentException("La hora de fin debe ser posterior a la hora de inicio");
-        }
+		if (!profesorRep.existsByDocumento(documento)) {
+			return;
+		}
 
-        Optional<Profesor> encontrado = profesorRep.findById(id);
-        if (encontrado.isEmpty()) {
-            return false;
-        }
+		profesorRep.deleteByDocumento(documento);
+	}
 
-        Profesor profesor = encontrado.get();
+	public boolean asignarDisponibilidadHoraria(long id, Dia dia, LocalTime horaInicio, LocalTime horaFin) {
 
-        FranjaHoraria franja = franjaRep.save(new FranjaHoraria(dia, horaInicio, horaFin));
+		LanzadorDeException.verificarId(id);
+		LanzadorDeException.verificarDia(dia);
+		LanzadorDeException.verificarHoraInicio(horaInicio);
+		LanzadorDeException.verificarHoraFin(horaFin);
 
-        if (profesor.getDisponibilidadHoraria() == null) {
-            profesor.setDisponibilidadHoraria(new ArrayList<>());
-        }
-        profesor.getDisponibilidadHoraria().add(franja);
+		if (!horaFin.isAfter(horaInicio)) {
+			throw new IllegalArgumentException("La hora de fin debe ser posterior a la hora de inicio");
+		}
 
-        profesorRep.save(profesor);
-        return true;
-    }
+		Optional<Profesor> encontrado = profesorRep.findById(id);
+		if (encontrado.isEmpty()) {
+			return false;
+		}
 
-    public ProfesorRepository getProfesorRep() {
-        return profesorRep;
-    }
+		Profesor profesor = encontrado.get();
 
-    public void setProfesorRep(ProfesorRepository profesorRep) {
-        this.profesorRep = profesorRep;
-    }
+		FranjaHoraria franja = franjaRep.save(new FranjaHoraria(dia, horaInicio, horaFin));
 
-    public ModelMapper getMapper() {
-        return mapper;
-    }
+		if (profesor.getDisponibilidadHoraria() == null) {
+			profesor.setDisponibilidadHoraria(new ArrayList<>());
+		}
+		profesor.getDisponibilidadHoraria().add(franja);
 
-    public void setMapper(ModelMapper mapper) {
-        this.mapper = mapper;
-    }
+		profesorRep.save(profesor);
+		return true;
+	}
+
+	public ProfesorRepository getProfesorRep() {
+		return profesorRep;
+	}
+
+	public void setProfesorRep(ProfesorRepository profesorRep) {
+		this.profesorRep = profesorRep;
+	}
+
+	public ModelMapper getMapper() {
+		return mapper;
+	}
+
+	public void setMapper(ModelMapper mapper) {
+		this.mapper = mapper;
+	}
 }
