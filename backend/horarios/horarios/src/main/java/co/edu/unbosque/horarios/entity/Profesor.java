@@ -280,7 +280,7 @@ public class Profesor extends Persona {
 	 */
 	@Override
 	public String toString() {
-		return "Profesor [tipoVinculacion=" + tipoVinculacion + ", escalafon=" + escalafon + ", especialidades="
+		return super.toString() + "Profesor [tipoVinculacion=" + tipoVinculacion + ", escalafon=" + escalafon + ", especialidades="
 				+ especialidades + ", disponibilidadHoraria=" + disponibilidadHoraria + ", horasMaximasSemanales="
 				+ horasMaximasSemanales + "]";
 	}
