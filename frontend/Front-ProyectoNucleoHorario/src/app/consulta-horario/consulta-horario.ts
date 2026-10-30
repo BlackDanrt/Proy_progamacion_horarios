@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, HostListener, OnInit} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 interface Clase {
@@ -121,5 +121,24 @@ export class ConsultaHorario implements OnInit {
 
   exportarHorario(): void {
     console.log('Exportar horario del docente:', this.docente?.nombre);
+  }
+
+  mostrarMenuUsuario: boolean = false;
+
+  toggleMenuUsuario(event: Event): void {
+    event.stopPropagation();
+    this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
+  }
+
+  cerrarSesion(): void {
+    this.mostrarMenuUsuario = false;
+    this.router.navigate(['/loginn']); // Cambia '/login' por la ruta de tu login
+  }
+
+  @HostListener('document:click')
+  cerrarMenuAlHacerClicFuera(): void {
+    if (this.mostrarMenuUsuario) {
+      this.mostrarMenuUsuario = false;
+    }
   }
 }
