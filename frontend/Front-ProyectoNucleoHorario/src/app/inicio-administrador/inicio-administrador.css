@@ -292,3 +292,56 @@
     display: none;
   }
 }
+
+/* Contenedor relativo para el avatar y su menú desplegable */
+.user-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Ventana desplegable del perfil */
+.user-dropdown {
+  position: absolute;
+  top: 0;
+  left: 55px; /* Aparece flotando a la derecha del botón del avatar */
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  padding: 6px;
+  min-width: 150px;
+  z-index: 100;
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+/* Ítem del menú desplegable */
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #ef4444; /* Color rojo para el cierre de sesión */
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #fef2f2;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, HostListener, OnInit} from '@angular/core';
 import { Router } from '@angular/router';
 
 // Interfaces
@@ -10,6 +10,7 @@ export interface Asignatura {
   docente: string;
   color?: string;
   bgLight?: string;
+  numEstudiantes?: number;
   dia?: string;
   hora?: string;
 }
@@ -69,7 +70,8 @@ export class AsignacionHorarios implements OnInit {
     nombre: '',
     docente: '',
     bloque: '',
-    aula: ''
+    aula: '',
+    numEstudiantes: undefined
   };
 
   asignaturasDisponibles: Asignatura[] = [
@@ -225,4 +227,24 @@ export class AsignacionHorarios implements OnInit {
   quitarClase(dia: string, hora: string): void {
     this.clasesAsignadas = this.clasesAsignadas.filter(c => !(c.dia === dia && c.hora === hora));
   }
+
+  mostrarMenuUsuario: boolean = false;
+
+  toggleMenuUsuario(event: Event): void {
+    event.stopPropagation();
+    this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
+  }
+
+  cerrarSesion(): void {
+    this.mostrarMenuUsuario = false;
+    this.router.navigate(['/loginn']); // Cambia '/login' por la ruta de tu login
+  }
+
+  @HostListener('document:click')
+  cerrarMenuAlHacerClicFuera(): void {
+    if (this.mostrarMenuUsuario) {
+      this.mostrarMenuUsuario = false;
+    }
+  }
+
 }

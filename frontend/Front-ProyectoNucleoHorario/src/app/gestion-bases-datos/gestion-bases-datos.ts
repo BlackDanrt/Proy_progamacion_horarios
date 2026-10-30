@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component, HostListener} from '@angular/core';
 import {Router} from '@angular/router';
 
 export interface RegistroBaseDatos {
@@ -16,6 +16,7 @@ export interface RegistroBaseDatos {
   styleUrl: './gestion-bases-datos.css',
 })
 export class GestionBasesDatos {
+
   filtroBusqueda: string = '';
   mostrarModalRegistro: boolean = false;
 
@@ -77,4 +78,24 @@ export class GestionBasesDatos {
   cambiarPagina(p: number): void {
     this.paginaActual = p;
   }
+
+  mostrarMenuUsuario: boolean = false;
+
+  toggleMenuUsuario(event: Event): void {
+    event.stopPropagation();
+    this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
+  }
+
+  cerrarSesion(): void {
+    this.mostrarMenuUsuario = false;
+    this.router.navigate(['/loginn']); // Cambia '/login' por la ruta de tu login
+  }
+
+  @HostListener('document:click')
+  cerrarMenuAlHacerClicFuera(): void {
+    if (this.mostrarMenuUsuario) {
+      this.mostrarMenuUsuario = false;
+    }
+  }
+
 }
