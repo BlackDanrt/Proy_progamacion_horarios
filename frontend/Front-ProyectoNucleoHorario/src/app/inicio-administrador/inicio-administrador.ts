@@ -1,5 +1,6 @@
-import {Component, HostListener} from '@angular/core';
+import {Component, HostListener, OnInit} from '@angular/core';
 import {Router} from '@angular/router';
+import {AuthAdminService} from '../services/auth-admin';
 
 interface TarjetaAcceso {
   titulo: string;
@@ -15,9 +16,13 @@ interface TarjetaAcceso {
   templateUrl: './inicio-administrador.html',
   styleUrl: './inicio-administrador.css',
 })
-export class InicioAdministrador {
+export class InicioAdministrador implements OnInit {
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private authAdminService: AuthAdminService
+  ) {}
+
   nombreAdmin: string = 'Administrador';
   rol: string = 'Administrador General';
 
@@ -45,7 +50,19 @@ export class InicioAdministrador {
     }
   ];
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Si no hay sesión de administrador, se regresa al login
+    if (!this.authAdminService.estaAutenticadoAdmin()) {
+      this.router.navigate(['/loginn']);
+      return;
+    }
+
+    // Muestra el nombre real guardado al iniciar sesión
+    const nombre = this.authAdminService.getNombreAdmin();
+    if (nombre) {
+      this.nombreAdmin = nombre;
+    }
+  }
 
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
@@ -60,7 +77,8 @@ export class InicioAdministrador {
 
   cerrarSesion(): void {
     this.mostrarMenuUsuario = false;
-    this.router.navigate(['/loginn']); // Cambia '/login' por la ruta de tu login
+    this.authAdminService.cerrarSesionAdmin();
+    this.router.navigate(['/loginn']);
   }
 
   @HostListener('document:click')

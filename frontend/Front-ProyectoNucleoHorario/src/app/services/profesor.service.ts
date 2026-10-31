@@ -4,8 +4,8 @@ import { Observable } from 'rxjs';
 import { ProfesorModel } from '../models/profesor.model';
 import { AsignaturaModel } from '../models/asignatura.model';
 import { Escalafon } from '../enums/escalafon.enum';
-import {FranjahorariaModel} from '../models/franjahoraria.model';
-import {TipoVinculacion} from '../enums/tipoViculacion.enum';
+import { FranjahorariaModel } from '../models/franjahoraria.model';
+import { TipoVinculacion } from '../enums/tipoViculacion.enum';
 
 @Injectable({
   providedIn: 'root',
@@ -14,12 +14,33 @@ export class ProfesorService {
 
   private cliente: HttpClient = inject(HttpClient);
 
-  private readonly urlbase: string = 'https://gpcueb.org/pokemon-pokedes/profesor';
+  private readonly urlbase: string = 'http://localhost:8080/profesor';
+
+  /**
+   * Encabezados para consultas: las pueden hacer administrador y profesor.
+   * Usa el token de administrador si existe; si no, el del profesor.
+   */
+  private headersConsulta(): HttpHeaders {
+    const token: string | null =
+      localStorage.getItem('admin_token') || localStorage.getItem('profesor_token');
+
+    return new HttpHeaders().set('Authorization', `Bearer ${token || ''}`);
+  }
+
+  /**
+   * Encabezados para crear, actualizar y eliminar: solo administrador.
+   */
+  private headersAdmin(): HttpHeaders {
+    const token: string | null = localStorage.getItem('admin_token');
+
+    return new HttpHeaders().set('Authorization', `Bearer ${token || ''}`);
+  }
 
   buscarPorCorreo(correo: string): Observable<HttpResponse<ProfesorModel>> {
     return this.cliente.get<ProfesorModel>(
       this.urlbase + '/buscarporcorreo?correo=' + encodeURIComponent(correo),
       {
+        headers: this.headersConsulta(),
         observe: 'response',
       }
     );
@@ -29,6 +50,7 @@ export class ProfesorService {
     return this.cliente.get<ProfesorModel>(
       this.urlbase + '/buscarpordocumento?documento=' + documento,
       {
+        headers: this.headersConsulta(),
         observe: 'response',
       }
     );
@@ -38,6 +60,7 @@ export class ProfesorService {
     return this.cliente.get<ProfesorModel[]>(
       this.urlbase + '/buscarpordisponibilidad?franjaHorariaDTO=' + encodeURIComponent(JSON.stringify(franjaHorariaDTO)),
       {
+        headers: this.headersConsulta(),
         observe: 'response',
       }
     );
@@ -47,6 +70,7 @@ export class ProfesorService {
     return this.cliente.get<ProfesorModel[]>(
       this.urlbase + '/buscarporescalafon?escalafon=' + encodeURIComponent(escalafon),
       {
+        headers: this.headersConsulta(),
         observe: 'response',
       }
     );
@@ -56,6 +80,7 @@ export class ProfesorService {
     return this.cliente.get<ProfesorModel[]>(
       this.urlbase + '/buscarporespecialidad?asignaturaDTO=' + encodeURIComponent(JSON.stringify(asignaturaDTO)),
       {
+        headers: this.headersConsulta(),
         observe: 'response',
       }
     );
@@ -65,6 +90,7 @@ export class ProfesorService {
     return this.cliente.get<ProfesorModel[]>(
       this.urlbase + '/buscarporvinculacion?tipoVinculacion=' + encodeURIComponent(tipoVinculacion),
       {
+        headers: this.headersConsulta(),
         observe: 'response',
       }
     );
@@ -72,6 +98,7 @@ export class ProfesorService {
 
   mostrarTodo(): Observable<HttpResponse<ProfesorModel[]>> {
     return this.cliente.get<ProfesorModel[]>(this.urlbase + '/mostrartodo', {
+      headers: this.headersConsulta(),
       observe: 'response',
     });
   }
@@ -80,7 +107,10 @@ export class ProfesorService {
     return this.cliente.post(
       this.urlbase + '/crear',
       profesorDTO,
-      { responseType: 'text' }
+      {
+        headers: this.headersAdmin(),
+        responseType: 'text',
+      }
     );
   }
 
@@ -88,28 +118,27 @@ export class ProfesorService {
     return this.cliente.put(
       this.urlbase + '/actualizar',
       profesorDTO,
-      { responseType: 'text' }
+      {
+        headers: this.headersAdmin(),
+        responseType: 'text',
+      }
     );
   }
 
   eliminarProfesor(id: number): Observable<string> {
     return this.cliente.delete(
       this.urlbase + '/eliminar?id=' + id,
-      { responseType: 'text' }
+      {
+        headers: this.headersAdmin(),
+        responseType: 'text',
+      }
     );
   }
 
+  /**
+   * Se mantiene por compatibilidad con los componentes que ya lo usan.
+   */
   mostrarTodoAdmin(): Observable<HttpResponse<ProfesorModel[]>> {
-    const token: string | null = localStorage.getItem('admin_token');
-
-    const headers: HttpHeaders = new HttpHeaders().set(
-      'Authorization',
-      `Bearer ${token || ''}`
-    );
-
-    return this.cliente.get<ProfesorModel[]>(`${this.urlbase}/mostrartodo`, {
-      headers: headers,
-      observe: 'response',
-    });
+    return this.mostrarTodo();
   }
 }
