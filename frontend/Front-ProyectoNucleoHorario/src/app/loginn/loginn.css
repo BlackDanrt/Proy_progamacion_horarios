@@ -188,6 +188,11 @@
   background-color: #1e632d;
 }
 
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .footer-divider {
   position: relative;
   display: flex;
@@ -215,6 +220,79 @@
   height: auto;
   background-color: #ffffff;
   padding: 0 8px;
+}
+
+.cortina {
+  position: fixed;
+  inset: 0;
+  background: #000000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+  z-index: 100;
+}
+
+.cortina.activa {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+}
+
+.modal-error {
+  background: #ffffff;
+  padding: 28px 32px;
+  border-radius: 12px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  border-top: 5px solid #b91c1c;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.modal-error.conexion {
+  border-top-color: #b45309;
+}
+
+.modal-error h3 {
+  color: #b91c1c;
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+.modal-error.conexion h3 {
+  color: #b45309;
+}
+
+.modal-error p {
+  color: #4a5568;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+  margin-bottom: 20px;
+}
+
+.modal-error button {
+  background-color: #27813a;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal-error button:hover {
+  background-color: #1e632d;
 }
 
 @media (max-width: 768px) {
