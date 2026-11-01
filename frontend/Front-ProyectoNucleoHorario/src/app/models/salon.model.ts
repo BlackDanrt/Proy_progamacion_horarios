@@ -1,7 +1,7 @@
-import {Bloque} from '../enums/bloque.enum';
+import { Bloque } from '../enums/bloque.enum';
 
 export interface SalonModel {
-  id: number;
+  id?: number;
   bloque: Bloque;
   numeroSalon: number;
   capacidad: number;

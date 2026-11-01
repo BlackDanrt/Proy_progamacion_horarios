@@ -1,87 +1,57 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AsignaturaModel } from '../models/asignatura.model'
+import { environment } from '../../environments/environment';
+import { AsignaturaModel } from '../models/asignatura.model';
 
-
-@Injectable({
-  providedIn: 'root',
-})
+/**
+ * Servicio que consume los endpoints de /asignatura del back.
+ */
+@Injectable({ providedIn: 'root' })
 export class AsignaturaService {
 
-  private cliente: HttpClient = inject(HttpClient);
-
-  private readonly urlbase: string = 'https://gpcueb.org/pokemon-pokedes/asignatura';
+  private readonly http: HttpClient = inject(HttpClient);
+  private readonly urlBase: string = `${environment.apiUrl}/asignatura`;
 
   buscarPorNombre(nombre: string): Observable<HttpResponse<AsignaturaModel[]>> {
-    return this.cliente.get<AsignaturaModel[]>(
-      this.urlbase + '/buscarpornombre?nombre=' + encodeURIComponent(nombre),
-      {
-        observe: 'response',
-      }
-    );
-  }
-
-  buscarPorFrecuenciaSemanal(frecuenciaSemanal: number): Observable<HttpResponse<AsignaturaModel[]>> {
-    return this.cliente.get<AsignaturaModel[]>(
-      this.urlbase + '/buscarporfrecuencia?frecuenciaSemanal=' + frecuenciaSemanal,
-      {
-        observe: 'response',
-      }
-    );
-  }
-
-  buscarPorNumCreditos(numCreditos: number): Observable<HttpResponse<AsignaturaModel[]>> {
-    return this.cliente.get<AsignaturaModel[]>(
-      this.urlbase + '/buscarporcreditos?numCreditos=' + numCreditos,
-      {
-        observe: 'response',
-      }
-    );
-  }
-
-  crearAsignatura(asignaturaDTO: AsignaturaModel): Observable<string> {
-    return this.cliente.post(
-      this.urlbase + '/crear',
-      asignaturaDTO,
-      { responseType: 'text' }
-    );
-  }
-
-  actualizarAsignatura(asignaturaDTO: AsignaturaModel): Observable<string> {
-    return this.cliente.put(
-      this.urlbase + '/actualizar',
-      asignaturaDTO,
-      { responseType: 'text' }
-    );
-  }
-
-
-  eliminarAsignatura(nombre: string): Observable<string> {
-    return this.cliente.delete(
-      this.urlbase + '/eliminar?nombre=' + encodeURIComponent(nombre),
-      { responseType: 'text' }
-    );
-  }
-
-
-  mostrarTodo(): Observable<HttpResponse<AsignaturaModel[]>> {
-    return this.cliente.get<AsignaturaModel[]>(this.urlbase + '/mostrartodo', {
+    return this.http.get<AsignaturaModel[]>(`${this.urlBase}/buscarpornombre`, {
+      params: new HttpParams().set('nombre', nombre),
       observe: 'response',
     });
   }
 
+  buscarPorFrecuenciaSemanal(frecuenciaSemanal: number): Observable<HttpResponse<AsignaturaModel[]>> {
+    return this.http.get<AsignaturaModel[]>(`${this.urlBase}/buscarporfrecuencia`, {
+      params: new HttpParams().set('frecuenciaSemanal', frecuenciaSemanal),
+      observe: 'response',
+    });
+  }
 
-  mostrarTodoAdmin(): Observable<HttpResponse<AsignaturaModel[]>> {
-    const token: string | null = localStorage.getItem('admin_token');
+  buscarPorNumCreditos(numCreditos: number): Observable<HttpResponse<AsignaturaModel[]>> {
+    return this.http.get<AsignaturaModel[]>(`${this.urlBase}/buscarporcreditos`, {
+      params: new HttpParams().set('numCreditos', numCreditos),
+      observe: 'response',
+    });
+  }
 
-    const headers: HttpHeaders = new HttpHeaders().set(
-      'Authorization',
-      `Bearer ${token || ''}`
-    );
+  crearAsignatura(asignatura: AsignaturaModel): Observable<string> {
+    return this.http.post(`${this.urlBase}/crear`, asignatura, { responseType: 'text' });
+  }
 
-    return this.cliente.get<AsignaturaModel[]>(`${this.urlbase}/mostrartodo`, {
-      headers: headers,
+  actualizarAsignatura(asignatura: AsignaturaModel): Observable<string> {
+    return this.http.put(`${this.urlBase}/actualizar`, asignatura, { responseType: 'text' });
+  }
+
+  /** El back elimina las asignaturas por nombre. */
+  eliminarAsignatura(nombre: string): Observable<string> {
+    return this.http.delete(`${this.urlBase}/eliminar`, {
+      params: new HttpParams().set('nombre', nombre),
+      responseType: 'text',
+    });
+  }
+
+  mostrarTodo(): Observable<HttpResponse<AsignaturaModel[]>> {
+    return this.http.get<AsignaturaModel[]>(`${this.urlBase}/mostrartodo`, {
       observe: 'response',
     });
   }

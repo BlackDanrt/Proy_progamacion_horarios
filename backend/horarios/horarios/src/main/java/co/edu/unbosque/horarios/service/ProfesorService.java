@@ -73,12 +73,14 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 	}
 
 	/**
-	 * Crea un nuevo profesor. La contraseña se guarda encriptada.
+	 * Crea un nuevo profesor. La contraseña se guarda encriptada. Si se envía
+	 * disponibilidad horaria, se valida y se registra junto con el profesor.
 	 *
 	 * @param data información del profesor.
 	 * @return 0 si se crea correctamente.
 	 */
 	@Override
+	@Transactional
 	public int create(ProfesorDTO data) {
 
 		LanzadorDeException.verificarProfesor(data);
@@ -90,6 +92,7 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		LanzadorDeException.verificarTipoVinculacion(data.getTipoVinculacion());
 		LanzadorDeException.verificarEscalafon(data.getEscalafon());
 		LanzadorDeException.verificarHorasMaximasSemanales(data.getHorasMaximasSemanales());
+		LanzadorDeException.verificarHorasSegunVinculacion(data.getTipoVinculacion(), data.getHorasMaximasSemanales());
 		LanzadorDeException.verificarEspecialidades(data.getEspecialidades());
 
 		LanzadorDeException.verificarDocumentoDuplicado(profesorRep.existsByDocumento(data.getDocumento()));
@@ -99,8 +102,13 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		Profesor profesor = mapper.map(data, Profesor.class);
 
 		profesor.setContrasenia(passwordEncoder.encode(data.getContrasenia()));
+		profesor.setDisponibilidadHoraria(new ArrayList<>());
 
-		profesorRep.save(profesor);
+		Profesor guardado = profesorRep.save(profesor);
+
+		if (data.getDisponibilidadHoraria() != null && !data.getDisponibilidadHoraria().isEmpty()) {
+			reemplazarDisponibilidadHoraria(guardado.getId(), data.getDisponibilidadHoraria());
+		}
 
 		return 0;
 	}
@@ -145,9 +153,9 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 	}
 
 	/**
-	 * Actualiza la información de un profesor. La contraseña se guarda encriptada.
-	 * Si no se envía disponibilidad horaria, se conserva la que el profesor ya
-	 * tiene registrada.
+	 * Actualiza la información de un profesor. Si no se envía contraseña se
+	 * conserva la actual; si se envía, se guarda encriptada. La disponibilidad
+	 * horaria se conserva siempre.
 	 *
 	 * @param id   identificador del profesor.
 	 * @param data nuevos datos del profesor.
@@ -169,28 +177,13 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		LanzadorDeException.verificarApellido(data.getApellido());
 		LanzadorDeException.verificarDocumento(data.getDocumento());
 		LanzadorDeException.verificarCorreoElectronico(data.getCorreo());
-		LanzadorDeException.verificarContrasena(data.getContrasenia());
 		LanzadorDeException.verificarTipoVinculacion(data.getTipoVinculacion());
 		LanzadorDeException.verificarEscalafon(data.getEscalafon());
 		LanzadorDeException.verificarHorasMaximasSemanales(data.getHorasMaximasSemanales());
+		LanzadorDeException.verificarHorasSegunVinculacion(data.getTipoVinculacion(), data.getHorasMaximasSemanales());
 		LanzadorDeException.verificarEspecialidades(data.getEspecialidades());
 
-		List<FranjaHoraria> disponibilidad = new ArrayList<>();
-		if (data.getDisponibilidadHoraria() != null) {
-			for (FranjaHorariaDTO franjaDTO : data.getDisponibilidadHoraria()) {
-				disponibilidad.add(mapper.map(franjaDTO, FranjaHoraria.class));
-			}
-		}
-
 		Profesor profesorActual = encontrado.get();
-
-		if (disponibilidad.isEmpty()) {
-			if (profesorActual.getDisponibilidadHoraria() != null) {
-				disponibilidad = new ArrayList<>(profesorActual.getDisponibilidadHoraria());
-			}
-		} else {
-			LanzadorDeException.verificarDisponibilidadHoraria(disponibilidad);
-		}
 
 		if (profesorActual.getDocumento() != data.getDocumento()) {
 			LanzadorDeException.verificarDocumentoDuplicado(profesorRep.existsByDocumento(data.getDocumento()));
@@ -203,8 +196,17 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		Profesor profesor = mapper.map(data, Profesor.class);
 
 		profesor.setId(id);
-		profesor.setContrasenia(passwordEncoder.encode(data.getContrasenia()));
-		profesor.setDisponibilidadHoraria(disponibilidad);
+
+		if (data.getContrasenia() != null && !data.getContrasenia().isBlank()) {
+			LanzadorDeException.verificarContrasena(data.getContrasenia());
+			profesor.setContrasenia(passwordEncoder.encode(data.getContrasenia()));
+		} else {
+			profesor.setContrasenia(profesorActual.getContrasenia());
+		}
+
+		profesor.setDisponibilidadHoraria(profesorActual.getDisponibilidadHoraria() != null
+				? new ArrayList<>(profesorActual.getDisponibilidadHoraria())
+				: new ArrayList<>());
 
 		profesorRep.save(profesor);
 
@@ -420,6 +422,54 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		profesor.getDisponibilidadHoraria().add(franja);
 
 		profesorRep.save(profesor);
+		return true;
+	}
+
+	/**
+	 * Reemplaza toda la disponibilidad horaria de un profesor por las franjas
+	 * indicadas. Valida que cada franja esté dentro de la jornada institucional,
+	 * que no haya franjas que se crucen y que la lista no esté vacía.
+	 *
+	 * @param idProfesor identificador del profesor.
+	 * @param franjasDTO nuevas franjas de disponibilidad.
+	 * @return true si se guarda, false si el profesor no existe.
+	 */
+	@Transactional
+	public boolean reemplazarDisponibilidadHoraria(long idProfesor, List<FranjaHorariaDTO> franjasDTO) {
+
+		LanzadorDeException.verificarId(idProfesor);
+
+		Optional<Profesor> encontrado = profesorRep.findById(idProfesor);
+
+		if (encontrado.isEmpty()) {
+			return false;
+		}
+
+		List<FranjaHoraria> franjas = new ArrayList<>();
+
+		if (franjasDTO != null) {
+			for (FranjaHorariaDTO franja : franjasDTO) {
+				LanzadorDeException.verificarFranjaHoraria(franja);
+				LanzadorDeException.verificarDia(franja.getDia());
+				LanzadorDeException.verificarHorario(franja.getHoraInicio(), franja.getHoraFin());
+				LanzadorDeException.verificarRangoHorarioInstitucional(franja.getDia(), franja.getHoraInicio(),
+						franja.getHoraFin());
+				franjas.add(new FranjaHoraria(franja.getDia(), franja.getHoraInicio(), franja.getHoraFin()));
+			}
+		}
+
+		LanzadorDeException.verificarDisponibilidadHoraria(franjas);
+		LanzadorDeException.verificarSinSolapamientoFranjas(franjas);
+
+		List<FranjaHoraria> guardadas = new ArrayList<>();
+		for (FranjaHoraria franja : franjas) {
+			guardadas.add(franjaRep.save(franja));
+		}
+
+		Profesor profesor = encontrado.get();
+		profesor.setDisponibilidadHoraria(guardadas);
+		profesorRep.save(profesor);
+
 		return true;
 	}
 
