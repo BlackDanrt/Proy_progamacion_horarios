@@ -2,6 +2,8 @@ package co.edu.unbosque.horarios.dto;
 
 import java.util.Objects;
 
+import co.edu.unbosque.horarios.util.enums.Especialidad;
+
 /**
  * Representa los datos de una asignatura para su transferencia entre las
  * diferentes capas de la aplicación.
@@ -41,6 +43,11 @@ public class AsignaturaDTO {
 	private boolean requiereSillasMoviles;
 
 	/**
+	 * Especialidad que debe tener el profesor para dictar la asignatura (opcional).
+	 */
+	private Especialidad especialidadRequerida;
+
+	/**
 	 * Constructor vacío de la clase.
 	 */
 	public AsignaturaDTO() {
@@ -50,10 +57,10 @@ public class AsignaturaDTO {
 	/**
 	 * Construye una asignatura con sus características principales.
 	 *
-	 * @param nombre nombre de la asignatura.
-	 * @param numCreditos número de créditos de la asignatura.
-	 * @param frecuenciaSemanal número de sesiones semanales.
-	 * @param requiereComputadores indica si requiere computadores.
+	 * @param nombre                nombre de la asignatura.
+	 * @param numCreditos           número de créditos de la asignatura.
+	 * @param frecuenciaSemanal     número de sesiones semanales.
+	 * @param requiereComputadores  indica si requiere computadores.
 	 * @param requiereSillasMoviles indica si requiere sillas móviles.
 	 */
 	public AsignaturaDTO(String nombre, int numCreditos, int frecuenciaSemanal, boolean requiereComputadores,
@@ -150,7 +157,8 @@ public class AsignaturaDTO {
 	/**
 	 * Establece si la asignatura requiere computadores.
 	 *
-	 * @param requiereComputadores true si requiere computadores; false en caso contrario.
+	 * @param requiereComputadores true si requiere computadores; false en caso
+	 *                             contrario.
 	 */
 	public void setRequiereComputadores(boolean requiereComputadores) {
 		this.requiereComputadores = requiereComputadores;
@@ -168,10 +176,29 @@ public class AsignaturaDTO {
 	/**
 	 * Establece si la asignatura requiere sillas móviles.
 	 *
-	 * @param requiereSillasMoviles true si requiere sillas móviles; false en caso contrario.
+	 * @param requiereSillasMoviles true si requiere sillas móviles; false en caso
+	 *                              contrario.
 	 */
 	public void setRequiereSillasMoviles(boolean requiereSillasMoviles) {
 		this.requiereSillasMoviles = requiereSillasMoviles;
+	}
+
+	/**
+	 * Obtiene la especialidad requerida para dictar la asignatura.
+	 *
+	 * @return especialidad requerida o null si no se exige ninguna.
+	 */
+	public Especialidad getEspecialidadRequerida() {
+		return especialidadRequerida;
+	}
+
+	/**
+	 * Establece la especialidad requerida para dictar la asignatura.
+	 *
+	 * @param especialidadRequerida especialidad requerida.
+	 */
+	public void setEspecialidadRequerida(Especialidad especialidadRequerida) {
+		this.especialidadRequerida = especialidadRequerida;
 	}
 
 	/**
@@ -188,7 +215,8 @@ public class AsignaturaDTO {
 	 * Compara esta asignatura con otro objeto para determinar si son iguales.
 	 *
 	 * @param obj objeto con el que se compara la asignatura.
-	 * @return true si ambos objetos tienen los mismos atributos; false en caso contrario.
+	 * @return true si ambos objetos tienen los mismos atributos; false en caso
+	 *         contrario.
 	 */
 	@Override
 	public boolean equals(Object obj) {

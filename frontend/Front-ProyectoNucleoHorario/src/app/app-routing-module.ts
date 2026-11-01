@@ -7,17 +7,19 @@ import { GestionBasesDatos } from './gestion-bases-datos/gestion-bases-datos';
 import { CrearAdministrador } from './crear-administrador/crear-administrador';
 import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
 import { ConsultaHorario } from './consulta-horario/consulta-horario';
+import { adminGuard, profesorGuard, sesionGuard } from './services/auth.guards';
 
 const routes: Routes = [
-  { path: '',                     component: Loginn },
+  { path: '',                     redirectTo: 'loginn', pathMatch: 'full' },
   { path: 'loginn',               component: Loginn },
-  { path: 'registro-profesor',    component: RegistroProfesor },
-  { path: 'inicio-administrador', component: InicioAdministrador },
-  { path: 'gestion-bases-datos',  component: GestionBasesDatos },
-  { path: 'crear-administrador',  component: CrearAdministrador },
-  { path: 'horarios',             component: AsignacionHorarios },
-  { path: 'consulta-horario',     component: ConsultaHorario },
-  { path: 'mi-horario',           component: ConsultaHorario, data: { modo: 'docente' } },
+  { path: 'registro-profesor',    component: RegistroProfesor,    canActivate: [sesionGuard] },
+  { path: 'inicio-administrador', component: InicioAdministrador, canActivate: [adminGuard] },
+  { path: 'gestion-bases-datos',  component: GestionBasesDatos,   canActivate: [adminGuard] },
+  { path: 'crear-administrador',  component: CrearAdministrador,  canActivate: [adminGuard] },
+  { path: 'horarios',             component: AsignacionHorarios,  canActivate: [adminGuard] },
+  { path: 'consulta-horario',     component: ConsultaHorario,     canActivate: [adminGuard] },
+  { path: 'mi-horario',           component: ConsultaHorario,     canActivate: [profesorGuard], data: { modo: 'docente' } },
+  { path: '**',                   redirectTo: 'loginn' },
 ];
 
 @NgModule({

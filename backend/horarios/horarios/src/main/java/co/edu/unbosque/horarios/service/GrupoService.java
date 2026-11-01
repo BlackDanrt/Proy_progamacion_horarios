@@ -7,19 +7,26 @@ import java.util.Optional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
 import co.edu.unbosque.horarios.dto.GrupoDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
+import co.edu.unbosque.horarios.dto.SalonDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.entity.Grupo;
 import co.edu.unbosque.horarios.entity.Profesor;
 import co.edu.unbosque.horarios.entity.Salon;
+import co.edu.unbosque.horarios.exception.AsignaturaInvalidaException;
 import co.edu.unbosque.horarios.exception.ProfesorInvalidoException;
+import co.edu.unbosque.horarios.exception.SalonInvalidoException;
+import co.edu.unbosque.horarios.repository.AsignaturaRepository;
+import co.edu.unbosque.horarios.repository.FranjaHorariaRepository;
 import co.edu.unbosque.horarios.repository.GrupoRepository;
 import co.edu.unbosque.horarios.repository.ProfesorRepository;
+import co.edu.unbosque.horarios.repository.SalonRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
 
@@ -27,7 +34,10 @@ import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
  * Servicio encargado de la gestión de grupos del sistema de horarios.
  * <p>
  * Implementa operaciones CRUD, búsquedas por diferentes atributos y
- * validaciones de negocio mediante LanzadorDeException.
+ * validaciones de negocio mediante LanzadorDeException. La asignatura, el
+ * profesor y el salón se leen de la base de datos a partir de su identificador,
+ * de modo que las validaciones usan los datos registrados y no los que envíe el
+ * cliente.
  */
 @Service
 public class GrupoService implements CRUDOperation<GrupoDTO> {
@@ -39,9 +49,28 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	private ProfesorRepository profesorRep;
 
 	@Autowired
+	private AsignaturaRepository asignaturaRep;
+
+	@Autowired
+	private SalonRepository salonRep;
+
+	@Autowired
+	private FranjaHorariaRepository franjaRep;
+
+	@Autowired
 	private ModelMapper mapper;
 
 	public GrupoService() {
+	}
+
+	/**
+	 * Datos de un grupo ya cargados de la base de datos y validados.
+	 */
+	private static class DatosGrupo {
+		Asignatura asignatura;
+		Profesor profesor;
+		Salon salon;
+		List<FranjaHoraria> sesiones;
 	}
 
 	/**
@@ -69,50 +98,28 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	}
 
 	/**
-	 * Crea un nuevo grupo.
+	 * Crea un nuevo grupo. Valida cupos, salón, profesor, sesiones y horarios, y
+	 * guarda las sesiones del grupo como franjas horarias nuevas.
 	 *
-	 * @param data información del grupo.
-	 * @return 0 si se crea correctamente, 1 si existe algún conflicto.
+	 * @param data información del grupo (asignatura, profesor y salón se
+	 *             identifican por su id).
+	 * @return 0 si se crea correctamente.
 	 */
 	@Override
+	@Transactional
 	public int create(GrupoDTO data) {
 
 		LanzadorDeException.verificarGrupo(data);
-
-		Profesor profesor = cargarProfesor(data.getProfesor());
-		Salon salon = aEntidad(data.getSalon(), Salon.class);
-		List<FranjaHoraria> sesiones = aEntidades(data.getSesiones());
-
 		LanzadorDeException.verificarNumeroGrupo(data.getNumeroGrupo());
-		LanzadorDeException.verificarCapacidadMinima(data.getCapacidadMinima());
-		LanzadorDeException.verificarCapacidadMaxima(data.getCapacidadMaxima());
-		LanzadorDeException.verificarCapacidades(data.getCapacidadMinima(), data.getCapacidadMaxima());
-		LanzadorDeException.verificarProfesor(profesor);
-		LanzadorDeException.verificarEstadoGrupo(data.getEstado());
 		LanzadorDeException.verificarNumeroGrupoDuplicado(grupoRep.existsByNumeroGrupo(data.getNumeroGrupo()));
-		LanzadorDeException.verificarAsignatura(data.getAsignatura());
-		LanzadorDeException.verificarSalon(data.getSalon());
-		LanzadorDeException.verificarSesiones(sesiones.size());
-		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima());
-		LanzadorDeException.verificarCapacidadSalon(data.getSalon().getCapacidad(), data.getCapacidadMaxima());
-		LanzadorDeException.verificarRequisitosSalon(data.getAsignatura().isRequiereComputadores(),
-				data.getSalon().isTieneComputadores(), data.getAsignatura().isRequiereSillasMoviles(),
-				data.getSalon().isTieneSillasMoviles());
-		LanzadorDeException.verificarSesionesFrecuencia(sesiones.size(), data.getAsignatura().getFrecuenciaSemanal());
-		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(profesor.getDisponibilidadHoraria(), sesiones);
 
-		LanzadorDeException.verificarSinConflictoHorarioProfesor(grupoRep.findByProfesor(profesor), sesiones,
-				data.getId());
+		DatosGrupo datos = validar(data, 0);
 
-		LanzadorDeException.verificarSinConflictoHorarioSalon(grupoRep.findBySalon(salon), sesiones, data.getId());
-
-		int horasYaAsignadas = grupoRep.findByProfesor(profesor).stream().filter(g -> g.getId() != data.getId())
-				.mapToInt(g -> g.getSesiones().size() * 2).sum();
-		LanzadorDeException.verificarCargaHorariaProfesor(profesor.getHorasMaximasSemanales(), horasYaAsignadas,
-				sesiones.size() * 2);
-
-		Grupo entity = mapper.map(data, Grupo.class);
-		entity.setProfesor(profesor);
+		Grupo entity = new Grupo(datos.asignatura, data.getNumeroGrupo(), data.getCapacidadMinima(),
+				data.getCapacidadMaxima(), datos.profesor, datos.salon, guardarSesiones(datos.sesiones),
+				data.getEstado());
+		entity.setPeriodo(data.getPeriodo());
+		entity.setInscritos(data.getInscritos());
 
 		grupoRep.save(entity);
 
@@ -131,12 +138,7 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 
 		List<GrupoDTO> dtoList = new ArrayList<>();
 
-		entityList.forEach(entity -> {
-
-			GrupoDTO dto = mapper.map(entity, GrupoDTO.class);
-
-			dtoList.add(dto);
-		});
+		entityList.forEach(entity -> dtoList.add(mapper.map(entity, GrupoDTO.class)));
 
 		return dtoList;
 	}
@@ -149,61 +151,43 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	 */
 	@Override
 	public int deleteById(Long id) {
+
 		LanzadorDeException.verificarId(id);
+
 		if (grupoRep.existsById(id)) {
+
 			grupoRep.deleteById(id);
+
 			return 0;
 		}
+
 		return 1;
 	}
 
 	/**
-	 * Actualiza un grupo por ID.
+	 * Actualiza un grupo por ID. Aplica las mismas validaciones que la creación y
+	 * reemplaza las sesiones del grupo.
 	 *
 	 * @param id   identificador del grupo.
 	 * @param data nuevos datos del grupo.
 	 * @return 0 si se actualiza correctamente, 1 si no existe.
 	 */
 	@Override
+	@Transactional
 	public int updateById(Long id, GrupoDTO data) {
+
 		LanzadorDeException.verificarId(id);
 		LanzadorDeException.verificarGrupo(data);
-
-		Profesor profesor = cargarProfesor(data.getProfesor());
-		Salon salon = aEntidad(data.getSalon(), Salon.class);
-		List<FranjaHoraria> sesiones = aEntidades(data.getSesiones());
-
-		LanzadorDeException.verificarNumeroGrupo(data.getNumeroGrupo());
-		LanzadorDeException.verificarCapacidadMinima(data.getCapacidadMinima());
-		LanzadorDeException.verificarCapacidadMaxima(data.getCapacidadMaxima());
-		LanzadorDeException.verificarCapacidades(data.getCapacidadMinima(), data.getCapacidadMaxima());
-		LanzadorDeException.verificarProfesor(profesor);
-		LanzadorDeException.verificarAsignatura(data.getAsignatura());
-		LanzadorDeException.verificarSalon(data.getSalon());
-		LanzadorDeException.verificarSesiones(sesiones.size());
-		LanzadorDeException.verificarEstadoGrupo(data.getEstado());
-		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima());
-		LanzadorDeException.verificarCapacidadSalon(data.getSalon().getCapacidad(), data.getCapacidadMaxima());
-		LanzadorDeException.verificarRequisitosSalon(data.getAsignatura().isRequiereComputadores(),
-				data.getSalon().isTieneComputadores(), data.getAsignatura().isRequiereSillasMoviles(),
-				data.getSalon().isTieneSillasMoviles());
-		LanzadorDeException.verificarSesionesFrecuencia(sesiones.size(), data.getAsignatura().getFrecuenciaSemanal());
-		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(profesor.getDisponibilidadHoraria(), sesiones);
-		LanzadorDeException.verificarSinConflictoHorarioProfesor(grupoRep.findByProfesor(profesor), sesiones,
-				data.getId());
-
-		LanzadorDeException.verificarSinConflictoHorarioSalon(grupoRep.findBySalon(salon), sesiones, data.getId());
-
-		int horasYaAsignadas = grupoRep.findByProfesor(profesor).stream().filter(g -> g.getId() != data.getId())
-				.mapToInt(g -> g.getSesiones().size() * 2).sum();
-		LanzadorDeException.verificarCargaHorariaProfesor(profesor.getHorasMaximasSemanales(), horasYaAsignadas,
-				sesiones.size() * 2);
 
 		Optional<Grupo> encontrado = grupoRep.findById(id);
 
 		if (encontrado.isEmpty()) {
 			return 1;
 		}
+
+		LanzadorDeException.verificarNumeroGrupo(data.getNumeroGrupo());
+
+		DatosGrupo datos = validar(data, id);
 
 		Grupo temp = encontrado.get();
 
@@ -214,14 +198,17 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 			LanzadorDeException.verificarNumeroGrupoDuplicado(grupoRep.existsByNumeroGrupo(data.getNumeroGrupo()));
 		}
 
-		temp.setAsignatura(mapper.map(data.getAsignatura(), Asignatura.class));
+		temp.setAsignatura(datos.asignatura);
 		temp.setNumeroGrupo(data.getNumeroGrupo());
 		temp.setCapacidadMinima(data.getCapacidadMinima());
 		temp.setCapacidadMaxima(data.getCapacidadMaxima());
-		temp.setProfesor(profesor);
-		temp.setSesiones(sesiones);
+		temp.setProfesor(datos.profesor);
+		temp.setSalon(datos.salon);
+		temp.setSesiones(guardarSesiones(datos.sesiones));
 		temp.setEstado(data.getEstado());
-		temp.setSalon(salon);
+		temp.setPeriodo(data.getPeriodo());
+		temp.setInscritos(data.getInscritos());
+
 		grupoRep.save(temp);
 
 		return 0;
@@ -234,17 +221,22 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	 * @return lista con el grupo encontrado.
 	 */
 	public List<GrupoDTO> findByNumeroGrupo(int numeroGrupo) {
+
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
+
 		Optional<Grupo> encontrado = grupoRep.findByNumeroGrupo(numeroGrupo);
+
 		List<GrupoDTO> dtoList = new ArrayList<>();
+
 		encontrado.ifPresent(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
+
 		return dtoList;
 	}
 
 	/**
 	 * Busca grupos por asignatura.
 	 *
-	 * @param asignaturaDTO asignatura asociada.
+	 * @param asignaturaDTO asignatura asociada (se usa su id).
 	 * @return lista de grupos encontrados.
 	 */
 	public List<GrupoDTO> findByAsignatura(AsignaturaDTO asignaturaDTO) {
@@ -262,7 +254,7 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	/**
 	 * Busca grupos por profesor.
 	 *
-	 * @param profesorDTO profesor asociado.
+	 * @param profesorDTO profesor asociado (se usa su id).
 	 * @return lista de grupos encontrados.
 	 */
 	public List<GrupoDTO> findByProfesor(ProfesorDTO profesorDTO) {
@@ -286,10 +278,15 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	 * @return lista de grupos encontrados.
 	 */
 	public List<GrupoDTO> findByEstado(EstadoGrupo estado) {
+
 		LanzadorDeException.verificarEstadoGrupo(estado);
+
 		List<Grupo> encontrados = grupoRep.findByEstado(estado);
+
 		List<GrupoDTO> dtoList = new ArrayList<>();
+
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
+
 		return dtoList;
 	}
 
@@ -300,7 +297,9 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	 * @return true si ya existe, false si no.
 	 */
 	public boolean findNumeroGrupoAlreadyTaken(int numeroGrupo) {
+
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
+
 		return grupoRep.existsByNumeroGrupo(numeroGrupo);
 	}
 
@@ -311,23 +310,95 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	 * @return 0 si se elimina, 1 si no existe.
 	 */
 	public int deleteByNumeroGrupo(int numeroGrupo) {
+
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
+
 		if (grupoRep.existsByNumeroGrupo(numeroGrupo)) {
+
 			grupoRep.deleteByNumeroGrupo(numeroGrupo);
+
 			return 0;
 		}
+
 		return 1;
 	}
 
 	/**
-	 * Carga desde la base de datos el profesor real a partir del DTO recibido, de
-	 * modo que las validaciones usen su disponibilidad y horas registradas y no las
-	 * que envíe el cliente. Si el DTO es null devuelve null para que lo reporte
-	 * LanzadorDeException.
+	 * Carga los datos reales del grupo y aplica todas las reglas de negocio:
+	 * capacidades, cupos, salón (capacidad y características), frecuencia y horario
+	 * de las sesiones, días de las sesiones, especialidad del profesor,
+	 * disponibilidad, cruces de horario y carga horaria del profesor.
 	 *
-	 * @param dto profesor recibido en la petición.
-	 * @return profesor almacenado en la base de datos o null si el DTO es null.
-	 * @throws ProfesorInvalidoException si el profesor no existe.
+	 * @param data     datos recibidos del grupo.
+	 * @param idActual identificador del grupo que se edita (0 si es nuevo).
+	 * @return asignatura, profesor, salón y sesiones validados.
+	 */
+	private DatosGrupo validar(GrupoDTO data, long idActual) {
+
+		DatosGrupo datos = new DatosGrupo();
+		datos.profesor = cargarProfesor(data.getProfesor());
+		datos.salon = cargarSalon(data.getSalon());
+		datos.asignatura = cargarAsignatura(data.getAsignatura());
+		datos.sesiones = aEntidades(data.getSesiones());
+
+		Profesor profesor = datos.profesor;
+		Salon salon = datos.salon;
+		Asignatura asignatura = datos.asignatura;
+		List<FranjaHoraria> sesiones = datos.sesiones;
+
+		LanzadorDeException.verificarCapacidadMinima(data.getCapacidadMinima());
+		LanzadorDeException.verificarCapacidadMaxima(data.getCapacidadMaxima());
+		LanzadorDeException.verificarCapacidades(data.getCapacidadMinima(), data.getCapacidadMaxima());
+		LanzadorDeException.verificarProfesor(profesor);
+		LanzadorDeException.verificarEstadoGrupo(data.getEstado());
+		LanzadorDeException.verificarAsignatura(data.getAsignatura());
+		LanzadorDeException.verificarSalon(data.getSalon());
+		LanzadorDeException.verificarSesiones(sesiones.size());
+		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima());
+		LanzadorDeException.verificarCuposInscritos(data.getInscritos(), data.getCapacidadMaxima());
+		LanzadorDeException.verificarCapacidadSalon(salon.getCapacidad(), data.getCapacidadMaxima());
+		LanzadorDeException.verificarRequisitosSalon(asignatura.isRequiereComputadores(), salon.isTieneComputadores(),
+				asignatura.isRequiereSillasMoviles(), salon.isTieneSillasMoviles());
+		LanzadorDeException.verificarSesionesFrecuencia(sesiones.size(), asignatura.getFrecuenciaSemanal());
+		LanzadorDeException.verificarSesionesGrupo(sesiones);
+		LanzadorDeException.verificarDiasSesiones(sesiones);
+		LanzadorDeException.verificarProfesorCalificado(asignatura.getEspecialidadRequerida(),
+				profesor.getEspecialidades());
+		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(profesor.getDisponibilidadHoraria(), sesiones);
+
+		List<Grupo> gruposProfesor = grupoRep.findByProfesor(profesor);
+
+		LanzadorDeException.verificarSinConflictoHorarioProfesor(gruposProfesor, sesiones, idActual);
+		LanzadorDeException.verificarSinConflictoHorarioSalon(grupoRep.findBySalon(salon), sesiones, idActual);
+
+		int horasYaAsignadas = gruposProfesor.stream().filter(g -> g.getId() != idActual)
+				.mapToInt(g -> g.getSesiones().size() * 2).sum();
+		LanzadorDeException.verificarCargaHorariaProfesor(profesor.getHorasMaximasSemanales(), horasYaAsignadas,
+				sesiones.size() * 2);
+
+		return datos;
+	}
+
+	/**
+	 * Guarda las sesiones del grupo como franjas horarias nuevas.
+	 *
+	 * @param sesiones sesiones validadas (sin guardar).
+	 * @return franjas horarias ya guardadas.
+	 */
+	private List<FranjaHoraria> guardarSesiones(List<FranjaHoraria> sesiones) {
+		List<FranjaHoraria> guardadas = new ArrayList<>();
+		for (FranjaHoraria sesion : sesiones) {
+			guardadas.add(
+					franjaRep.save(new FranjaHoraria(sesion.getDia(), sesion.getHoraInicio(), sesion.getHoraFin())));
+		}
+		return guardadas;
+	}
+
+	/**
+	 * Carga el profesor registrado a partir del DTO recibido.
+	 *
+	 * @param dto profesor recibido (se usa su id).
+	 * @return profesor registrado o null si el DTO es null.
 	 */
 	private Profesor cargarProfesor(ProfesorDTO dto) {
 		if (dto == null) {
@@ -338,15 +409,31 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	}
 
 	/**
-	 * Convierte un DTO a su entidad. Si el DTO es null devuelve null, para que las
-	 * validaciones de LanzadorDeException sean quienes reporten el error.
+	 * Carga el salón registrado a partir del DTO recibido.
 	 *
-	 * @param dto   objeto DTO a convertir.
-	 * @param clase clase de la entidad destino.
-	 * @return entidad resultante o null si el DTO es null.
+	 * @param dto salón recibido (se usa su id).
+	 * @return salón registrado o null si el DTO es null.
 	 */
-	private <T> T aEntidad(Object dto, Class<T> clase) {
-		return dto == null ? null : mapper.map(dto, clase);
+	private Salon cargarSalon(SalonDTO dto) {
+		if (dto == null) {
+			return null;
+		}
+		return salonRep.findById(dto.getId())
+				.orElseThrow(() -> new SalonInvalidoException("El salón indicado no existe"));
+	}
+
+	/**
+	 * Carga la asignatura registrada a partir del DTO recibido.
+	 *
+	 * @param dto asignatura recibida (se usa su id).
+	 * @return asignatura registrada o null si el DTO es null.
+	 */
+	private Asignatura cargarAsignatura(AsignaturaDTO dto) {
+		if (dto == null) {
+			return null;
+		}
+		return asignaturaRep.findById(dto.getId())
+				.orElseThrow(() -> new AsignaturaInvalidaException("La asignatura indicada no existe"));
 	}
 
 	/**
@@ -377,6 +464,30 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 
 	public void setProfesorRep(ProfesorRepository profesorRep) {
 		this.profesorRep = profesorRep;
+	}
+
+	public AsignaturaRepository getAsignaturaRep() {
+		return asignaturaRep;
+	}
+
+	public void setAsignaturaRep(AsignaturaRepository asignaturaRep) {
+		this.asignaturaRep = asignaturaRep;
+	}
+
+	public SalonRepository getSalonRep() {
+		return salonRep;
+	}
+
+	public void setSalonRep(SalonRepository salonRep) {
+		this.salonRep = salonRep;
+	}
+
+	public FranjaHorariaRepository getFranjaRep() {
+		return franjaRep;
+	}
+
+	public void setFranjaRep(FranjaHorariaRepository franjaRep) {
+		this.franjaRep = franjaRep;
 	}
 
 	public ModelMapper getMapper() {

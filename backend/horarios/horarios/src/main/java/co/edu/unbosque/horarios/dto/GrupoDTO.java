@@ -60,6 +60,16 @@ public class GrupoDTO {
 	private SalonDTO salon;
 
 	/**
+	 * Periodo académico al que pertenece el grupo, por ejemplo "2026-2".
+	 */
+	private String periodo;
+
+	/**
+	 * Cantidad de estudiantes inscritos en el grupo.
+	 */
+	private int inscritos;
+
+	/**
 	 * Constructor vacío de la clase.
 	 */
 	public GrupoDTO() {
@@ -252,6 +262,42 @@ public class GrupoDTO {
 	 */
 	public void setSalon(SalonDTO salon) {
 		this.salon = salon;
+	}
+
+	/**
+	 * Obtiene el periodo académico del grupo.
+	 *
+	 * @return periodo académico.
+	 */
+	public String getPeriodo() {
+		return periodo;
+	}
+
+	/**
+	 * Establece el periodo académico del grupo.
+	 *
+	 * @param periodo periodo académico.
+	 */
+	public void setPeriodo(String periodo) {
+		this.periodo = periodo;
+	}
+
+	/**
+	 * Obtiene la cantidad de estudiantes inscritos.
+	 *
+	 * @return número de inscritos.
+	 */
+	public int getInscritos() {
+		return inscritos;
+	}
+
+	/**
+	 * Establece la cantidad de estudiantes inscritos.
+	 *
+	 * @param inscritos número de inscritos.
+	 */
+	public void setInscritos(int inscritos) {
+		this.inscritos = inscritos;
 	}
 
 	/**

@@ -1,4 +1,5 @@
-import {Component, HostListener} from '@angular/core';
+import {Component, HostListener, inject} from '@angular/core';
+import { SesionService } from '../services/sesion.service';
 import {Router} from '@angular/router';
 
 export interface RegistroBaseDatos {
@@ -81,6 +82,8 @@ export class GestionBasesDatos {
 
   mostrarMenuUsuario: boolean = false;
 
+  private sesion = inject(SesionService);
+
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
@@ -88,7 +91,8 @@ export class GestionBasesDatos {
 
   cerrarSesion(): void {
     this.mostrarMenuUsuario = false;
-    this.router.navigate(['/loginn']); // Cambia '/login' por la ruta de tu login
+    this.sesion.cerrarSesion();
+    this.router.navigate(['/loginn']);
   }
 
   @HostListener('document:click')

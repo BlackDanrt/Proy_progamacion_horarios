@@ -1,4 +1,5 @@
-import {Component, HostListener, OnInit} from '@angular/core';
+import {Component, HostListener, inject, OnInit} from '@angular/core';
+import { SesionService } from '../services/sesion.service';
 import { Router } from '@angular/router';
 
 // Interfaces
@@ -35,7 +36,7 @@ export class AsignacionHorarios implements OnInit {
   // Listas desplegables para los selectores
   listaMaterias: string[] = ['Desarrollo de sistemas de información 1', 'Principios de sistemas de información', 'Desarrollo de sistemas de información 2', 'Desarrollo de sistemas de información 3', 'Estructura de datos',
     'Estructuras de sistemas', 'Bases de datos 1','Infraestructura TI 1', 'Modelizacion informacional'
-  ,'Proyecto núcleo 1', 'Ingenieria de software 1','Bases de datos 2',
+    ,'Proyecto núcleo 1', 'Ingenieria de software 1','Bases de datos 2',
     'Infraestructura TI 2',
     'Ingeniería de software',
     'Complejidad algorítmica',
@@ -230,6 +231,8 @@ export class AsignacionHorarios implements OnInit {
 
   mostrarMenuUsuario: boolean = false;
 
+  private sesion = inject(SesionService);
+
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
@@ -237,7 +240,8 @@ export class AsignacionHorarios implements OnInit {
 
   cerrarSesion(): void {
     this.mostrarMenuUsuario = false;
-    this.router.navigate(['/loginn']); // Cambia '/login' por la ruta de tu login
+    this.sesion.cerrarSesion();
+    this.router.navigate(['/loginn']);
   }
 
   @HostListener('document:click')

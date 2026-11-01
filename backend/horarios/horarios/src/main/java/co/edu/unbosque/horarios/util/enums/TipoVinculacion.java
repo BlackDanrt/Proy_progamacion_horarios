@@ -1,29 +1,45 @@
 package co.edu.unbosque.horarios.util.enums;
 
 /**
- * Enum que representa los tipos de vinculación laboral de los profesores
- * dentro del sistema de gestión de horarios.
+ * Enum que representa las dedicaciones de los profesores según el Estatuto
+ * Docente de la Universidad El Bosque (artículo 8). Cada tipo define el tope de
+ * horas semanales que puede tener un profesor.
  *
  * @author Prisma Web
  */
 public enum TipoVinculacion {
 
-    /** Representa una vinculación de tiempo completo. */
-    TIEMPO_COMPLETO,
+	/** Tiempo completo: de 31 a 40 horas semanales. */
+	TIEMPO_COMPLETO(40),
 
-    /** Representa una vinculación de tres cuartos de tiempo. */
-    TRES_CUARTOS_DE_TIEMPO,
+	/** Tres cuartos de tiempo: de 21 a 30 horas semanales. */
+	TRES_CUARTOS_DE_TIEMPO(30),
 
-    /** Representa una vinculación de medio tiempo. */
-    MEDIO_TIEMPO,
+	/** Medio tiempo: de 11 a 20 horas semanales. */
+	MEDIO_TIEMPO(20),
 
-    /** Representa una vinculación de cuarto de tiempo. */
-    CUARTO_DE_TIEMPO,
+	/** Un cuarto de tiempo: de 1 a 10 horas semanales. */
+	CUARTO_DE_TIEMPO(10);
 
-    /** Representa una vinculación de cinco horas. */
-    CINCO_HORAS,
+	/** Tope de horas semanales de la dedicación. */
+	private final int horasMaximas;
 
-    /** Representa una vinculación por horas de cátedra. */
-    CATEDRA
+	/**
+	 * Construye el tipo de vinculación con su tope de horas semanales.
+	 *
+	 * @param horasMaximas tope de horas semanales.
+	 */
+	TipoVinculacion(int horasMaximas) {
+		this.horasMaximas = horasMaximas;
+	}
+
+	/**
+	 * Obtiene el tope de horas semanales de la dedicación.
+	 *
+	 * @return horas máximas semanales permitidas.
+	 */
+	public int getHorasMaximas() {
+		return horasMaximas;
+	}
 
 }

@@ -50,15 +50,15 @@ public class LoadDatabase {
 		return args -> {
 
 			/**
-			 * Busca el usuario administrador por correo. Si no existe, crea una nueva
-			 * instancia.
+			 * Busca el usuario administrador por su código (ADMIN-001). Si no existe, crea
+			 * una nueva instancia.
 			 */
-			Administrador admin = adminRepo.findByCorreo("administrador@gmail.com").orElse(new Administrador());
+			Administrador admin = adminRepo.findByCodigoAdministrador("ADMIN-001").orElse(new Administrador());
 
 			admin.setNombre("Administrador");
 			admin.setApellido("Sistema");
 			admin.setDocumento(123456789L);
-			admin.setCorreo("administrador@gmail.com");
+			admin.setCorreo("administrador@unbosque.edu.co");
 			admin.setContrasenia(passwordEncoder.encode(defaultPassword));
 			admin.setCodigoAdministrador("ADMIN-001");
 			admin.setEstado(true);

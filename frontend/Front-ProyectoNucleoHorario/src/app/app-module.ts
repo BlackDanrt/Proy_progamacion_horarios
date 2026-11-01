@@ -5,7 +5,7 @@ import { AppRoutingModule } from './app-routing-module';
 import { App } from './app';
 import { Loginn } from './loginn/loginn';
 import { RouterModule } from '@angular/router';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RegistroProfesor } from './registro-profesor/registro-profesor';
 import { InicioAdministrador } from './inicio-administrador/inicio-administrador';
@@ -14,6 +14,7 @@ import { SeleccionCrearRegistro } from './seleccion-crear-registro/seleccion-cre
 import { CrearAdministrador } from './crear-administrador/crear-administrador';
 import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
 import { ConsultaHorario } from './consulta-horario/consulta-horario';
+import { authInterceptor } from './services/auth.interceptor';
 
 @NgModule({
   declarations: [
@@ -27,8 +28,8 @@ import { ConsultaHorario } from './consulta-horario/consulta-horario';
     AsignacionHorarios,
     ConsultaHorario,
   ],
-  imports: [BrowserModule, AppRoutingModule, RouterModule, FormsModule, HttpClientModule],
-  providers: [provideBrowserGlobalErrorListeners()],
+  imports: [BrowserModule, AppRoutingModule, RouterModule, FormsModule],
+  providers: [provideBrowserGlobalErrorListeners(), provideHttpClient(withInterceptors([authInterceptor]))],
   bootstrap: [App],
 })
 export class AppModule {}

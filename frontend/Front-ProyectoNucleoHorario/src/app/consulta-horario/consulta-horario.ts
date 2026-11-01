@@ -1,4 +1,5 @@
-import {Component, HostListener, OnInit} from '@angular/core';
+import {Component, HostListener, inject, OnInit} from '@angular/core';
+import { SesionService } from '../services/sesion.service';
 import { ActivatedRoute, Router } from '@angular/router';
 
 interface Clase {
@@ -125,6 +126,8 @@ export class ConsultaHorario implements OnInit {
 
   mostrarMenuUsuario: boolean = false;
 
+  private sesion = inject(SesionService);
+
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
@@ -132,7 +135,8 @@ export class ConsultaHorario implements OnInit {
 
   cerrarSesion(): void {
     this.mostrarMenuUsuario = false;
-    this.router.navigate(['/loginn']); // Cambia '/login' por la ruta de tu login
+    this.sesion.cerrarSesion();
+    this.router.navigate(['/loginn']);
   }
 
   @HostListener('document:click')

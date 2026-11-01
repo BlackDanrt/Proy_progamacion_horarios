@@ -9,9 +9,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * Representa un administrador del sistema de gestión de horarios.
- * Hereda los atributos personales de la clase Persona y agrega
- * el código del administrador y su estado.
+ * Representa un administrador del sistema de gestión de horarios. Hereda los
+ * atributos personales de la clase Persona y agrega el código del administrador
+ * y su estado.
  *
  * @author Prisma Web
  */
@@ -43,7 +43,7 @@ public class Administrador extends Persona {
 	 * Construye un administrador con su código y estado.
 	 *
 	 * @param codigoAdministrador código del administrador.
-	 * @param estado estado del administrador.
+	 * @param estado              estado del administrador.
 	 */
 	public Administrador(String codigoAdministrador, boolean estado) {
 		super();
@@ -52,16 +52,15 @@ public class Administrador extends Persona {
 	}
 
 	/**
-	 * Construye un administrador con sus datos personales,
-	 * código y estado.
+	 * Construye un administrador con sus datos personales, código y estado.
 	 *
-	 * @param nombre nombre del administrador.
-	 * @param apellido apellido del administrador.
-	 * @param documento número de documento del administrador.
-	 * @param correo correo electrónico del administrador.
-	 * @param contrasenia contraseña del administrador.
+	 * @param nombre              nombre del administrador.
+	 * @param apellido            apellido del administrador.
+	 * @param documento           número de documento del administrador.
+	 * @param correo              correo electrónico del administrador.
+	 * @param contrasenia         contraseña del administrador.
 	 * @param codigoAdministrador código del administrador.
-	 * @param estado estado del administrador.
+	 * @param estado              estado del administrador.
 	 */
 	public Administrador(@NotBlank(message = "El nombre no puede estar vacío") String nombre,
 			@NotBlank(message = "El apellido no puede estar vacío") String apellido, long documento,
@@ -76,10 +75,10 @@ public class Administrador extends Persona {
 	/**
 	 * Construye un administrador con sus datos personales.
 	 *
-	 * @param nombre nombre del administrador.
-	 * @param apellido apellido del administrador.
-	 * @param documento número de documento del administrador.
-	 * @param correo correo electrónico del administrador.
+	 * @param nombre      nombre del administrador.
+	 * @param apellido    apellido del administrador.
+	 * @param documento   número de documento del administrador.
+	 * @param correo      correo electrónico del administrador.
 	 * @param contrasenia contraseña del administrador.
 	 */
 	public Administrador(@NotBlank(message = "El nombre no puede estar vacío") String nombre,
@@ -140,8 +139,8 @@ public class Administrador extends Persona {
 	}
 
 	/**
-	 * Compara este administrador con otro objeto para determinar
-	 * si ambos son iguales.
+	 * Compara este administrador con otro objeto para determinar si ambos son
+	 * iguales.
 	 *
 	 * @param obj objeto con el que se compara el administrador.
 	 * @return true si ambos objetos son iguales; false en caso contrario.
@@ -167,7 +166,18 @@ public class Administrador extends Persona {
 	 */
 	@Override
 	public String toString() {
-		return super.toString() + ", Administrador [codigoAdminsitrador=" + codigoAdministrador + ", estado=" + estado + "]";
+		return super.toString() + ", Administrador [codigoAdminsitrador=" + codigoAdministrador + ", estado=" + estado
+				+ "]";
 	}
 
+	/**
+	 * Indica si la cuenta está habilitada. Un administrador inactivo no puede
+	 * iniciar sesión.
+	 *
+	 * @return true si el administrador está activo; false en caso contrario.
+	 */
+	@Override
+	public boolean isEnabled() {
+		return estado;
+	}
 }

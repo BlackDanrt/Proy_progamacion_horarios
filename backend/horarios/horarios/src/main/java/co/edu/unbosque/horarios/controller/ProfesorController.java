@@ -7,17 +7,20 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
+import co.edu.unbosque.horarios.entity.Profesor;
 import co.edu.unbosque.horarios.service.FranjaHorariaService;
 import co.edu.unbosque.horarios.service.ProfesorService;
 import co.edu.unbosque.horarios.util.enums.Dia;
@@ -196,38 +199,15 @@ public class ProfesorController {
 	}
 
 	/**
-	 * Crea un nuevo profesor. La disponibilidad horaria se asigna después con el
-	 * endpoint correspondiente.
+	 * Crea un nuevo profesor. Si el cuerpo trae disponibilidad horaria, se registra
+	 * junto con el profesor.
 	 *
-	 * @param nombre                nombre del profesor.
-	 * @param apellido              apellido del profesor.
-	 * @param correo                correo electrónico del profesor.
-	 * @param documento             número de documento del profesor.
-	 * @param contrasenia           contraseña del profesor.
-	 * @param tipoVinculacion       tipo de vinculación laboral.
-	 * @param escalafon             escalafón académico.
-	 * @param especialidades        lista de especialidades del profesor.
-	 * @param horasMaximasSemanales máximo de horas de trabajo por semana.
+	 * @param profesorDTO datos del profesor (incluye la contraseña).
 	 * @return mensaje de confirmación con estado 201 o el error con estado 400.
 	 */
 	@PostMapping("/crear")
-	public ResponseEntity<String> crearProfesor(@RequestParam String nombre, @RequestParam String apellido,
-			@RequestParam String correo, @RequestParam long documento, @RequestParam String contrasenia,
-			@RequestParam TipoVinculacion tipoVinculacion, @RequestParam Escalafon escalafon,
-			@RequestParam List<Especialidad> especialidades, @RequestParam int horasMaximasSemanales) {
+	public ResponseEntity<String> crearProfesor(@RequestBody ProfesorDTO profesorDTO) {
 		try {
-			ProfesorDTO profesorDTO = new ProfesorDTO();
-			profesorDTO.setNombre(nombre);
-			profesorDTO.setApellido(apellido);
-			profesorDTO.setCorreo(correo);
-			profesorDTO.setDocumento(documento);
-			profesorDTO.setContrasenia(contrasenia);
-			profesorDTO.setTipoVinculacion(tipoVinculacion);
-			profesorDTO.setEscalafon(escalafon);
-			profesorDTO.setEspecialidades(especialidades);
-			profesorDTO.setHorasMaximasSemanales(horasMaximasSemanales);
-			profesorDTO.setDisponibilidadHoraria(null);
-
 			profesorSer.create(profesorDTO);
 			return new ResponseEntity<>("Profesor creado con éxito", HttpStatus.CREATED);
 		} catch (Exception e) {
@@ -236,19 +216,24 @@ public class ProfesorController {
 	}
 
 	/**
-	 * Agrega una nueva franja de disponibilidad horaria a un profesor.
+	 * Agrega una nueva franja de disponibilidad horaria a un profesor. Un profesor
+	 * solo puede modificar su propia disponibilidad.
 	 *
-	 * @param idProfesor identificador del profesor.
-	 * @param dia        día de la semana de la franja.
-	 * @param horaInicio hora de inicio de la franja.
-	 * @param horaFin    hora de fin de la franja.
-	 * @return mensaje de confirmación con estado 201, 404 si el profesor no existe
-	 *         o 400 si hay un error.
+	 * @param idProfesor     identificador del profesor.
+	 * @param dia            día de la semana de la franja.
+	 * @param horaInicio     hora de inicio de la franja.
+	 * @param horaFin        hora de fin de la franja.
+	 * @param authentication usuario autenticado.
+	 * @return mensaje de confirmación con estado 201, 403 si no es su propia
+	 *         disponibilidad, 404 si el profesor no existe o 400 si hay un error.
 	 */
 	@PutMapping("/asignardisponibilidadhoraria")
 	public ResponseEntity<String> asignarDisponibilidadHoraria(@RequestParam long idProfesor, @RequestParam Dia dia,
-			@RequestParam LocalTime horaInicio, @RequestParam LocalTime horaFin) {
+			@RequestParam LocalTime horaInicio, @RequestParam LocalTime horaFin, Authentication authentication) {
 
+		if (esOtroProfesor(authentication, idProfesor)) {
+			return new ResponseEntity<>("Solo puedes modificar tu propia disponibilidad", HttpStatus.FORBIDDEN);
+		}
 		try {
 			boolean asignado = profesorSer.asignarDisponibilidadHoraria(idProfesor, dia, horaInicio, horaFin);
 			if (asignado) {
@@ -260,46 +245,48 @@ public class ProfesorController {
 			return new ResponseEntity<>("Error al asignar la disponibilidad horaria: " + e.getMessage(),
 					HttpStatus.BAD_REQUEST);
 		}
+	}
 
+	/**
+	 * Reemplaza toda la disponibilidad horaria de un profesor por la lista enviada.
+	 * Un profesor solo puede modificar su propia disponibilidad.
+	 *
+	 * @param idProfesor     identificador del profesor.
+	 * @param franjas        nuevas franjas de disponibilidad (día y horas).
+	 * @param authentication usuario autenticado.
+	 * @return mensaje de confirmación con estado 200, 403 si no es su propia
+	 *         disponibilidad, 404 si el profesor no existe o 400 si hay un error.
+	 */
+	@PutMapping("/guardardisponibilidad")
+	public ResponseEntity<String> guardarDisponibilidad(@RequestParam long idProfesor,
+			@RequestBody List<FranjaHorariaDTO> franjas, Authentication authentication) {
+
+		if (esOtroProfesor(authentication, idProfesor)) {
+			return new ResponseEntity<>("Solo puedes modificar tu propia disponibilidad", HttpStatus.FORBIDDEN);
+		}
+		try {
+			boolean guardado = profesorSer.reemplazarDisponibilidadHoraria(idProfesor, franjas);
+			return guardado ? new ResponseEntity<>("Disponibilidad horaria guardada con éxito", HttpStatus.OK)
+					: new ResponseEntity<>("No existe ningún profesor con el ID ingresado", HttpStatus.NOT_FOUND);
+		} catch (Exception e) {
+			return new ResponseEntity<>("Error al guardar la disponibilidad horaria: " + e.getMessage(),
+					HttpStatus.BAD_REQUEST);
+		}
 	}
 
 	/**
 	 * Actualiza la información de un profesor. Conserva la disponibilidad horaria
-	 * que el profesor ya tiene registrada.
+	 * que el profesor ya tiene registrada. Si no se envía contraseña, se conserva
+	 * la actual.
 	 *
-	 * @param id                    identificador del profesor.
-	 * @param nombre                nuevo nombre.
-	 * @param apellido              nuevo apellido.
-	 * @param documento             nuevo número de documento.
-	 * @param correo                nuevo correo electrónico.
-	 * @param contrasenia           nueva contraseña.
-	 * @param tipoVinculacion       nuevo tipo de vinculación.
-	 * @param escalafon             nuevo escalafón.
-	 * @param especialidades        nueva lista de especialidades.
-	 * @param horasMaximasSemanales nuevo máximo de horas semanales.
+	 * @param profesorDTO nuevos datos del profesor, incluido su identificador.
 	 * @return mensaje de confirmación con estado 202, 404 si el profesor no existe
 	 *         o 400 si hay un error.
 	 */
 	@PutMapping("/actualizarinformacion")
-	public ResponseEntity<String> actualizarInformacionProfesor(@RequestParam long id, @RequestParam String nombre,
-			@RequestParam String apellido, @RequestParam long documento, @RequestParam String correo,
-			@RequestParam String contrasenia, @RequestParam TipoVinculacion tipoVinculacion,
-			@RequestParam Escalafon escalafon, @RequestParam List<Especialidad> especialidades,
-			@RequestParam int horasMaximasSemanales) {
+	public ResponseEntity<String> actualizarInformacionProfesor(@RequestBody ProfesorDTO profesorDTO) {
 		try {
-			ProfesorDTO profesor = new ProfesorDTO();
-			profesor.setId(id);
-			profesor.setNombre(nombre);
-			profesor.setApellido(apellido);
-			profesor.setDocumento(documento);
-			profesor.setCorreo(correo);
-			profesor.setContrasenia(contrasenia);
-			profesor.setTipoVinculacion(tipoVinculacion);
-			profesor.setEscalafon(escalafon);
-			profesor.setEspecialidades(especialidades);
-			profesor.setHorasMaximasSemanales(horasMaximasSemanales);
-
-			int status = profesorSer.updateById(id, profesor);
+			int status = profesorSer.updateById(profesorDTO.getId(), profesorDTO);
 			return (status == 0) ? new ResponseEntity<>("Profesor actualizado exitosamente", HttpStatus.ACCEPTED)
 					: new ResponseEntity<>("Profesor no encontrado", HttpStatus.NOT_FOUND);
 		} catch (Exception e) {
@@ -365,4 +352,15 @@ public class ProfesorController {
 		}
 	}
 
+	/**
+	 * Indica si el usuario autenticado es un profesor distinto al indicado.
+	 *
+	 * @param authentication usuario autenticado.
+	 * @param idProfesor     identificador del profesor que se quiere modificar.
+	 * @return true si es un profesor que intenta modificar a otro profesor.
+	 */
+	private boolean esOtroProfesor(Authentication authentication, long idProfesor) {
+		return authentication != null && authentication.getPrincipal() instanceof Profesor profesor
+				&& profesor.getId() != idProfesor;
+	}
 }

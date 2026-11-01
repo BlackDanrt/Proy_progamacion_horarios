@@ -16,8 +16,8 @@ import co.edu.unbosque.horarios.util.LanzadorDeException;
 /**
  * Servicio encargado de la gestión de asignaturas del sistema de horarios.
  * <p>
- * Implementa operaciones CRUD, búsquedas por diferentes atributos
- * y validaciones de negocio mediante LanzadorDeException.
+ * Implementa operaciones CRUD, búsquedas por diferentes atributos y
+ * validaciones de negocio mediante LanzadorDeException.
  */
 @Service
 public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
@@ -65,13 +65,10 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		LanzadorDeException.verificarAsignatura(data);
 
 		LanzadorDeException.verificarNombre(data.getNombre());
-		LanzadorDeException.verificarNumCreditos(
-				data.getNumCreditos());
-		LanzadorDeException.verificarFrecuenciaSemanal(
-				data.getFrecuenciaSemanal());
+		LanzadorDeException.verificarNumCreditos(data.getNumCreditos());
+		LanzadorDeException.verificarFrecuenciaSemanal(data.getFrecuenciaSemanal());
 
-		LanzadorDeException.verificarNombreDuplicado(
-				asignaturaRep.existsByNombre(data.getNombre()));
+		LanzadorDeException.verificarNombreDuplicado(asignaturaRep.existsByNombre(data.getNombre()));
 
 		Asignatura entity = mapper.map(data, Asignatura.class);
 
@@ -93,8 +90,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
 		entityList.forEach(entity -> {
-			AsignaturaDTO dto =
-					mapper.map(entity, AsignaturaDTO.class);
+			AsignaturaDTO dto = mapper.map(entity, AsignaturaDTO.class);
 
 			dtoList.add(dto);
 		});
@@ -124,7 +120,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	/**
 	 * Actualiza una asignatura por ID.
 	 *
-	 * @param id identificador de la asignatura.
+	 * @param id   identificador de la asignatura.
 	 * @param data nuevos datos de la asignatura.
 	 * @return 0 si se actualiza correctamente, 1 si no existe.
 	 */
@@ -135,13 +131,10 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		LanzadorDeException.verificarAsignatura(data);
 
 		LanzadorDeException.verificarNombre(data.getNombre());
-		LanzadorDeException.verificarNumCreditos(
-				data.getNumCreditos());
-		LanzadorDeException.verificarFrecuenciaSemanal(
-				data.getFrecuenciaSemanal());
+		LanzadorDeException.verificarNumCreditos(data.getNumCreditos());
+		LanzadorDeException.verificarFrecuenciaSemanal(data.getFrecuenciaSemanal());
 
-		Optional<Asignatura> encontrado =
-				asignaturaRep.findById(id);
+		Optional<Asignatura> encontrado = asignaturaRep.findById(id);
 
 		if (encontrado.isEmpty()) {
 			return 1;
@@ -150,20 +143,19 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		Asignatura temp = encontrado.get();
 
 		/*
-		 * Solo se verifica duplicado si el nombre
-		 * realmente está cambiando.
+		 * Solo se verifica duplicado si el nombre realmente está cambiando.
 		 */
 		if (!temp.getNombre().equals(data.getNombre())) {
 
-			LanzadorDeException.verificarNombreDuplicado(
-					asignaturaRep.existsByNombre(
-							data.getNombre()));
+			LanzadorDeException.verificarNombreDuplicado(asignaturaRep.existsByNombre(data.getNombre()));
 		}
 
 		temp.setNombre(data.getNombre());
 		temp.setNumCreditos(data.getNumCreditos());
-		temp.setFrecuenciaSemanal(
-				data.getFrecuenciaSemanal());
+		temp.setFrecuenciaSemanal(data.getFrecuenciaSemanal());
+		temp.setRequiereComputadores(data.isRequiereComputadores());
+		temp.setRequiereSillasMoviles(data.isRequiereSillasMoviles());
+		temp.setEspecialidadRequerida(data.getEspecialidadRequerida());
 
 		asignaturaRep.save(temp);
 
@@ -180,16 +172,11 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 
 		LanzadorDeException.verificarNombre(nombre);
 
-		Optional<Asignatura> encontrado =
-				asignaturaRep.findByNombre(nombre);
+		Optional<Asignatura> encontrado = asignaturaRep.findByNombre(nombre);
 
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(asignatura ->
-				dtoList.add(
-						mapper.map(
-								asignatura,
-								AsignaturaDTO.class)));
+		encontrado.ifPresent(asignatura -> dtoList.add(mapper.map(asignatura, AsignaturaDTO.class)));
 
 		return dtoList;
 	}
@@ -200,22 +187,15 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @param numCreditos número de créditos.
 	 * @return lista con las asignaturas encontradas.
 	 */
-	public List<AsignaturaDTO> findByNumCreditos(
-			int numCreditos) {
+	public List<AsignaturaDTO> findByNumCreditos(int numCreditos) {
 
-		LanzadorDeException.verificarNumCreditos(
-				numCreditos);
+		LanzadorDeException.verificarNumCreditos(numCreditos);
 
-		Optional<Asignatura> encontrado =
-				asignaturaRep.findByNumCreditos(numCreditos);
+		Optional<Asignatura> encontrado = asignaturaRep.findByNumCreditos(numCreditos);
 
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(asignatura ->
-				dtoList.add(
-						mapper.map(
-								asignatura,
-								AsignaturaDTO.class)));
+		encontrado.ifPresent(asignatura -> dtoList.add(mapper.map(asignatura, AsignaturaDTO.class)));
 
 		return dtoList;
 	}
@@ -226,23 +206,15 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @param frecuenciaSemanal frecuencia semanal.
 	 * @return lista con las asignaturas encontradas.
 	 */
-	public List<AsignaturaDTO> findByFrecuenciaSemanal(
-			int frecuenciaSemanal) {
+	public List<AsignaturaDTO> findByFrecuenciaSemanal(int frecuenciaSemanal) {
 
-		LanzadorDeException.verificarFrecuenciaSemanal(
-				frecuenciaSemanal);
+		LanzadorDeException.verificarFrecuenciaSemanal(frecuenciaSemanal);
 
-		Optional<Asignatura> encontrado =
-				asignaturaRep.findByFrecuenciaSemanal(
-						frecuenciaSemanal);
+		Optional<Asignatura> encontrado = asignaturaRep.findByFrecuenciaSemanal(frecuenciaSemanal);
 
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(asignatura ->
-				dtoList.add(
-						mapper.map(
-								asignatura,
-								AsignaturaDTO.class)));
+		encontrado.ifPresent(asignatura -> dtoList.add(mapper.map(asignatura, AsignaturaDTO.class)));
 
 		return dtoList;
 	}
@@ -284,8 +256,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		return asignaturaRep;
 	}
 
-	public void setAsignaturaRep(
-			AsignaturaRepository asignaturaRep) {
+	public void setAsignaturaRep(AsignaturaRepository asignaturaRep) {
 
 		this.asignaturaRep = asignaturaRep;
 	}

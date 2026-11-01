@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 /**
  * Servicio encargado de la autenticación
@@ -14,7 +15,7 @@ export class AuthProfesorService {
   private http = inject(HttpClient);
 
   /** URL base del módulo de autenticación. */
-  private apiUrl = 'http://localhost:8080/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
 
   /**
    * Autentica a un profesor y guarda la sesión.
@@ -30,6 +31,9 @@ export class AuthProfesorService {
     ).pipe(
       tap((respuesta) => {
         if (respuesta && respuesta.token) {
+          // Solo puede haber una sesión activa: se borra la de administrador
+          ['admin_token', 'admin_rol', 'admin_id', 'admin_nombre'].forEach(k => localStorage.removeItem(k));
+
           localStorage.setItem('profesor_token', respuesta.token);
           localStorage.setItem('profesor_rol', respuesta.role || 'PROFESOR');
           localStorage.setItem('profesor_id', respuesta.id.toString());

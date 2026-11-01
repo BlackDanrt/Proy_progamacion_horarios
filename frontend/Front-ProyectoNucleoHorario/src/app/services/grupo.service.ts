@@ -1,95 +1,72 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { GrupoModel } from '../models/grupo.model';
-import { AsignaturaModel } from '../models/asignatura.model';
-import { ProfesorModel } from '../models/profesor.model';
-import {EstadoGrupo} from '../enums/estadoGrupo.enum';
+import { EstadoGrupo } from '../enums/estadoGrupo.enum';
 
-
-@Injectable({
-  providedIn: 'root',
-})
+/**
+ * Servicio que consume los endpoints de /grupo del back.
+ * Las búsquedas son GET con parámetros en la URL.
+ */
+@Injectable({ providedIn: 'root' })
 export class GrupoService {
 
-  private cliente: HttpClient = inject(HttpClient);
+  private readonly http: HttpClient = inject(HttpClient);
+  private readonly urlBase: string = `${environment.apiUrl}/grupo`;
 
-  private readonly urlbase: string = 'https://gpcueb.org/pokemon-pokedes/grupo';
-
-  buscarPorAsignatura(asignaturaDTO: AsignaturaModel): Observable<HttpResponse<GrupoModel[]>> {
-    return this.cliente.request<GrupoModel[]>('GET', this.urlbase + '/buscarporasignatura', {
-      body: asignaturaDTO,
+  buscarPorAsignatura(idAsignatura: number): Observable<HttpResponse<GrupoModel[]>> {
+    return this.http.get<GrupoModel[]>(`${this.urlBase}/buscarporasignatura`, {
+      params: new HttpParams().set('idAsignatura', idAsignatura),
       observe: 'response',
     });
   }
 
   buscarPorEstado(estadoGrupo: EstadoGrupo): Observable<HttpResponse<GrupoModel[]>> {
-    return this.cliente.request<GrupoModel[]>('GET', this.urlbase + '/buscarporestado', {
-      body: estadoGrupo,
+    return this.http.get<GrupoModel[]>(`${this.urlBase}/buscarporestado`, {
+      params: new HttpParams().set('estadoGrupo', estadoGrupo),
       observe: 'response',
     });
   }
 
   buscarPorNumeroGrupo(numeroGrupo: number): Observable<HttpResponse<GrupoModel[]>> {
-    return this.cliente.request<GrupoModel[]>('GET', this.urlbase + '/buscarpornumero', {
-      body: numeroGrupo,
+    return this.http.get<GrupoModel[]>(`${this.urlBase}/buscarpornumero`, {
+      params: new HttpParams().set('numeroGrupo', numeroGrupo),
       observe: 'response',
     });
   }
 
-  buscarPorProfesor(profesorDTO: ProfesorModel): Observable<HttpResponse<GrupoModel[]>> {
-    return this.cliente.request<GrupoModel[]>('GET', this.urlbase + '/buscarporprofesor', {
-      body: profesorDTO,
+  buscarPorProfesor(idProfesor: number): Observable<HttpResponse<GrupoModel[]>> {
+    return this.http.get<GrupoModel[]>(`${this.urlBase}/buscarporprofesor`, {
+      params: new HttpParams().set('idProfesor', idProfesor),
       observe: 'response',
     });
   }
 
-  crearGrupo(grupoDTO: GrupoModel): Observable<string> {
-    return this.cliente.post(
-      this.urlbase + '/crear',
-      grupoDTO,
-      { responseType: 'text' }
-    );
+  crearGrupo(grupo: GrupoModel): Observable<string> {
+    return this.http.post(`${this.urlBase}/crear`, grupo, { responseType: 'text' });
   }
 
-  actualizarGrupo(grupoDTO: GrupoModel): Observable<string> {
-    return this.cliente.put(
-      this.urlbase + '/actualizar',
-      grupoDTO,
-      { responseType: 'text' }
-    );
+  actualizarGrupo(grupo: GrupoModel): Observable<string> {
+    return this.http.put(`${this.urlBase}/actualizar`, grupo, { responseType: 'text' });
   }
 
   eliminarGrupoPorId(grupoId: number): Observable<string> {
-    return this.cliente.delete(
-      this.urlbase + '/eliminarporid?grupoId=' + grupoId,
-      { responseType: 'text' }
-    );
-  }
-
-  eliminarGrupoPorNumero(numeroGrupo: number): Observable<string> {
-    return this.cliente.delete(
-      this.urlbase + '/eliminarpornumero?numeroGrupo=' + numeroGrupo,
-      { responseType: 'text' }
-    );
-  }
-
-  mostrarTodo(): Observable<HttpResponse<GrupoModel[]>> {
-    return this.cliente.get<GrupoModel[]>(this.urlbase + '/mostrartodo', {
-      observe: 'response',
+    return this.http.delete(`${this.urlBase}/eliminarporid`, {
+      params: new HttpParams().set('grupoId', grupoId),
+      responseType: 'text',
     });
   }
 
-  mostrarTodoAdmin(): Observable<HttpResponse<GrupoModel[]>> {
-    const token: string | null = localStorage.getItem('admin_token');
+  eliminarGrupoPorNumero(numeroGrupo: number): Observable<string> {
+    return this.http.delete(`${this.urlBase}/eliminarpornumero`, {
+      params: new HttpParams().set('numeroGrupo', numeroGrupo),
+      responseType: 'text',
+    });
+  }
 
-    const headers: HttpHeaders = new HttpHeaders().set(
-      'Authorization',
-      `Bearer ${token || ''}`
-    );
-
-    return this.cliente.get<GrupoModel[]>(`${this.urlbase}/mostrartodo`, {
-      headers: headers,
+  mostrarTodo(): Observable<HttpResponse<GrupoModel[]>> {
+    return this.http.get<GrupoModel[]>(`${this.urlBase}/mostrartodo`, {
       observe: 'response',
     });
   }
