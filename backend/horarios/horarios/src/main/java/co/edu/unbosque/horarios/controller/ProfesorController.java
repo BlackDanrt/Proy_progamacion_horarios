@@ -189,13 +189,14 @@ public class ProfesorController {
 	 */
 	@GetMapping("/mostrartodo")
 	public ResponseEntity<List<ProfesorDTO>> mostrarTodo() {
-		List<ProfesorDTO> lista = new ArrayList<>();
-		try {
-			lista = profesorSer.getAll();
-			return new ResponseEntity<>(lista, HttpStatus.ACCEPTED);
-		} catch (Exception e) {
-			return new ResponseEntity<>(lista, HttpStatus.BAD_REQUEST);
-		}
+	    try {
+	        List<ProfesorDTO> lista = profesorSer.getAll();
+	        return new ResponseEntity<>(lista, HttpStatus.OK);
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
 	}
 
 	/**
