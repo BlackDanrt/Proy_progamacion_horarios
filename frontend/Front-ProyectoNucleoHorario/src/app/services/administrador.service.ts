@@ -41,13 +41,29 @@ export class AdministradorService {
     });
   }
 
-  /** [BACK] El back debe recibir este objeto como @RequestBody (hoy usa @RequestParam). */
+  /**
+   * Crea un administrador enviando los datos mediante @RequestParam.
+   */
   crearAdministrador(administrador: AdministradorModel): Observable<string> {
-    return this.http.post(`${this.urlBase}/crear`, administrador, { responseType: 'text' });
+    const params = new HttpParams()
+      .set('nombre', administrador.nombre)
+      .set('apellido', administrador.apellido)
+      .set('documento', administrador.documento)
+      .set('correo', administrador.correo)
+      .set('contrasenia', administrador.contrasenia ?? '')
+      .set('codigoAdministrador', administrador.codigoAdministrador)
+      .set('estado', administrador.estado);
+
+    return this.http.post(`${this.urlBase}/crear`, null, {
+      params,
+      responseType: 'text',
+    });
   }
 
   actualizarAdministrador(administrador: AdministradorModel): Observable<string> {
-    return this.http.put(`${this.urlBase}/actualizar`, administrador, { responseType: 'text' });
+    return this.http.put(`${this.urlBase}/actualizar`, administrador, {
+      responseType: 'text',
+    });
   }
 
   eliminarAdministrador(id: number): Observable<string> {
@@ -57,7 +73,9 @@ export class AdministradorService {
     });
   }
 
-  /** Alias de compatibilidad: hace lo mismo que mostrarTodo(). */
+  /**
+   * Alias de compatibilidad: hace lo mismo que mostrarTodo().
+   */
   mostrarTodoAdmin(): Observable<HttpResponse<AdministradorModel[]>> {
     return this.mostrarTodo();
   }
