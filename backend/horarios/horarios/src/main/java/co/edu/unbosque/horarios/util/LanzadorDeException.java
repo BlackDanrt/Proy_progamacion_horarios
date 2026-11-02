@@ -2,6 +2,7 @@ package co.edu.unbosque.horarios.util;
 
 import java.time.Duration;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,6 +16,7 @@ import co.edu.unbosque.horarios.dto.SalonDTO;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.entity.Grupo;
 import co.edu.unbosque.horarios.entity.Profesor;
+
 import co.edu.unbosque.horarios.exception.AdministradorInvalidoException;
 import co.edu.unbosque.horarios.exception.AsignaturaInvalidaException;
 import co.edu.unbosque.horarios.exception.BloqueAlmuerzoInvalidoException;
@@ -51,6 +53,7 @@ import co.edu.unbosque.horarios.exception.NumeroCreditosInvalidoException;
 import co.edu.unbosque.horarios.exception.NumeroGrupoInvalidoException;
 import co.edu.unbosque.horarios.exception.NumeroSalonInvalidoException;
 import co.edu.unbosque.horarios.exception.ProfesorInvalidoException;
+import co.edu.unbosque.horarios.exception.ProfesorNoCalificadoException;
 import co.edu.unbosque.horarios.exception.ProfesorNoDisponibleException;
 import co.edu.unbosque.horarios.exception.RangoHorarioInvalidoException;
 import co.edu.unbosque.horarios.exception.RequisitosSalonInvalidosException;
@@ -350,7 +353,7 @@ public class LanzadorDeException {
 	}
 
 	/**
-	 * Verifica que la frecuencia semanal esté entre 1 y 6.
+	 * Verifica que la frecuencia semanal esté entre 1 y 4.
 	 *
 	 * @param frecuenciaSemanal frecuencia semanal a verificar.
 	 * @throws FrecuenciaSemanalInvalidaException si la frecuencia está fuera del
@@ -363,9 +366,9 @@ public class LanzadorDeException {
 			throw new FrecuenciaSemanalInvalidaException("La frecuencia semanal debe ser mayor que cero");
 		}
 
-		if (frecuenciaSemanal > 6) {
+		if (frecuenciaSemanal > 4) {
 
-			throw new FrecuenciaSemanalInvalidaException("La frecuencia semanal no puede ser mayor a 6");
+			throw new FrecuenciaSemanalInvalidaException("La frecuencia semanal no puede ser mayor a 4");
 		}
 	}
 
@@ -413,7 +416,7 @@ public class LanzadorDeException {
 
 	/**
 	 * Verifica que la hora de inicio no sea nula y esté entre las 7:00 a. m. y las
-	 * 8:00 p. m.
+	 * 9:00 p. m.
 	 *
 	 * @param horaInicio hora de inicio a verificar.
 	 * @throws HoraInicioInvalidaException si la hora es nula o está fuera del
@@ -429,13 +432,13 @@ public class LanzadorDeException {
 			throw new HoraInicioInvalidaException("La hora de inicio no puede ser antes de las 7:00 a. m.");
 		}
 
-		if (horaInicio.isAfter(LocalTime.of(20, 0))) {
-			throw new HoraInicioInvalidaException("La hora de inicio no puede ser después de las 8:00 p. m.");
+		if (horaInicio.isAfter(LocalTime.of(21, 0))) {
+			throw new HoraInicioInvalidaException("La hora de inicio no puede ser después de las 9:00 p. m.");
 		}
 	}
 
 	/**
-	 * Verifica que la hora de fin no sea nula y esté entre las 9:00 a. m. y las
+	 * Verifica que la hora de fin no sea nula y esté entre las 8:00 a. m. y las
 	 * 10:00 p. m.
 	 *
 	 * @param horaFin hora de fin a verificar.
@@ -447,8 +450,8 @@ public class LanzadorDeException {
 			throw new HoraFinInvalidaException("La hora de fin no puede ser nula");
 		}
 
-		if (horaFin.isBefore(LocalTime.of(9, 0))) {
-			throw new HoraFinInvalidaException("La hora de fin no puede ser antes de las 9:00 a. m.");
+		if (horaFin.isBefore(LocalTime.of(8, 0))) {
+			throw new HoraFinInvalidaException("La hora de fin no puede ser antes de las 8:00 a. m.");
 		}
 
 		if (horaFin.isAfter(LocalTime.of(22, 0))) {
@@ -565,7 +568,7 @@ public class LanzadorDeException {
 	}
 
 	/**
-	 * Verifica que el número de sesiones esté entre 0 y 3.
+	 * Verifica que el número de sesiones esté entre 0 y 4.
 	 *
 	 * @param sesiones número de sesiones a verificar.
 	 * @throws SesionesInvalidasException si el número de sesiones está fuera del
@@ -577,8 +580,8 @@ public class LanzadorDeException {
 			throw new SesionesInvalidasException("El número de sesiones no puede ser menor que 0");
 		}
 
-		if (sesiones > 3) {
-			throw new SesionesInvalidasException("El número de sesiones no puede ser mayor que 3");
+		if (sesiones > 4) {
+			throw new SesionesInvalidasException("El número de sesiones no puede ser mayor que 4");
 		}
 	}
 
@@ -1004,6 +1007,123 @@ public class LanzadorDeException {
 		if (capacidadMaxima > limite) {
 			throw new CapacidadMaximaExcedidaException(
 					"La capacidad máxima no puede superar " + limite + " estudiantes (40 + 10% de tolerancia)");
+		}
+	}
+
+	/**
+	 * Indica si se exige que las sesiones de un grupo con dos o tres sesiones no
+	 * sean en días consecutivos.
+	 */
+	private static final boolean EXIGIR_DIAS_NO_CONSECUTIVOS = true;
+
+	/**
+	 * Verifica que las horas máximas semanales no superen el tope de la dedicación
+	 * (Estatuto Docente, artículo 8): tiempo completo 40, tres cuartos 30, medio
+	 * tiempo 20 y un cuarto de tiempo 10.
+	 *
+	 * @param tipoVinculacion       tipo de vinculación del profesor.
+	 * @param horasMaximasSemanales horas máximas semanales a verificar.
+	 * @throws HorasMaximasSemanalesInvalidasException si las horas superan el tope.
+	 */
+	public static void verificarHorasSegunVinculacion(TipoVinculacion tipoVinculacion, int horasMaximasSemanales) {
+		if (tipoVinculacion != null && horasMaximasSemanales > tipoVinculacion.getHorasMaximas()) {
+			throw new HorasMaximasSemanalesInvalidasException("Con vinculación " + tipoVinculacion
+					+ " las horas máximas semanales no pueden superar " + tipoVinculacion.getHorasMaximas());
+		}
+	}
+
+	/**
+	 * Verifica que cada sesión del grupo cumpla las reglas de horario: rango
+	 * institucional, sin cruce con el almuerzo y duración de 2 horas.
+	 *
+	 * @param sesiones sesiones del grupo.
+	 * @throws RangoHorarioInvalidoException si alguna sesión incumple las reglas.
+	 */
+	public static void verificarSesionesGrupo(List<FranjaHoraria> sesiones) {
+		for (FranjaHoraria sesion : sesiones) {
+			verificarDia(sesion.getDia());
+			verificarHorario(sesion.getHoraInicio(), sesion.getHoraFin());
+			verificarRangoHorarioInstitucional(sesion.getDia(), sesion.getHoraInicio(), sesion.getHoraFin());
+			verificarBloqueAlmuerzo(sesion.getHoraInicio(), sesion.getHoraFin());
+			verificarDuracionSesion(sesion.getHoraInicio(), sesion.getHoraFin());
+		}
+	}
+
+	/**
+	 * Verifica que las sesiones de un grupo sean en días distintos y, cuando el
+	 * grupo tiene dos o tres sesiones, que no sean en días consecutivos.
+	 *
+	 * @param sesiones sesiones del grupo.
+	 * @throws SesionesInvalidasException si dos sesiones coinciden en el día o son
+	 *                                    en días consecutivos.
+	 */
+	public static void verificarDiasSesiones(List<FranjaHoraria> sesiones) {
+		List<Integer> dias = new ArrayList<>();
+		for (FranjaHoraria sesion : sesiones) {
+			dias.add(sesion.getDia().ordinal());
+		}
+		dias.sort(null);
+		for (int i = 1; i < dias.size(); i++) {
+			if (dias.get(i).equals(dias.get(i - 1))) {
+				throw new SesionesInvalidasException("Las sesiones de un mismo grupo deben ser en días distintos");
+			}
+			if (EXIGIR_DIAS_NO_CONSECUTIVOS && sesiones.size() <= 3 && dias.get(i) - dias.get(i - 1) == 1) {
+				throw new SesionesInvalidasException(
+						"Las sesiones de un grupo con dos o tres sesiones no pueden ser en días consecutivos");
+			}
+		}
+	}
+
+	/**
+	 * Verifica que los inscritos no sean negativos ni superen los cupos del grupo.
+	 *
+	 * @param inscritos       estudiantes inscritos.
+	 * @param capacidadMaxima cupos del grupo.
+	 * @throws CapacidadMaximaExcedidaException si los inscritos están fuera del
+	 *                                          rango.
+	 */
+	public static void verificarCuposInscritos(int inscritos, int capacidadMaxima) {
+		if (inscritos < 0 || inscritos > capacidadMaxima) {
+			throw new CapacidadMaximaExcedidaException("Los inscritos (" + inscritos
+					+ ") deben estar entre 0 y los cupos del grupo (" + capacidadMaxima + ")");
+		}
+	}
+
+	/**
+	 * Verifica que el profesor tenga la especialidad que exige la asignatura. Si la
+	 * asignatura no exige ninguna, no se valida.
+	 *
+	 * @param especialidadRequerida  especialidad que exige la asignatura (puede ser
+	 *                               null).
+	 * @param especialidadesProfesor especialidades del profesor.
+	 * @throws ProfesorNoCalificadoException si el profesor no tiene la
+	 *                                       especialidad.
+	 */
+	public static void verificarProfesorCalificado(Especialidad especialidadRequerida,
+			List<Especialidad> especialidadesProfesor) {
+		if (especialidadRequerida != null
+				&& (especialidadesProfesor == null || !especialidadesProfesor.contains(especialidadRequerida))) {
+			throw new ProfesorNoCalificadoException(
+					"El profesor no tiene la especialidad requerida por la asignatura: " + especialidadRequerida);
+		}
+	}
+
+	/**
+	 * Verifica que ninguna franja de la lista se cruce con otra del mismo día.
+	 *
+	 * @param franjas franjas a verificar.
+	 * @throws HorarioInvalidoException si dos franjas del mismo día se cruzan.
+	 */
+	public static void verificarSinSolapamientoFranjas(List<FranjaHoraria> franjas) {
+		for (int i = 0; i < franjas.size(); i++) {
+			for (int j = i + 1; j < franjas.size(); j++) {
+				FranjaHoraria a = franjas.get(i);
+				FranjaHoraria b = franjas.get(j);
+				if (a.getDia() == b.getDia() && a.getHoraInicio().isBefore(b.getHoraFin())
+						&& b.getHoraInicio().isBefore(a.getHoraFin())) {
+					throw new HorarioInvalidoException("Las franjas del día " + a.getDia() + " se cruzan entre sí");
+				}
+			}
 		}
 	}
 }

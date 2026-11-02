@@ -1,92 +1,64 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import {FranjahorariaModel} from '../models/franjahoraria.model';
-import {dia} from '../enums/dia.enum';
+import { environment } from '../../environments/environment';
+import { FranjahorariaModel } from '../models/franjahoraria.model';
+import { Dia } from '../enums/dia.enum';
 
-
-@Injectable({
-  providedIn: 'root',
-})
+/**
+ * Servicio que consume los endpoints de /franjahoraria del back.
+ */
+@Injectable({ providedIn: 'root' })
 export class FranjaHorariaService {
 
-  private cliente: HttpClient = inject(HttpClient);
+  private readonly http: HttpClient = inject(HttpClient);
+  private readonly urlBase: string = `${environment.apiUrl}/franjahoraria`;
 
-  private readonly urlbase: string = 'https://gpcueb.org/pokemon-pokedes/franjahoraria';
-
-  buscarPorDia(dia: dia): Observable<HttpResponse<FranjahorariaModel[]>> {
-    return this.cliente.get<FranjahorariaModel[]>(
-      this.urlbase + '/buscarpordia?dia=' + encodeURIComponent(dia),
-      {
-        observe: 'response',
-      }
-    );
-  }
-
-  buscarPorHoraInicio(horaInicio: string): Observable<HttpResponse<FranjahorariaModel[]>> {
-    return this.cliente.get<FranjahorariaModel[]>(
-      this.urlbase + '/buscarporhorainicio?horaInicio=' + encodeURIComponent(horaInicio),
-      {
-        observe: 'response',
-      }
-    );
-  }
-
-  buscarPorHoraFin(horaFin: string): Observable<HttpResponse<FranjahorariaModel[]>> {
-    return this.cliente.get<FranjahorariaModel[]>(
-      this.urlbase + '/buscarporhorafin?horaFin=' + encodeURIComponent(horaFin),
-      {
-        observe: 'response',
-      }
-    );
-  }
-
-  crearFranjaHoraria(franjaHorariaDTO: FranjahorariaModel): Observable<string> {
-    return this.cliente.post(
-      this.urlbase + '/crear',
-      franjaHorariaDTO,
-      { responseType: 'text' }
-    );
-  }
-
-  actualizarFranjaHoraria(franjaHorariaDTO: FranjahorariaModel): Observable<string> {
-    return this.cliente.put(
-      this.urlbase + '/actualizar',
-      franjaHorariaDTO,
-      { responseType: 'text' }
-    );
-  }
-
-  eliminarFranjaHorariaPorId(franjaHorariaId: number): Observable<string> {
-    return this.cliente.delete(
-      this.urlbase + '/eliminarporid?franjaHorariaId=' + franjaHorariaId,
-      { responseType: 'text' }
-    );
-  }
-
-  eliminarFranjaHorariaPorDia(dia: dia): Observable<string> {
-    return this.cliente.delete(
-      this.urlbase + '/eliminarpordia?dia=' + encodeURIComponent(dia),
-      { responseType: 'text' }
-    );
-  }
-
-  mostrarTodo(): Observable<HttpResponse<FranjahorariaModel[]>> {
-    return this.cliente.get<FranjahorariaModel[]>(this.urlbase + '/mostrartodo', {
+  buscarPorDia(dia: Dia): Observable<HttpResponse<FranjahorariaModel[]>> {
+    return this.http.get<FranjahorariaModel[]>(`${this.urlBase}/buscarpordia`, {
+      params: new HttpParams().set('dia', dia),
       observe: 'response',
     });
   }
 
-  mostrarTodoAdmin(): Observable<HttpResponse<FranjahorariaModel[]>> {
-    const token: string | null = localStorage.getItem('admin_token');
+  buscarPorHoraInicio(horaInicio: string): Observable<HttpResponse<FranjahorariaModel[]>> {
+    return this.http.get<FranjahorariaModel[]>(`${this.urlBase}/buscarporhorainicio`, {
+      params: new HttpParams().set('horaInicio', horaInicio),
+      observe: 'response',
+    });
+  }
 
-    const headers: HttpHeaders = new HttpHeaders().set(
-      'Authorization',
-      `Bearer ${token || ''}`
-    );
+  buscarPorHoraFin(horaFin: string): Observable<HttpResponse<FranjahorariaModel[]>> {
+    return this.http.get<FranjahorariaModel[]>(`${this.urlBase}/buscarporhorafin`, {
+      params: new HttpParams().set('horaFin', horaFin),
+      observe: 'response',
+    });
+  }
 
-    return this.cliente.get<FranjahorariaModel[]>(`${this.urlbase}/mostrartodo`, {
-      headers: headers,
+  crearFranjaHoraria(franja: FranjahorariaModel): Observable<string> {
+    return this.http.post(`${this.urlBase}/crear`, franja, { responseType: 'text' });
+  }
+
+  actualizarFranjaHoraria(franja: FranjahorariaModel): Observable<string> {
+    return this.http.put(`${this.urlBase}/actualizar`, franja, { responseType: 'text' });
+  }
+
+  eliminarFranjaHorariaPorId(franjaHorariaId: number): Observable<string> {
+    return this.http.delete(`${this.urlBase}/eliminarporid`, {
+      params: new HttpParams().set('franjaHorariaId', franjaHorariaId),
+      responseType: 'text',
+    });
+  }
+
+  eliminarFranjaHorariaPorDia(dia: Dia): Observable<string> {
+    return this.http.delete(`${this.urlBase}/eliminarpordia`, {
+      params: new HttpParams().set('dia', dia),
+      responseType: 'text',
+    });
+  }
+
+  mostrarTodo(): Observable<HttpResponse<FranjahorariaModel[]>> {
+    return this.http.get<FranjahorariaModel[]>(`${this.urlBase}/mostrartodo`, {
       observe: 'response',
     });
   }

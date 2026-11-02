@@ -1,8 +1,8 @@
 export interface AsignaturaModel {
-  id: number;
+  id?: number;
   nombre: string;
-  credito: number;
-  frecuenciaSemanal:number;
-  requiereComputadores:boolean;
-  requiereSillasmoviles:boolean;
+  numCreditos: number;
+  frecuenciaSemanal: number;
+  requiereComputadores: boolean;
+  requiereSillasMoviles: boolean;
 }

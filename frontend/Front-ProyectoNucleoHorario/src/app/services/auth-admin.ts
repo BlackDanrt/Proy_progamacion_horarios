@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 /**
  * Servicio encargado de la autenticación
@@ -29,7 +30,7 @@ export class AuthAdminService {
   /**
    * URL base del módulo de autenticación.
    */
-  private apiUrl = 'http://localhost:8080/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
 
   /**
    * Realiza el proceso de autenticación
@@ -92,6 +93,9 @@ export class AuthAdminService {
     id: number,
     nombre: string
   ) {
+
+    // Solo puede haber una sesión activa: se borra la de profesor
+    ['profesor_token', 'profesor_rol', 'profesor_id', 'profesor_nombre'].forEach(k => localStorage.removeItem(k));
 
     localStorage.setItem('admin_token', token);
     localStorage.setItem('admin_rol', rol);

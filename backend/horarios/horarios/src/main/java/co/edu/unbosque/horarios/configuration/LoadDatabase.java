@@ -49,7 +49,7 @@ public class LoadDatabase {
 	CommandLineRunner initDatabase(AdministradorRepository adminRepo, PasswordEncoder passwordEncoder) {
 		return args -> {
 
-			final String correo = "administrador@gmail.com";
+			final String correo = "administrador@unbosque.edu.co";
 			final long documento = 123456789L;
 			final String codigo = "ADMIN-001";
 

@@ -1,8 +1,9 @@
 export interface PersonaModel {
-  id: number;
+  id?: number;
   nombre: string;
   apellido: string;
   documento: number;
   correo: string;
-  contrasenia: string;
+  /** Solo se envía al crear o actualizar; el back nunca la devuelve. */
+  contrasenia?: string;
 }

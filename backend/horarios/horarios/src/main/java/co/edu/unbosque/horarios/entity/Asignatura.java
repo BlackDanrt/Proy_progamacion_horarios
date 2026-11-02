@@ -2,8 +2,11 @@ package co.edu.unbosque.horarios.entity;
 
 import java.util.Objects;
 
+import co.edu.unbosque.horarios.util.enums.Especialidad;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -14,9 +17,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * Representa una asignatura dentro del sistema de gestión de horarios.
- * Contiene información sobre su nombre, número de créditos, frecuencia
- * semanal y requerimientos de infraestructura.
+ * Representa una asignatura dentro del sistema de gestión de horarios. Contiene
+ * información sobre su nombre, número de créditos, frecuencia semanal y
+ * requerimientos de infraestructura.
  *
  * @author Prisma Web
  */
@@ -50,7 +53,7 @@ public class Asignatura {
 	 * Número de días por semana en los que se programa la asignatura.
 	 */
 	@Min(value = 1, message = "La frecuencia semanal debe ser al menos 1 día")
-	@Max(value = 7, message = "No puede exceder los 7 días de la semana")
+	@Max(value = 4, message = "No puede exceder las 4 sesiones semanales")
 	private int frecuenciaSemanal;
 
 	/**
@@ -66,6 +69,13 @@ public class Asignatura {
 	private boolean requiereSillasMoviles;
 
 	/**
+	 * Especialidad que debe tener el profesor para dictar la asignatura (opcional).
+	 */
+	@Enumerated(EnumType.STRING)
+	@Column(name = "especialidad_requerida")
+	private Especialidad especialidadRequerida;
+
+	/**
 	 * Constructor vacío de la clase Asignatura.
 	 */
 	public Asignatura() {
@@ -75,10 +85,10 @@ public class Asignatura {
 	/**
 	 * Construye una asignatura con sus datos y requerimientos de infraestructura.
 	 *
-	 * @param nombre nombre de la asignatura.
-	 * @param numCreditos número de créditos académicos.
-	 * @param frecuenciaSemanal frecuencia semanal de la asignatura.
-	 * @param requiereComputadores indica si requiere computadores.
+	 * @param nombre                nombre de la asignatura.
+	 * @param numCreditos           número de créditos académicos.
+	 * @param frecuenciaSemanal     frecuencia semanal de la asignatura.
+	 * @param requiereComputadores  indica si requiere computadores.
 	 * @param requiereSillasMoviles indica si requiere sillas móviles.
 	 */
 	public Asignatura(String nombre, int numCreditos, int frecuenciaSemanal, boolean requiereComputadores,
@@ -200,6 +210,24 @@ public class Asignatura {
 	}
 
 	/**
+	 * Obtiene la especialidad requerida para dictar la asignatura.
+	 *
+	 * @return especialidad requerida o null si no se exige ninguna.
+	 */
+	public Especialidad getEspecialidadRequerida() {
+		return especialidadRequerida;
+	}
+
+	/**
+	 * Modifica la especialidad requerida para dictar la asignatura.
+	 *
+	 * @param especialidadRequerida nueva especialidad requerida.
+	 */
+	public void setEspecialidadRequerida(Especialidad especialidadRequerida) {
+		this.especialidadRequerida = especialidadRequerida;
+	}
+
+	/**
 	 * Calcula el código hash de la asignatura a partir de sus atributos.
 	 *
 	 * @return código hash de la asignatura.
@@ -214,7 +242,8 @@ public class Asignatura {
 	 * Compara esta asignatura con otro objeto para determinar si son iguales.
 	 *
 	 * @param obj objeto con el que se compara la asignatura.
-	 * @return true si ambos objetos tienen los mismos atributos; false en caso contrario.
+	 * @return true si ambos objetos tienen los mismos atributos; false en caso
+	 *         contrario.
 	 */
 	@Override
 	public boolean equals(Object obj) {

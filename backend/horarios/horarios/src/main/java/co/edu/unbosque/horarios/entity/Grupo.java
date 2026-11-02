@@ -21,9 +21,9 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 /**
- * Representa un grupo de una asignatura dentro del sistema de gestión
- * de horarios. Contiene información sobre el profesor, el salón, las
- * capacidades, las sesiones programadas y el estado del grupo.
+ * Representa un grupo de una asignatura dentro del sistema de gestión de
+ * horarios. Contiene información sobre el profesor, el salón, las capacidades,
+ * las sesiones programadas y el estado del grupo.
  *
  * @author Prisma Web
  */
@@ -92,6 +92,18 @@ public class Grupo {
 	private EstadoGrupo estado;
 
 	/**
+	 * Periodo académico al que pertenece el grupo, por ejemplo "2026-2".
+	 */
+	@Column(length = 20)
+	private String periodo;
+
+	/**
+	 * Cantidad de estudiantes inscritos en el grupo.
+	 */
+	@Min(value = 0, message = "Los inscritos no pueden ser negativos")
+	private int inscritos;
+
+	/**
 	 * Constructor vacío de la clase Grupo.
 	 */
 	public Grupo() {
@@ -99,17 +111,17 @@ public class Grupo {
 	}
 
 	/**
-	 * Construye un grupo con su asignatura, número, capacidades,
-	 * profesor, salón, sesiones y estado.
+	 * Construye un grupo con su asignatura, número, capacidades, profesor, salón,
+	 * sesiones y estado.
 	 *
-	 * @param asignatura asignatura a la que pertenece el grupo.
-	 * @param numeroGrupo número identificador del grupo.
+	 * @param asignatura      asignatura a la que pertenece el grupo.
+	 * @param numeroGrupo     número identificador del grupo.
 	 * @param capacidadMinima cantidad mínima de estudiantes.
 	 * @param capacidadMaxima cantidad máxima de estudiantes.
-	 * @param profesor profesor encargado del grupo.
-	 * @param salon salón asignado al grupo.
-	 * @param sesiones lista de franjas horarias del grupo.
-	 * @param estado estado actual del grupo.
+	 * @param profesor        profesor encargado del grupo.
+	 * @param salon           salón asignado al grupo.
+	 * @param sesiones        lista de franjas horarias del grupo.
+	 * @param estado          estado actual del grupo.
 	 */
 	public Grupo(Asignatura asignatura, int numeroGrupo,
 			@Min(value = 1, message = "La capacidad mínima debe ser al menos 1") int capacidadMinima,
@@ -289,6 +301,42 @@ public class Grupo {
 	}
 
 	/**
+	 * Obtiene el periodo académico del grupo.
+	 *
+	 * @return periodo académico.
+	 */
+	public String getPeriodo() {
+		return periodo;
+	}
+
+	/**
+	 * Modifica el periodo académico del grupo.
+	 *
+	 * @param periodo nuevo periodo académico.
+	 */
+	public void setPeriodo(String periodo) {
+		this.periodo = periodo;
+	}
+
+	/**
+	 * Obtiene la cantidad de estudiantes inscritos.
+	 *
+	 * @return número de inscritos.
+	 */
+	public int getInscritos() {
+		return inscritos;
+	}
+
+	/**
+	 * Modifica la cantidad de estudiantes inscritos.
+	 *
+	 * @param inscritos nuevo número de inscritos.
+	 */
+	public void setInscritos(int inscritos) {
+		this.inscritos = inscritos;
+	}
+
+	/**
 	 * Calcula el código hash del grupo a partir de sus atributos.
 	 *
 	 * @return código hash del grupo.
@@ -303,8 +351,8 @@ public class Grupo {
 	 * Compara este grupo con otro objeto para determinar si son iguales.
 	 *
 	 * @param obj objeto con el que se compara el grupo.
-	 * @return true si ambos objetos tienen los mismos atributos comparados;
-	 *         false en caso contrario.
+	 * @return true si ambos objetos tienen los mismos atributos comparados; false
+	 *         en caso contrario.
 	 */
 	@Override
 	public boolean equals(Object obj) {

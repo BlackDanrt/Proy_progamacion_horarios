@@ -7,6 +7,7 @@ import { ProfesorService } from '../services/profesor.service';             // a
 import { AdministradorService } from '../services/administrador.service';   // ajusta la ruta
 
 export interface RegistroBaseDatos {
+  clave: string;                       // identificador único: rol + id
   id: number;
   nombre: string;
   rol: 'Docente' | 'Administrador';
@@ -69,11 +70,13 @@ export class GestionBasesDatos implements OnInit {
     this.cargando.set(true);
     this.error.set('');
 
+    const mensajes: string[] = [];
+
     const profesores$ = this.profesorService.mostrarTodo().pipe(
       map(resp => (resp.body ?? []) as any[]),
       catchError(err => {
         console.error('Error cargando profesores', err);
-        this.error.update(e => e + 'No se pudieron cargar los profesores. ');
+        mensajes.push('No se pudieron cargar los profesores.');
         return of([] as any[]);
       })
     );
@@ -82,7 +85,7 @@ export class GestionBasesDatos implements OnInit {
       map(resp => (resp.body ?? []) as any[]),
       catchError(err => {
         console.error('Error cargando administradores', err);
-        this.error.update(e => e + 'No se pudieron cargar los administradores.');
+        mensajes.push('No se pudieron cargar los administradores.');
         return of([] as any[]);
       })
     );
@@ -90,14 +93,18 @@ export class GestionBasesDatos implements OnInit {
     forkJoin({ profesores: profesores$, administradores: administradores$ }).subscribe({
       next: ({ profesores, administradores }) => {
         const docentes: RegistroBaseDatos[] = profesores.map(p => ({
+          clave: `Docente-${p.id}`,
           id: p.id,
           nombre: `${p.nombre} ${p.apellido}`,
           rol: 'Docente',
           especialidad: this.textoEspecialidades(p.especialidades),
-          cargaAsignada: `${p.horasMaximasSemanales} horas/semana`
+          cargaAsignada: p.horasMaximasSemanales != null
+            ? `${p.horasMaximasSemanales} horas/semana`
+            : '—'
         }));
 
         const admins: RegistroBaseDatos[] = administradores.map(a => ({
+          clave: `Administrador-${a.id}`,
           id: a.id,
           nombre: `${a.nombre} ${a.apellido}`,
           rol: 'Administrador',
@@ -106,6 +113,8 @@ export class GestionBasesDatos implements OnInit {
         }));
 
         this.registros.set([...docentes, ...admins]);
+        this.error.set(mensajes.join(' '));
+        this.ajustarPagina();
         this.cargando.set(false);
       },
       error: (err) => {
@@ -130,6 +139,17 @@ export class GestionBasesDatos implements OnInit {
       .split('_')
       .map(w => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');
+  }
+
+  /** Evita que la página actual quede fuera de rango (tras filtrar, eliminar o recargar). */
+  private ajustarPagina(): void {
+    if (this.paginaActual() > this.totalPaginas()) {
+      this.paginaActual.set(this.totalPaginas());
+    }
+  }
+
+  esDocente(reg: RegistroBaseDatos): boolean {
+    return reg.rol === 'Docente';
   }
 
   onFiltroChange(valor: string): void {
@@ -160,16 +180,21 @@ export class GestionBasesDatos implements OnInit {
     this.mostrarModalRegistro.set(false);
   }
 
-  visualizarHorario(idDocente: number): void {
-    this.router.navigate(['/consulta-horario'], { queryParams: { id: idDocente } });
+  visualizarHorario(reg: RegistroBaseDatos): void {
+    if (!this.esDocente(reg)) return;
+    this.router.navigate(['/consulta-horario'], { queryParams: { id: reg.id } });
   }
 
-  actualizarRegistro(id: number): void {
-    console.log('Actualizar registro ID:', id);
+  actualizarRegistro(reg: RegistroBaseDatos): void {
+    // TODO: llamar al servicio según reg.rol (profesorService / administradorService)
+    console.log('Actualizar registro:', reg.rol, reg.id);
   }
 
-  eliminarRegistro(id: number): void {
-    console.log('Eliminar registro ID:', id);
+  eliminarRegistro(reg: RegistroBaseDatos): void {
+    // TODO: llamar al servicio según reg.rol y, al tener éxito, quitar el registro localmente:
+    // this.registros.update(lista => lista.filter(r => r.clave !== reg.clave));
+    // this.ajustarPagina();
+    console.log('Eliminar registro:', reg.rol, reg.id);
   }
 
   toggleMenuUsuario(event: Event): void {
