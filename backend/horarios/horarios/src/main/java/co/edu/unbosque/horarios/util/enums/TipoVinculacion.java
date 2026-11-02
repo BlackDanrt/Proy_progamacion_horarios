@@ -8,6 +8,10 @@ package co.edu.unbosque.horarios.util.enums;
  * @author Prisma Web
  */
 public enum TipoVinculacion {
+	
+	CINCO_HORAS(5),
+	
+	CATEDRA(10),
 
 	/** Tiempo completo: de 31 a 40 horas semanales. */
 	TIEMPO_COMPLETO(40),

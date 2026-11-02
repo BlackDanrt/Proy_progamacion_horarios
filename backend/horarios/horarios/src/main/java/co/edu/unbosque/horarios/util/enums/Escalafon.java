@@ -7,6 +7,9 @@ package co.edu.unbosque.horarios.util.enums;
  * @author Prisma Web
  */
 public enum Escalafon {
+	PROFESOR_AUXILIAR_I,
+	
+	PROFESOR_AUXILIAR_II,
 
 	/** Representa la categoría de instructor asistente. */
 	INSTRUCTOR_ASISTENTE,

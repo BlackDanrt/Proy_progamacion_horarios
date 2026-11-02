@@ -121,15 +121,26 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 	@Override
 	public List<ProfesorDTO> getAll() {
 
-		List<ProfesorDTO> lista = new ArrayList<>();
+	    List<ProfesorDTO> lista = new ArrayList<>();
 
-		Iterable<Profesor> profesores = profesorRep.findAll();
+	    Iterable<Profesor> profesores = profesorRep.findAll();
 
-		for (Profesor profesor : profesores) {
-			lista.add(mapper.map(profesor, ProfesorDTO.class));
-		}
+	    for (Profesor profesor : profesores) {
 
-		return lista;
+	        ProfesorDTO dto = mapper.map(profesor, ProfesorDTO.class);
+
+	        List<FranjaHorariaDTO> franjasDTO = new ArrayList<>();
+
+	        for (FranjaHoraria franja : profesor.getDisponibilidadHoraria()) {
+	            franjasDTO.add(mapper.map(franja, FranjaHorariaDTO.class));
+	        }
+
+	        dto.setDisponibilidadHoraria(franjasDTO);
+
+	        lista.add(dto);
+	    }
+
+	    return lista;
 	}
 
 	/**
