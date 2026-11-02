@@ -1,8 +1,13 @@
-import {Component, HostListener, inject} from '@angular/core';
-import { SesionService } from '../services/sesion.service';
-import {Router} from '@angular/router';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+
+import { ProfesorService } from '../services/profesor.service';             // ajusta la ruta
+import { AdministradorService } from '../services/administrador.service';   // ajusta la ruta
 
 export interface RegistroBaseDatos {
+  clave: string;                       // identificador único: rol + id
   id: number;
   nombre: string;
   rol: 'Docente' | 'Administrador';
@@ -16,90 +21,196 @@ export interface RegistroBaseDatos {
   templateUrl: './gestion-bases-datos.html',
   styleUrl: './gestion-bases-datos.css',
 })
-export class GestionBasesDatos {
+export class GestionBasesDatos implements OnInit {
 
-  filtroBusqueda: string = '';
-  mostrarModalRegistro: boolean = false;
+  private profesorService = inject(ProfesorService);
+  private administradorService = inject(AdministradorService);
+  private router = inject(Router);
 
-  registros: RegistroBaseDatos[] = [
-    { id: 1, nombre: 'Dr. Carlos Mendoza López', rol: 'Docente', especialidad: 'Ingeniería de Software', cargaAsignada: '18 horas/semana' },
-    { id: 2, nombre: 'Dra. Ana Lucía Ramírez Torres', rol: 'Docente', especialidad: 'Base de Datos', cargaAsignada: '16 horas/semana' },
-    { id: 3, nombre: 'Javier Solís Herrera', rol: 'Docente', especialidad: 'Redes y Comunicaciones', cargaAsignada: '14 horas/semana' },
-    { id: 4, nombre: 'Ing. Mariana Ortega Castillo', rol: 'Administrador', especialidad: 'Tecnologías de Información', cargaAsignada: '20 horas/semana' },
-    { id: 5, nombre: 'Dr. Ricardo Vega Paredes', rol: 'Docente', especialidad: 'Inteligencia Artificial', cargaAsignada: '16 horas/semana' },
-    { id: 6, nombre: 'Mtra. Sofía Delgado Morales', rol: 'Docente', especialidad: 'Sistemas Operativos', cargaAsignada: '14 horas/semana' },
-    { id: 7, nombre: 'Lic. Pablo Estrada Gómez', rol: 'Docente', especialidad: 'Ciencias de la Computación', cargaAsignada: '18 horas/semana' }
-  ];
+  // Estado como signals
+  registros = signal<RegistroBaseDatos[]>([]);
+  cargando = signal<boolean>(false);
+  error = signal<string>('');
+  filtroBusqueda = signal<string>('');
+  registrosPorPagina = signal<number>(10);
+  paginaActual = signal<number>(1);
+  mostrarModalRegistro = signal<boolean>(false);
+  mostrarMenuUsuario = signal<boolean>(false);
 
-  registrosPorPagina: number = 10;
-  paginas: number[] = [1, 2, 3, 4, 5];
-  paginaActual: number = 1;
-
-  constructor(private router: Router) { }
-
-  ngOnInit(): void {}
-
-  get registrosFiltrados(): RegistroBaseDatos[] {
-    if (!this.filtroBusqueda.trim()) {
-      return this.registros;
-    }
-    const termino = this.filtroBusqueda.toLowerCase();
-    return this.registros.filter(reg =>
+  // Derivados con computed
+  registrosFiltrados = computed(() => {
+    const todos = this.registros();
+    const termino = this.filtroBusqueda().trim().toLowerCase();
+    if (!termino) return todos;
+    return todos.filter(reg =>
       reg.nombre.toLowerCase().includes(termino) ||
       reg.rol.toLowerCase().includes(termino) ||
       reg.especialidad.toLowerCase().includes(termino)
     );
+  });
+
+  totalPaginas = computed(() =>
+    Math.max(1, Math.ceil(this.registrosFiltrados().length / this.registrosPorPagina()))
+  );
+
+  paginas = computed(() =>
+    Array.from({ length: this.totalPaginas() }, (_, i) => i + 1)
+  );
+
+  registrosPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.registrosPorPagina();
+    return this.registrosFiltrados().slice(inicio, inicio + this.registrosPorPagina());
+  });
+
+  ngOnInit(): void {
+    this.cargarRegistros();
+  }
+
+  cargarRegistros(): void {
+    this.cargando.set(true);
+    this.error.set('');
+
+    const mensajes: string[] = [];
+
+    const profesores$ = this.profesorService.mostrarTodo().pipe(
+      map(resp => (resp.body ?? []) as any[]),
+      catchError(err => {
+        console.error('Error cargando profesores', err);
+        mensajes.push('No se pudieron cargar los profesores.');
+        return of([] as any[]);
+      })
+    );
+
+    const administradores$ = this.administradorService.mostrarTodo().pipe(
+      map(resp => (resp.body ?? []) as any[]),
+      catchError(err => {
+        console.error('Error cargando administradores', err);
+        mensajes.push('No se pudieron cargar los administradores.');
+        return of([] as any[]);
+      })
+    );
+
+    forkJoin({ profesores: profesores$, administradores: administradores$ }).subscribe({
+      next: ({ profesores, administradores }) => {
+        const docentes: RegistroBaseDatos[] = profesores.map(p => ({
+          clave: `Docente-${p.id}`,
+          id: p.id,
+          nombre: `${p.nombre} ${p.apellido}`,
+          rol: 'Docente',
+          especialidad: this.textoEspecialidades(p.especialidades),
+          cargaAsignada: p.horasMaximasSemanales != null
+            ? `${p.horasMaximasSemanales} horas/semana`
+            : '—'
+        }));
+
+        const admins: RegistroBaseDatos[] = administradores.map(a => ({
+          clave: `Administrador-${a.id}`,
+          id: a.id,
+          nombre: `${a.nombre} ${a.apellido}`,
+          rol: 'Administrador',
+          especialidad: '—',
+          cargaAsignada: '—'
+        }));
+
+        this.registros.set([...docentes, ...admins]);
+        this.error.set(mensajes.join(' '));
+        this.ajustarPagina();
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        console.error('Error inesperado', err);
+        this.error.set('Ocurrió un error al cargar los registros.');
+        this.cargando.set(false);
+      }
+    });
+  }
+
+  private textoEspecialidades(lista: any[] | null | undefined): string {
+    if (!lista || lista.length === 0) return '—';
+    return lista
+      .map(e => typeof e === 'string' ? this.formatearEnum(e) : (e?.nombre ?? ''))
+      .filter(t => t)
+      .join(', ') || '—';
+  }
+
+  private formatearEnum(valor: string): string {
+    return valor
+      .toLowerCase()
+      .split('_')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+
+  /** Evita que la página actual quede fuera de rango (tras filtrar, eliminar o recargar). */
+  private ajustarPagina(): void {
+    if (this.paginaActual() > this.totalPaginas()) {
+      this.paginaActual.set(this.totalPaginas());
+    }
+  }
+
+  esDocente(reg: RegistroBaseDatos): boolean {
+    return reg.rol === 'Docente';
+  }
+
+  onFiltroChange(valor: string): void {
+    this.filtroBusqueda.set(valor);
+    this.paginaActual.set(1);
+  }
+
+  onRegistrosPorPaginaChange(valor: number): void {
+    this.registrosPorPagina.set(Number(valor));
+    this.paginaActual.set(1);
+  }
+
+  cambiarPagina(p: number): void {
+    if (p >= 1 && p <= this.totalPaginas()) {
+      this.paginaActual.set(p);
+    }
   }
 
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
   }
 
-
-
   crearNuevoRegistro(): void {
-    this.mostrarModalRegistro = true;
+    this.mostrarModalRegistro.set(true);
   }
 
   cerrarModalRegistro(): void {
-    this.mostrarModalRegistro = false;
-  }
-  visualizarHorario(idDocente: number): void {
-    this.router.navigate(['/consulta-horario'], { queryParams: { id: idDocente } });
+    this.mostrarModalRegistro.set(false);
   }
 
-  actualizarRegistro(id: number): void {
-    console.log('Actualizar registro ID:', id);
+  visualizarHorario(reg: RegistroBaseDatos): void {
+    if (!this.esDocente(reg)) return;
+    this.router.navigate(['/consulta-horario'], { queryParams: { id: reg.id } });
   }
 
-  eliminarRegistro(id: number): void {
-    console.log('Eliminar registro ID:', id);
+  actualizarRegistro(reg: RegistroBaseDatos): void {
+    // TODO: llamar al servicio según reg.rol (profesorService / administradorService)
+    console.log('Actualizar registro:', reg.rol, reg.id);
   }
 
-  cambiarPagina(p: number): void {
-    this.paginaActual = p;
+  eliminarRegistro(reg: RegistroBaseDatos): void {
+    // TODO: llamar al servicio según reg.rol y, al tener éxito, quitar el registro localmente:
+    // this.registros.update(lista => lista.filter(r => r.clave !== reg.clave));
+    // this.ajustarPagina();
+    console.log('Eliminar registro:', reg.rol, reg.id);
   }
-
-  mostrarMenuUsuario: boolean = false;
-
-  private sesion = inject(SesionService);
 
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
-    this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
+    this.mostrarMenuUsuario.update(v => !v);
   }
 
   cerrarSesion(): void {
-    this.mostrarMenuUsuario = false;
-    this.sesion.cerrarSesion();
+    this.mostrarMenuUsuario.set(false);
     this.router.navigate(['/loginn']);
   }
 
   @HostListener('document:click')
   cerrarMenuAlHacerClicFuera(): void {
-    if (this.mostrarMenuUsuario) {
-      this.mostrarMenuUsuario = false;
+    if (this.mostrarMenuUsuario()) {
+      this.mostrarMenuUsuario.set(false);
     }
   }
-
 }

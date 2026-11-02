@@ -3,30 +3,28 @@
   <aside class="sidebar">
     <div class="sidebar-top">
       <div class="user-menu-container">
-      <div
-        class="user-avatar-btn"
-        title="Perfil Administrador"
-        (click)="toggleMenuUsuario($event)">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-          <circle cx="12" cy="7" r="4"></circle>
-        </svg>
-      </div>
-
-      <div class="user-dropdown" *ngIf="mostrarMenuUsuario" (click)="$event.stopPropagation()">
-        <button type="button" class="dropdown-item logout-btn" (click)="cerrarSesion()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
+        <div
+          class="user-avatar-btn"
+          title="Perfil Administrador"
+          (click)="toggleMenuUsuario($event)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
           </svg>
-          <span>Cerrar sesión</span>
-        </button>
+        </div>
+
+        <div class="user-dropdown" *ngIf="mostrarMenuUsuario()" (click)="$event.stopPropagation()">
+          <button type="button" class="dropdown-item logout-btn" (click)="cerrarSesion()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
       </div>
     </div>
-    </div>
-
-
 
     <nav class="sidebar-menu">
       <button type="button" class="sidebar-btn" (click)="navegarA('/inicio-administrador')" title="Inicio">
@@ -78,10 +76,14 @@
         </svg>
         <input
           type="text"
-          [(ngModel)]="filtroBusqueda"
+          [value]="filtroBusqueda()"
+          (input)="onFiltroChange($any($event.target).value)"
           placeholder="Buscar por nombre, rol o especialidad...">
       </div>
     </div>
+
+    <div *ngIf="cargando()" style="padding: 16px;">Cargando registros...</div>
+    <div *ngIf="error()" style="padding: 16px; color: #ef4444;">{{ error() }}</div>
 
     <div class="table-card">
       <table class="data-table">
@@ -107,7 +109,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr *ngFor="let reg of registrosFiltrados">
+        <tr *ngFor="let reg of registrosPaginados()">
           <td class="td-nombre">{{ reg.nombre }}</td>
           <td>
             <span class="badge-role" [class.badge-docente]="reg.rol === 'Docente'" [class.badge-admin]="reg.rol === 'Administrador'">
@@ -153,10 +155,13 @@
     <footer class="pagination-footer">
       <div class="records-selector">
         <span>Mostrar</span>
-        <select [(ngModel)]="registrosPorPagina" class="select-per-page">
-          <option [value]="10">10</option>
-          <option [value]="25">25</option>
-          <option [value]="50">50</option>
+        <select
+          class="select-per-page"
+          [value]="registrosPorPagina()"
+          (change)="onRegistrosPorPaginaChange($any($event.target).value)">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
         </select>
         <span>registros por página</span>
       </div>
@@ -164,13 +169,13 @@
       <div class="pagination-controls">
         <button
           type="button"
-          *ngFor="let p of paginas"
+          *ngFor="let p of paginas()"
           class="page-btn"
-          [class.active]="p === paginaActual"
+          [class.active]="p === paginaActual()"
           (click)="cambiarPagina(p)">
           {{ p }}
         </button>
-        <button type="button" class="page-btn next-btn" (click)="cambiarPagina(paginaActual + 1)">
+        <button type="button" class="page-btn next-btn" (click)="cambiarPagina(paginaActual() + 1)">
           &gt;
         </button>
       </div>
@@ -179,7 +184,7 @@
   </main>
 
   <app-seleccion-crear-registro
-    *ngIf="mostrarModalRegistro"
+    *ngIf="mostrarModalRegistro()"
     (cerrar)="cerrarModalRegistro()">
   </app-seleccion-crear-registro>
 
