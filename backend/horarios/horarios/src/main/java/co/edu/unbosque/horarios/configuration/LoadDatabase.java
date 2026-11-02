@@ -18,7 +18,7 @@ import co.edu.unbosque.horarios.repository.AdministradorRepository;
  * En este caso, se asegura de crear o actualizar un usuario administrador al
  * iniciar la aplicación.
  * 
- * @version 1.0
+ * @version 1.1
  */
 @Configuration
 public class LoadDatabase {
@@ -38,8 +38,8 @@ public class LoadDatabase {
 	/**
 	 * Inicializa la base de datos con un usuario administrador.
 	 * 
-	 * Si el usuario administrador no existe, se crea automáticamente. Si ya existe,
-	 * se actualizan sus datos principales.
+	 * Busca el administrador por correo, documento o código (todos únicos). Si
+	 * existe alguno, se actualizan sus datos; si no, se crea uno nuevo.
 	 * 
 	 * @param adminRepo       repositorio de administradores.
 	 * @param passwordEncoder codificador de contraseñas.
@@ -49,18 +49,25 @@ public class LoadDatabase {
 	CommandLineRunner initDatabase(AdministradorRepository adminRepo, PasswordEncoder passwordEncoder) {
 		return args -> {
 
+			final String correo = "administrador@gmail.com";
+			final long documento = 123456789L;
+			final String codigo = "ADMIN-001";
+
 			/**
-			 * Busca el usuario administrador por correo. Si no existe, crea una nueva
-			 * instancia.
+			 * Busca el administrador por cualquiera de los campos únicos. Si no existe
+			 * ninguno, crea una nueva instancia.
 			 */
-			Administrador admin = adminRepo.findByCorreo("administrador@gmail.com").orElse(new Administrador());
+			Administrador admin = adminRepo.findByCorreo(correo)
+					.or(() -> adminRepo.findByDocumento(documento))
+					.or(() -> adminRepo.findByCodigoAdministrador(codigo))
+					.orElseGet(Administrador::new);
 
 			admin.setNombre("Administrador");
 			admin.setApellido("Sistema");
-			admin.setDocumento(123456789L);
-			admin.setCorreo("administrador@gmail.com");
+			admin.setDocumento(documento);
+			admin.setCorreo(correo);
 			admin.setContrasenia(passwordEncoder.encode(defaultPassword));
-			admin.setCodigoAdministrador("ADMIN-001");
+			admin.setCodigoAdministrador(codigo);
 			admin.setEstado(true);
 
 			/**
