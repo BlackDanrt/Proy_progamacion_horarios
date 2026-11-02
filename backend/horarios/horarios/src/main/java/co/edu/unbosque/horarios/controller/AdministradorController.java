@@ -130,13 +130,34 @@ public class AdministradorController {
 	 * @return mensaje de confirmación con estado 201 o el error con estado 400.
 	 */
 	@PostMapping("/crear")
-	public ResponseEntity<String> crearAdministrador(@RequestBody AdministradorDTO administradorDTO) {
-		try {
-			administradorSer.create(administradorDTO);
-			return new ResponseEntity<>("Administrador creado con éxito", HttpStatus.CREATED);
-		} catch (Exception e) {
-			return new ResponseEntity<>("Error al crear el administrador: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-		}
+	public ResponseEntity<String> crearAdministrador(
+	        @RequestParam String nombre,
+	        @RequestParam String apellido,
+	        @RequestParam long documento,
+	        @RequestParam String correo,
+	        @RequestParam String contrasenia,
+	        @RequestParam String codigoAdministrador,
+	        @RequestParam boolean estado) {
+
+	    try {
+	        AdministradorDTO administradorDTO = new AdministradorDTO();
+
+	        administradorDTO.setNombre(nombre);
+	        administradorDTO.setApellido(apellido);
+	        administradorDTO.setDocumento(documento);
+	        administradorDTO.setCorreo(correo);
+	        administradorDTO.setContrasenia(contrasenia);
+	        administradorDTO.setCodigoAdministrador(codigoAdministrador);
+	        administradorDTO.setEstado(estado);
+
+	        administradorSer.create(administradorDTO);
+
+	        return new ResponseEntity<>("Administrador creado con éxito", HttpStatus.CREATED);
+
+	    } catch (Exception e) {
+	        return new ResponseEntity<>("Error al crear el administrador: " + e.getMessage(),
+	                HttpStatus.BAD_REQUEST);
+	    }
 	}
 
 	/**
