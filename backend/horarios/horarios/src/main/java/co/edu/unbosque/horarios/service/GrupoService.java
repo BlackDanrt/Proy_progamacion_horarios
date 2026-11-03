@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
+import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
 import co.edu.unbosque.horarios.dto.GrupoDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
@@ -29,6 +30,8 @@ import co.edu.unbosque.horarios.repository.ProfesorRepository;
 import co.edu.unbosque.horarios.repository.SalonRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
+import co.edu.unbosque.horarios.util.enums.Servicio;
+import co.edu.unbosque.horarios.util.enums.TipoAccion;
 
 /**
  * Servicio encargado de la gestión de grupos del sistema de horarios.
@@ -57,6 +60,9 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	@Autowired
 	private FranjaHorariaRepository franjaRep;
 
+	@Autowired
+	private AuditoriaService auditoriaService;
+	
 	@Autowired
 	private ModelMapper mapper;
 
@@ -120,9 +126,10 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 				data.getEstado());
 		entity.setPeriodo(data.getPeriodo());
 		entity.setInscritos(data.getInscritos());
-
+		
 		grupoRep.save(entity);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.CREATE, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -139,7 +146,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		List<GrupoDTO> dtoList = new ArrayList<>();
 
 		entityList.forEach(entity -> dtoList.add(mapper.map(entity, GrupoDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -157,7 +165,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		if (grupoRep.existsById(id)) {
 
 			grupoRep.deleteById(id);
-
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.GRUPO);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 
@@ -210,7 +219,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		temp.setInscritos(data.getInscritos());
 
 		grupoRep.save(temp);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -229,7 +239,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		List<GrupoDTO> dtoList = new ArrayList<>();
 
 		encontrado.ifPresent(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -247,7 +258,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		List<GrupoDTO> dtoList = new ArrayList<>();
 
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -267,7 +279,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		List<GrupoDTO> dtoList = new ArrayList<>();
 
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -286,7 +299,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		List<GrupoDTO> dtoList = new ArrayList<>();
 
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -316,7 +330,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		if (grupoRep.existsByNumeroGrupo(numeroGrupo)) {
 
 			grupoRep.deleteByNumeroGrupo(numeroGrupo);
-
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.GRUPO);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 

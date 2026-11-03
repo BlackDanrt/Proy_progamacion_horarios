@@ -7,9 +7,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.ParametrosSistemaDTO;
 import co.edu.unbosque.horarios.entity.ParametrosSistema;
 import co.edu.unbosque.horarios.repository.ParametrosSistemaRepository;
+import co.edu.unbosque.horarios.util.enums.Servicio;
+import co.edu.unbosque.horarios.util.enums.TipoAccion;
 import jakarta.validation.ConstraintViolationException;
 
 @Validated
@@ -19,6 +22,9 @@ public class ParametrosSistemaService {
 	@Autowired
 	private ParametrosSistemaRepository parametrosSistemaRepository;
 
+	@Autowired
+	private AuditoriaService auditoriaService;
+	
 	@Autowired
 	private ModelMapper mapper;
 
@@ -30,6 +36,8 @@ public class ParametrosSistemaService {
 		ParametrosSistema parametros = parametrosSistemaRepository.getById(1L);
 		ParametrosSistemaDTO parametrosDTO = mapper.map(parametros, ParametrosSistemaDTO.class);
 		parametrosDTO.setId(1L);
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.PARAMETROS);
+    	auditoriaService.create(auditoria);
 		return parametrosDTO;
 	}
 
@@ -38,6 +46,8 @@ public class ParametrosSistemaService {
 		        ParametrosSistema parametros = mapper.map(nuevosValores, ParametrosSistema.class);
 		        parametros.setId(1L);
 		        parametrosSistemaRepository.save(parametros);
+		        AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.PARAMETROS);
+		    	auditoriaService.create(auditoria);
 		        return 0;
 		    } catch (ConstraintViolationException e) {
 		        return 1;

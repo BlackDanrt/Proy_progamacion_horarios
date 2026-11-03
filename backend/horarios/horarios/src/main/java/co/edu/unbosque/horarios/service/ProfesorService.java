@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
@@ -21,6 +22,8 @@ import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.Dia;
 import co.edu.unbosque.horarios.util.enums.Escalafon;
 import co.edu.unbosque.horarios.util.enums.Especialidad;
+import co.edu.unbosque.horarios.util.enums.Servicio;
+import co.edu.unbosque.horarios.util.enums.TipoAccion;
 import co.edu.unbosque.horarios.util.enums.TipoVinculacion;
 import jakarta.transaction.Transactional;
 
@@ -40,6 +43,9 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 	@Autowired
 	private FranjaHorariaRepository franjaRep;
 
+	@Autowired
+	private AuditoriaService auditoriaService;
+	
 	@Autowired
 	private ModelMapper mapper;
 
@@ -109,7 +115,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		if (data.getDisponibilidadHoraria() != null && !data.getDisponibilidadHoraria().isEmpty()) {
 			reemplazarDisponibilidadHoraria(guardado.getId(), data.getDisponibilidadHoraria());
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.CREATE, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -139,7 +146,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 
 	        lista.add(dto);
 	    }
-
+	    AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 	    return lista;
 	}
 
@@ -159,7 +167,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		}
 
 		profesorRep.deleteById(id);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -220,7 +229,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 				: new ArrayList<>());
 
 		profesorRep.save(profesor);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -239,7 +249,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		if (encontrado.isEmpty()) {
 			return null;
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return mapper.map(encontrado.get(), ProfesorDTO.class);
 	}
 
@@ -258,7 +269,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		if (encontrado.isEmpty()) {
 			return null;
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return mapper.map(encontrado.get(), ProfesorDTO.class);
 	}
 
@@ -279,7 +291,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		for (Profesor profesor : profesores) {
 			lista.add(mapper.map(profesor, ProfesorDTO.class));
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return lista;
 	}
 
@@ -300,7 +313,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		for (Profesor profesor : profesores) {
 			lista.add(mapper.map(profesor, ProfesorDTO.class));
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return lista;
 	}
 
@@ -323,7 +337,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 				lista.add(mapper.map(profesor, ProfesorDTO.class));
 			}
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return lista;
 	}
 
@@ -358,7 +373,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 				lista.add(mapper.map(profesor, ProfesorDTO.class));
 			}
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return lista;
 	}
 
@@ -396,6 +412,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		}
 
 		profesorRep.deleteByDocumento(documento);
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 	}
 
 	/**
@@ -433,6 +451,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		profesor.getDisponibilidadHoraria().add(franja);
 
 		profesorRep.save(profesor);
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return true;
 	}
 
@@ -480,7 +500,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		Profesor profesor = encontrado.get();
 		profesor.setDisponibilidadHoraria(guardadas);
 		profesorRep.save(profesor);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return true;
 	}
 
@@ -520,7 +541,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		franja.setDia(franjaDTO.getDia());
 		franja.setHoraInicio(franjaDTO.getHoraInicio());
 		franja.setHoraFin(franjaDTO.getHoraFin());
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.PROFESOR);
+    	auditoriaService.create(auditoria);
 		return true;
 	}
 

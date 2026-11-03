@@ -8,11 +8,14 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.SalonDTO;
 import co.edu.unbosque.horarios.entity.Salon;
 import co.edu.unbosque.horarios.repository.SalonRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.Bloque;
+import co.edu.unbosque.horarios.util.enums.Servicio;
+import co.edu.unbosque.horarios.util.enums.TipoAccion;
 
 /**
  * Servicio encargado de la gestión de salones del sistema de horarios.
@@ -29,6 +32,9 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 	@Autowired
 	private SalonRepository salonRep;
 
+	@Autowired
+	private AuditoriaService auditoriaService;
+	
 	/**
 	 * Conversor utilizado para transformar entre entidades y DTOs.
 	 */
@@ -85,7 +91,8 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 		Salon salon = mapper.map(data, Salon.class);
 
 		salonRep.save(salon);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.CREATE, Servicio.SALON);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -104,7 +111,8 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 		for (Salon salon : salones) {
 			lista.add(mapper.map(salon, SalonDTO.class));
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.SALON);
+    	auditoriaService.create(auditoria);
 		return lista;
 	}
 
@@ -124,7 +132,8 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 		}
 
 		salonRep.deleteById(id);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.SALON);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -164,7 +173,8 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 		salon.setId(id);
 
 		salonRep.save(salon);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.SALON);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -185,7 +195,8 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 		if (encontrado.isEmpty()) {
 			return null;
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.SALON);
+    	auditoriaService.create(auditoria);
 		return mapper.map(encontrado.get(), SalonDTO.class);
 	}
 
@@ -206,7 +217,8 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 		for (Salon salon : salones) {
 			lista.add(mapper.map(salon, SalonDTO.class));
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.SALON);
+    	auditoriaService.create(auditoria);
 		return lista;
 	}
 
@@ -227,7 +239,8 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 		for (Salon salon : salones) {
 			lista.add(mapper.map(salon, SalonDTO.class));
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.SALON);
+    	auditoriaService.create(auditoria);
 		return lista;
 	}
 
@@ -247,7 +260,8 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 		for (Salon salon : salones) {
 			lista.add(mapper.map(salon, SalonDTO.class));
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.SALON);
+    	auditoriaService.create(auditoria);
 		return lista;
 	}
 
@@ -267,7 +281,8 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 		for (Salon salon : salones) {
 			lista.add(mapper.map(salon, SalonDTO.class));
 		}
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.SALON);
+    	auditoriaService.create(auditoria);
 		return lista;
 	}
 
@@ -300,6 +315,8 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 		}
 
 		salonRep.deleteByBloqueAndNumeroSalon(bloque, numeroSalon);
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.SALON);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 

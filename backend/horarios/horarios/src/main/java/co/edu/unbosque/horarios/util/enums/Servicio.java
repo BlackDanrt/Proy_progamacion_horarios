@@ -13,5 +13,6 @@ public enum Servicio {
 	FRANJA_HORARIA,
 	GRUPO,
 	SALON,
-	ASIGNATURA
+	ASIGNATURA,
+	PARAMETROS
 }

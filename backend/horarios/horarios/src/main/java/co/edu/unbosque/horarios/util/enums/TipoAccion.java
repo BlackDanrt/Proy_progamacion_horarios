@@ -10,6 +10,5 @@ public enum TipoAccion {
 	CREATE,
 	DELETE,
 	UPDATE,
-	READ,
-	SEND
+	READ
 }
