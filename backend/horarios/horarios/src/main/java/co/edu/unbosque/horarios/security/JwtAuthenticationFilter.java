@@ -27,6 +27,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /** Servicio para cargar los detalles del usuario. */
     private final UserDetailsService userDetailsService;
+    
+    private static String TOKEN_JWT;
 
     /**
      * Constructor que inicializa las dependencias necesarias para el filtro.
@@ -38,6 +40,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
     }
+    
+    public String getTokenJWT() {
+    	return TOKEN_JWT;
+      }
 
     /**
      * Método principal del filtro que se ejecuta para cada solicitud HTTP.
