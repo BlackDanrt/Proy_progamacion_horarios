@@ -6,6 +6,7 @@ import { InicioAdministrador } from './inicio-administrador/inicio-administrador
 import { GestionBasesDatos } from './gestion-bases-datos/gestion-bases-datos';
 import { CrearAdministrador } from './crear-administrador/crear-administrador';
 import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
+import { Auditoria } from './auditoria/auditoria';
 import { ConsultaHorario } from './consulta-horario/consulta-horario';
 import { adminGuard, profesorGuard, sesionGuard } from './services/auth.guards';
 
@@ -18,6 +19,7 @@ const routes: Routes = [
   { path: 'crear-administrador',  component: CrearAdministrador,  canActivate: [adminGuard] },
   { path: 'horarios',             component: AsignacionHorarios,  canActivate: [adminGuard] },
   { path: 'consulta-horario',     component: ConsultaHorario,     canActivate: [adminGuard] },
+  { path: 'auditoria', component: Auditoria, canActivate: [adminGuard] },
   { path: 'mi-horario',           component: ConsultaHorario,     canActivate: [profesorGuard], data: { modo: 'docente' } },
   { path: '**',                   redirectTo: 'loginn' },
 ];
