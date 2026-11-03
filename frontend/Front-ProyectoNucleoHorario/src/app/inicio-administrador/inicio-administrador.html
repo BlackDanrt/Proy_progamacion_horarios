@@ -52,7 +52,7 @@
         </svg>
       </button>
 
-      <button type="button" class="sidebar-btn " (click)="navegarA('/gestion-asignatura')" title="Gestión de aignaturas">
+      <button type="button" class="sidebar-btn" (click)="navegarA('/gestion-asignatura')" title="Gestión de asignaturas">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
@@ -86,7 +86,6 @@
       <h2 class="section-title">¿Qué deseas gestionar hoy?</h2>
 
       <section class="modules-grid">
-        <!-- Evento click actualizado a ejecutarAccion() -->
         <div class="module-card" *ngFor="let item of accesosDirectos" (click)="ejecutarAccion(item)">
           <div class="module-header">
             <span class="module-badge">{{ item.badge }}</span>
@@ -110,47 +109,5 @@
     <div class="circle-middle-orange"></div>
     <div class="circle-bottom-green"></div>
   </aside>
-
-  <!-- VENTANA EMERGENTE (MODAL) PARA ASIGNATURA O SALÓN -->
-  <div class="modal-overlay" *ngIf="mostrarModalAsignaturas" (click)="cerrarModalAsignaturas()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
-      <button type="button" class="close-btn" (click)="cerrarModalAsignaturas()" title="Cerrar">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-
-      <div class="modal-header">
-        <h2 style="text-align: center; color: #1e293b; margin-bottom: 24px;">¿Qué deseas gestionar?</h2>
-      </div>
-
-      <div class="options-container">
-        <!-- Tarjeta Asignatura -->
-        <div class="option-card" (click)="seleccionarOpcionModal('asignatura')">
-          <div class="icon-wrapper icon-asignatura">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
-          </div>
-          <h3>Asignatura</h3>
-          <p>Gestionar el catálogo de materias</p>
-        </div>
-
-        <!-- Tarjeta Salón -->
-        <div class="option-card" (click)="seleccionarOpcionModal('salon')">
-          <div class="icon-wrapper icon-salon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-          </div>
-          <h3>Salón</h3>
-          <p>Gestionar las aulas</p>
-        </div>
-      </div>
-    </div>
-  </div>
 
 </div>

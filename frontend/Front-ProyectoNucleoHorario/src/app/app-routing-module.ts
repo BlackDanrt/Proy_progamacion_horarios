@@ -9,6 +9,7 @@ import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
 import { ConsultaHorario } from './consulta-horario/consulta-horario';
 import { adminGuard, profesorGuard, sesionGuard } from './services/auth.guards';
 import {GestionAsignatura} from './gestion-asignatura/gestion-asignatura';
+import {GestionAulas} from './gestion-aulas/gestion-aulas';
 
 const routes: Routes = [
   { path: '',                     redirectTo: 'loginn', pathMatch: 'full' },
@@ -21,6 +22,7 @@ const routes: Routes = [
   { path: 'consulta-horario',     component: ConsultaHorario,     canActivate: [adminGuard] },
   { path: 'mi-horario',           component: ConsultaHorario,     canActivate: [profesorGuard], data: { modo: 'docente' } },
   { path: 'gestion-asignatura',     component: GestionAsignatura,     canActivate: [adminGuard] },
+  { path: 'gestion-aulas',     component: GestionAulas,     canActivate: [adminGuard] },
   { path: '**',                   redirectTo: 'loginn' },
 ];
 

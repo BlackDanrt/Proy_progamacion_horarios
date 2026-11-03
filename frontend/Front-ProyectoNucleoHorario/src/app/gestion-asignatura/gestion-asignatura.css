@@ -181,7 +181,7 @@
 }
 
 .search-input-wrapper input:focus {
-  border-color: #17522d;
+  border-color:#17522d;
 }
 
 .table-card {
@@ -427,11 +427,8 @@
   height: 100%;
 }
 
-/* Reemplaza .btn-view con la clase .btn-add */
-.btn-add { color: #0284c7; } /* Puedes cambiar este azul por otro color si prefieres */
+.btn-add { color: #22c55e; } /* Puedes cambiar este azul por otro color si prefieres */
 
-/* ===== Modal de creación de asignatura =====
-   Pega esto al final de gestion-asignatura.css */
 
 .modal-overlay {
   position: fixed;
@@ -628,7 +625,7 @@
 }
 
 .form-group input:focus {
-  border-color: #3b82f6;
+  border-color: #22c55e;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
@@ -656,12 +653,12 @@
 }
 
 .btn-primary {
-  background: #2563eb;
+  background: #22c55e;
   color: #ffffff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: #22c55e;
 }
 
 .btn-primary:disabled {
@@ -699,7 +696,7 @@
 .check-item input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: #2563eb;
+  accent-color: #22c55e;
 }
 
 .btn-primary:disabled {
