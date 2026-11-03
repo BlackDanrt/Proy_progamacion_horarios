@@ -16,6 +16,7 @@ import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
 import { ConsultaHorario } from './consulta-horario/consulta-horario';
 import { authInterceptor } from './services/auth.interceptor';
 import { GestionAsignatura } from './gestion-asignatura/gestion-asignatura';
+import { GestionAulas } from './gestion-aulas/gestion-aulas';
 
 @NgModule({
   declarations: [
@@ -29,6 +30,7 @@ import { GestionAsignatura } from './gestion-asignatura/gestion-asignatura';
     AsignacionHorarios,
     ConsultaHorario,
     GestionAsignatura,
+    GestionAulas,
   ],
   imports: [BrowserModule, AppRoutingModule, RouterModule, FormsModule],
   providers: [

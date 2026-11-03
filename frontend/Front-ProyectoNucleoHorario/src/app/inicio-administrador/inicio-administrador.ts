@@ -1,6 +1,6 @@
-import {Component, HostListener, OnInit} from '@angular/core';
-import {Router} from '@angular/router';
-import {AuthAdminService} from '../services/auth-admin';
+import { Component, HostListener, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthAdminService } from '../services/auth-admin';
 
 interface TarjetaAcceso {
   titulo: string;
@@ -8,7 +8,6 @@ interface TarjetaAcceso {
   icono: string;
   ruta: string;
   badge: string;
-  esModal?: boolean;
 }
 
 @Component({
@@ -26,7 +25,6 @@ export class InicioAdministrador implements OnInit {
 
   nombreAdmin: string = 'Administrador';
   rol: string = 'Administrador General';
-  mostrarModalAsignaturas: boolean = false;
 
   metricas = [
     { titulo: 'Docentes Activos', valor: '48', icono: 'users' },
@@ -35,6 +33,7 @@ export class InicioAdministrador implements OnInit {
     { titulo: 'Personas en la Base de Datos', valor: '10', icono: 'database' }
   ];
 
+  // 4 Tarjetas separadas independientes
   accesosDirectos: TarjetaAcceso[] = [
     {
       titulo: 'Gestión de Bases de Datos',
@@ -48,54 +47,40 @@ export class InicioAdministrador implements OnInit {
       descripcion: 'Organiza la disponibilidad horaria semanal por asignaturas y aulas.',
       icono: 'calendar',
       ruta: '/horarios',
-      badge: 'Semana Actual',
+      badge: 'Semana Actual'
     },
     {
-      titulo: 'Gestión de asignaturas y salones',
-      descripcion: 'Crea, edita o elimina materias curriculares y aulas físicas de la institución.',
+      titulo: 'Gestión de Aulas',
+      descripcion: 'Crea, edita o consulta el catálogo de asignaturas y materias curriculares.',
       icono: 'book',
-      ruta: '',
-      badge: 'Módulos',
-      esModal: true // Esto indica que se debe abrir la ventana
+      ruta: '/gestion-asignatura',
+      badge: 'Asignaturas'
+    },
+    {
+      titulo: 'Gestión de Salones',
+      descripcion: 'Administra los bloques físicos, salones y capacidad de las aulas institucionales.',
+      icono: 'building',
+      ruta: '/gestion-aulas',
+      badge: 'Infraestructura'
     }
   ];
 
   ngOnInit(): void {
-    // Si no hay sesión de administrador, se regresa al login
     if (!this.authAdminService.estaAutenticadoAdmin()) {
       this.router.navigate(['/loginn']);
       return;
     }
 
-    // Muestra el nombre real guardado al iniciar sesión
     const nombre = this.authAdminService.getNombreAdmin();
     if (nombre) {
       this.nombreAdmin = nombre;
     }
   }
 
-  // --- MÉTODOS AÑADIDOS PARA LA VENTANA DE ASIGNATURA Y SALÓN ---
+  // Navegación directa para todas las tarjetas
   ejecutarAccion(item: TarjetaAcceso): void {
-    if (item.esModal) {
-      this.mostrarModalAsignaturas = true;
-    } else {
-      this.router.navigate([item.ruta]);
-    }
+    this.router.navigate([item.ruta]);
   }
-
-  cerrarModalAsignaturas(): void {
-    this.mostrarModalAsignaturas = false;
-  }
-
-  seleccionarOpcionModal(opcion: 'asignatura' | 'salon'): void {
-    this.cerrarModalAsignaturas();
-    if (opcion === 'asignatura') {
-      this.router.navigate(['/gestion-asignatura']);
-    } else {
-      this.router.navigate(['/gestion-salones']);
-    }
-  }
-  // ---------------------------------------------------------------
 
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
