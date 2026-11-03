@@ -8,6 +8,7 @@ interface TarjetaAcceso {
   icono: string;
   ruta: string;
   badge: string;
+  esModal?: boolean;
 }
 
 @Component({
@@ -25,6 +26,7 @@ export class InicioAdministrador implements OnInit {
 
   nombreAdmin: string = 'Administrador';
   rol: string = 'Administrador General';
+  mostrarModalAsignaturas: boolean = false;
 
   metricas = [
     { titulo: 'Docentes Activos', valor: '48', icono: 'users' },
@@ -46,7 +48,15 @@ export class InicioAdministrador implements OnInit {
       descripcion: 'Organiza la disponibilidad horaria semanal por asignaturas y aulas.',
       icono: 'calendar',
       ruta: '/horarios',
-      badge: 'Semana Actual'
+      badge: 'Semana Actual',
+    },
+    {
+      titulo: 'Gestión de asignaturas y salones',
+      descripcion: 'Crea, edita o elimina materias curriculares y aulas físicas de la institución.',
+      icono: 'book',
+      ruta: '',
+      badge: 'Módulos',
+      esModal: true // Esto indica que se debe abrir la ventana
     }
   ];
 
@@ -63,6 +73,29 @@ export class InicioAdministrador implements OnInit {
       this.nombreAdmin = nombre;
     }
   }
+
+  // --- MÉTODOS AÑADIDOS PARA LA VENTANA DE ASIGNATURA Y SALÓN ---
+  ejecutarAccion(item: TarjetaAcceso): void {
+    if (item.esModal) {
+      this.mostrarModalAsignaturas = true;
+    } else {
+      this.router.navigate([item.ruta]);
+    }
+  }
+
+  cerrarModalAsignaturas(): void {
+    this.mostrarModalAsignaturas = false;
+  }
+
+  seleccionarOpcionModal(opcion: 'asignatura' | 'salon'): void {
+    this.cerrarModalAsignaturas();
+    if (opcion === 'asignatura') {
+      this.router.navigate(['/gestion-asignatura']);
+    } else {
+      this.router.navigate(['/gestion-salones']);
+    }
+  }
+  // ---------------------------------------------------------------
 
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);

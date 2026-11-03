@@ -15,6 +15,7 @@ import { CrearAdministrador } from './crear-administrador/crear-administrador';
 import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
 import { ConsultaHorario } from './consulta-horario/consulta-horario';
 import { authInterceptor } from './services/auth.interceptor';
+import { GestionAsignatura } from './gestion-asignatura/gestion-asignatura';
 
 @NgModule({
   declarations: [
@@ -27,9 +28,13 @@ import { authInterceptor } from './services/auth.interceptor';
     CrearAdministrador,
     AsignacionHorarios,
     ConsultaHorario,
+    GestionAsignatura,
   ],
   imports: [BrowserModule, AppRoutingModule, RouterModule, FormsModule],
-  providers: [provideBrowserGlobalErrorListeners(), provideHttpClient(withInterceptors([authInterceptor]))],
+  providers: [
+    provideBrowserGlobalErrorListeners(),
+    provideHttpClient(withInterceptors([authInterceptor])),
+  ],
   bootstrap: [App],
 })
 export class AppModule {}
