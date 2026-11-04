@@ -100,6 +100,12 @@
         <thead>
         <tr>
           <th class="th-sortable">
+            <span>ID Usuario</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 15l5 5 5-5M7 9l5-5 5 5"/>
+            </svg>
+          </th>
+          <th class="th-sortable">
             <span>Usuario</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M7 15l5 5 5-5M7 9l5-5 5 5"/>
@@ -138,6 +144,7 @@
 
         <tbody>
         <tr *ngFor="let reg of registrosPaginados()">
+          <td>{{ reg.idUsuario }}</td>
           <td class="td-nombre">{{ reg.nombreUsuario }}</td>
 
           <td>
@@ -152,10 +159,10 @@
           <td>
   <span
     class="badge-accion"
-    [class.badge-crear]="reg.accion === 'Crear'"
-    [class.badge-actualizar]="reg.accion === 'Actualizar'"
-    [class.badge-eliminar]="reg.accion === 'Eliminar'"
-    [class.badge-leer]="reg.accion === 'Leer'"
+    [class.badge-crear]="reg.accion === 'Create'"
+    [class.badge-actualizar]="reg.accion === 'Update'"
+    [class.badge-eliminar]="reg.accion === 'Delete'"
+    [class.badge-leer]="reg.accion === 'Read'"
     [class.badge-login]="reg.accion === 'Login'">
     {{ reg.accion }}
   </span>

@@ -1,5 +1,9 @@
-import { Component, HostListener, computed, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { catchError, map } from 'rxjs/operators';
+import { of } from 'rxjs';
+
+import { AuditoriaService } from '../services/auditoria.service';
 
 export interface RegistroAuditoria {
   id: number;
@@ -17,17 +21,12 @@ export interface RegistroAuditoria {
   templateUrl: './auditoria.html',
   styleUrl: './auditoria.css',
 })
-export class Auditoria {
+export class Auditoria implements OnInit {
 
-  constructor(private router: Router) {}
+  private auditoriaService = inject(AuditoriaService);
+  private router = inject(Router);
 
-  // Datos de ejemplo (temporal, mientras no hay service/entidad en el front)
-  registros = signal<RegistroAuditoria[]>([
-    { id: 1, idUsuario: 10, nombreUsuario: 'Juan Pérez', accion: 'Crear', rol: 'Administrador', servicioUsado: 'Horarios', fecha: '03/11/2026 09:15' },
-    { id: 2, idUsuario: 22, nombreUsuario: 'Laura Gómez', accion: 'Actualizar', rol: 'Docente', servicioUsado: 'Profesores', fecha: '03/11/2026 10:02' },
-    { id: 3, idUsuario: 10, nombreUsuario: 'Juan Pérez', accion: 'Eliminar', rol: 'Administrador', servicioUsado: 'Administradores', fecha: '02/11/2026 18:40' },
-  ]);
-
+  registros = signal<RegistroAuditoria[]>([]);
   cargando = signal<boolean>(false);
   error = signal<string>('');
   filtroBusqueda = signal<string>('');
@@ -35,7 +34,6 @@ export class Auditoria {
   paginaActual = signal<number>(1);
   mostrarMenuUsuario = signal<boolean>(false);
 
-  // Derivados con computed
   registrosFiltrados = computed(() => {
     const todos = this.registros();
     const termino = this.filtroBusqueda().trim().toLowerCase();
@@ -60,6 +58,71 @@ export class Auditoria {
     const inicio = (this.paginaActual() - 1) * this.registrosPorPagina();
     return this.registrosFiltrados().slice(inicio, inicio + this.registrosPorPagina());
   });
+
+  ngOnInit(): void {
+    this.cargarRegistros();
+  }
+
+  cargarRegistros(): void {
+    this.cargando.set(true);
+    this.error.set('');
+
+    this.auditoriaService.mostrarTodo().pipe(
+      map(resp => (resp.body ?? []) as any[]),
+      catchError(err => {
+        console.error('Error cargando auditoría', err);
+        this.error.set('No se pudieron cargar los registros de auditoría.');
+        return of([] as any[]);
+      })
+    ).subscribe({
+      next: (lista) => {
+        const mapeados: RegistroAuditoria[] = lista.map(a => ({
+          id: a.id,
+          idUsuario: a.idUsuario,
+          nombreUsuario: a.nombreUsuario,
+          accion: this.formatearEnum(a.accion),
+          rol: a.esAdmin ? 'Administrador' : 'Docente',
+          servicioUsado: this.formatearEnum(a.servicioUsado),
+          fecha: this.formatearFecha(a.fecha)
+        }));
+
+        this.registros.set(mapeados);
+        this.ajustarPagina();
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        console.error('Error inesperado', err);
+        this.error.set('Ocurrió un error al cargar los registros.');
+        this.cargando.set(false);
+      }
+    });
+  }
+
+  private formatearEnum(valor: string | null | undefined): string {
+    if (!valor) return '—';
+    return valor
+      .toLowerCase()
+      .split('_')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+
+  private formatearFecha(valor: string | null | undefined): string {
+    if (!valor) return '—';
+    const fecha = new Date(valor);
+    if (isNaN(fecha.getTime())) return '—';
+    return fecha.toLocaleString('es-CO', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  /** Evita que la página actual quede fuera de rango (tras filtrar o recargar). */
+  private ajustarPagina(): void {
+    if (this.paginaActual() > this.totalPaginas()) {
+      this.paginaActual.set(this.totalPaginas());
+    }
+  }
 
   onFiltroChange(valor: string): void {
     this.filtroBusqueda.set(valor);
