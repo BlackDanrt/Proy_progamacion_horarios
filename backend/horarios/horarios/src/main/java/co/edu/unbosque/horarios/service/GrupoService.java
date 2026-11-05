@@ -13,6 +13,7 @@ import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
 import co.edu.unbosque.horarios.dto.GrupoDTO;
+import co.edu.unbosque.horarios.dto.ParametrosSistemaDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
 import co.edu.unbosque.horarios.dto.SalonDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
@@ -65,6 +66,9 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	
 	@Autowired
 	private ModelMapper mapper;
+	
+	@Autowired
+	private ParametrosSistemaService parametrosSistemaService;
 
 	public GrupoService() {
 	}
@@ -350,6 +354,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	 */
 	private DatosGrupo validar(GrupoDTO data, long idActual) {
 
+		ParametrosSistemaDTO parametros = parametrosSistemaService.get();
+		
 		DatosGrupo datos = new DatosGrupo();
 		datos.profesor = cargarProfesor(data.getProfesor());
 		datos.salon = cargarSalon(data.getSalon());
@@ -361,21 +367,21 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		Asignatura asignatura = datos.asignatura;
 		List<FranjaHoraria> sesiones = datos.sesiones;
 
-		LanzadorDeException.verificarCapacidadMinima(data.getCapacidadMinima());
-		LanzadorDeException.verificarCapacidadMaxima(data.getCapacidadMaxima());
+		LanzadorDeException.verificarCapacidadMinima(data.getCapacidadMinima(), parametros);
+		LanzadorDeException.verificarCapacidadMaxima(data.getCapacidadMaxima(), parametros);
 		LanzadorDeException.verificarCapacidades(data.getCapacidadMinima(), data.getCapacidadMaxima());
 		LanzadorDeException.verificarProfesor(profesor);
 		LanzadorDeException.verificarEstadoGrupo(data.getEstado());
 		LanzadorDeException.verificarAsignatura(data.getAsignatura());
 		LanzadorDeException.verificarSalon(data.getSalon());
-		LanzadorDeException.verificarSesiones(sesiones.size());
-		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima());
+		LanzadorDeException.verificarSesiones(sesiones.size(), parametros);
+		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima(), parametros);
 		LanzadorDeException.verificarCuposInscritos(data.getInscritos(), data.getCapacidadMaxima());
 		LanzadorDeException.verificarCapacidadSalon(salon.getCapacidad(), data.getCapacidadMaxima());
 		LanzadorDeException.verificarRequisitosSalon(asignatura.isRequiereComputadores(), salon.isTieneComputadores(),
 				asignatura.isRequiereSillasMoviles(), salon.isTieneSillasMoviles());
 		LanzadorDeException.verificarSesionesFrecuencia(sesiones.size(), asignatura.getFrecuenciaSemanal());
-		LanzadorDeException.verificarSesionesGrupo(sesiones);
+		LanzadorDeException.verificarSesionesGrupo(sesiones, parametros);
 		LanzadorDeException.verificarDiasSesiones(sesiones);
 		LanzadorDeException.verificarProfesorCalificado(asignatura.getEspecialidadRequerida(),
 				profesor.getEspecialidades());

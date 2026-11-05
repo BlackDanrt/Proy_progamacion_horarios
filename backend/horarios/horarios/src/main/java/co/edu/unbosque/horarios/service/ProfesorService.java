@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
+import co.edu.unbosque.horarios.dto.ParametrosSistemaDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.entity.Profesor;
@@ -51,6 +52,9 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+	
+	@Autowired
+	private ParametrosSistemaService parametrosSistemaService;
 
 	public ProfesorService() {
 		// Constructor vacío
@@ -468,6 +472,8 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 	@Transactional
 	public boolean reemplazarDisponibilidadHoraria(long idProfesor, List<FranjaHorariaDTO> franjasDTO) {
 
+		ParametrosSistemaDTO parametros = parametrosSistemaService.get();
+		
 		LanzadorDeException.verificarId(idProfesor);
 
 		Optional<Profesor> encontrado = profesorRep.findById(idProfesor);
@@ -484,7 +490,7 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 				LanzadorDeException.verificarDia(franja.getDia());
 				LanzadorDeException.verificarHorario(franja.getHoraInicio(), franja.getHoraFin());
 				LanzadorDeException.verificarRangoHorarioInstitucional(franja.getDia(), franja.getHoraInicio(),
-						franja.getHoraFin());
+						franja.getHoraFin(), parametros);
 				franjas.add(new FranjaHoraria(franja.getDia(), franja.getHoraInicio(), franja.getHoraFin()));
 			}
 		}

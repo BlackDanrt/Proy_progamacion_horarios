@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 
 import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
+import co.edu.unbosque.horarios.dto.ParametrosSistemaDTO;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.repository.FranjaHorariaRepository;
+import co.edu.unbosque.horarios.repository.ParametrosSistemaRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.Dia;
 import co.edu.unbosque.horarios.util.enums.Servicio;
@@ -35,6 +37,9 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 	
 	@Autowired
 	private ModelMapper mapper;
+	
+	@Autowired
+	private ParametrosSistemaService parametrosSistemaService;
 
 	public FranjaHorariaService() {
 	}
@@ -70,6 +75,8 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 	@Override
 	public int create(FranjaHorariaDTO data) {
 
+		ParametrosSistemaDTO parametros = parametrosSistemaService.get();
+		
 		LanzadorDeException.verificarFranjaHoraria(data);
 
 		LanzadorDeException.verificarDia(data.getDia());
@@ -85,11 +92,11 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 				data.getHoraFin());
 		
 		LanzadorDeException.verificarRangoHorarioInstitucional(
-				data.getDia(), data.getHoraInicio(), data.getHoraFin());
+				data.getDia(), data.getHoraInicio(), data.getHoraFin(),parametros);
 		LanzadorDeException.verificarBloqueAlmuerzo(
-				data.getHoraInicio(), data.getHoraFin());
+				data.getHoraInicio(), data.getHoraFin(), parametros);
 		LanzadorDeException.verificarDuracionSesion(
-				data.getHoraInicio(), data.getHoraFin());
+				data.getHoraInicio(), data.getHoraFin(), parametros);
 		
 		FranjaHoraria entity =
 				mapper.map(data, FranjaHoraria.class);
@@ -162,6 +169,8 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 			Long id,
 			FranjaHorariaDTO data) {
 
+		ParametrosSistemaDTO parametros = parametrosSistemaService.get();
+		
 		LanzadorDeException.verificarId(id);
 
 		LanzadorDeException.verificarFranjaHoraria(data);
@@ -179,11 +188,11 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 				data.getHoraFin());
 		
 		LanzadorDeException.verificarRangoHorarioInstitucional(
-				data.getDia(), data.getHoraInicio(), data.getHoraFin());
+				data.getDia(), data.getHoraInicio(), data.getHoraFin(), parametros);
 		LanzadorDeException.verificarBloqueAlmuerzo(
-				data.getHoraInicio(), data.getHoraFin());
+				data.getHoraInicio(), data.getHoraFin(), parametros);
 		LanzadorDeException.verificarDuracionSesion(
-				data.getHoraInicio(), data.getHoraFin());
+				data.getHoraInicio(), data.getHoraFin(), parametros);
 
 		Optional<FranjaHoraria> encontrado =
 				franjaHorariaRep.findById(id);

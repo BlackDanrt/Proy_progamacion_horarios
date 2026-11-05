@@ -54,13 +54,11 @@ public class Grupo {
 	/**
 	 * Cantidad mínima de estudiantes permitida para el grupo.
 	 */
-	@Min(value = 1, message = "La capacidad mínima debe ser al menos 1")
 	private int capacidadMinima;
 
 	/**
 	 * Cantidad máxima de estudiantes permitida para el grupo.
 	 */
-	@Max(value = 44, message = "La capacidad máxima es de 44")
 	private int capacidadMaxima;
 
 	/**
@@ -124,8 +122,8 @@ public class Grupo {
 	 * @param estado          estado actual del grupo.
 	 */
 	public Grupo(Asignatura asignatura, int numeroGrupo,
-			@Min(value = 1, message = "La capacidad mínima debe ser al menos 1") int capacidadMinima,
-			@Min(value = 1, message = "La capacidad máxima debe ser al menos 1") int capacidadMaxima, Profesor profesor,
+			int capacidadMinima,
+			int capacidadMaxima, Profesor profesor,
 			Salon salon, List<FranjaHoraria> sesiones, EstadoGrupo estado) {
 		super();
 		this.asignatura = asignatura;
