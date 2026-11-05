@@ -65,7 +65,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 
 		LanzadorDeException.verificarAsignatura(data);
 
-		LanzadorDeException.verificarNombre(data.getNombre());
+		LanzadorDeException.verificarNombreAsignatura(data.getNombre());
 		LanzadorDeException.verificarNumCreditos(data.getNumCreditos());
 		LanzadorDeException.verificarFrecuenciaSemanal(data.getFrecuenciaSemanal());
 
@@ -132,7 +132,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		LanzadorDeException.verificarId(id);
 		LanzadorDeException.verificarAsignatura(data);
 
-		LanzadorDeException.verificarNombre(data.getNombre());
+		LanzadorDeException.verificarNombreAsignatura(data.getNombre());
 		LanzadorDeException.verificarNumCreditos(data.getNumCreditos());
 		LanzadorDeException.verificarFrecuenciaSemanal(data.getFrecuenciaSemanal());
 
