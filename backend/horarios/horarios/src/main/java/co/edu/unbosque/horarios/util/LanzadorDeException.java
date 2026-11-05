@@ -106,6 +106,36 @@ public class LanzadorDeException {
 			throw new NombreInvalidoException("El nombre debe tener mínimo una palabra y máximo dos");
 		}
 	}
+	
+	/**
+	 * Verifica que el nombre de la asignatura cumpla con los criterios establecidos.
+	 * El nombre no puede estar vacío, contener espacios dobles ni caracteres
+	 * especiales. Se permiten letras, números y espacios, con un máximo de cinco palabras.
+	 *
+	 * @param nombre nombre de la asignatura que se desea validar.
+	 * @throws NombreInvalidoException si el nombre es nulo, está vacío, contiene
+	 * espacios dobles, caracteres no permitidos o supera las cinco palabras.
+	 */
+	public static void verificarNombreAsignatura(String nombre) {
+
+	    if (nombre == null || nombre.trim().isEmpty()) {
+	        throw new NombreInvalidoException("El nombre de la asignatura no puede estar vacío");
+	    }
+
+	    if (nombre.contains("  ")) {
+	        throw new NombreInvalidoException("El nombre de la asignatura no puede contener espacios dobles");
+	    }
+
+	    if (!nombre.matches("^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]+$")) {
+	        throw new NombreInvalidoException("El nombre de la asignatura solo debe contener letras, números y espacios");
+	    }
+
+	    String[] palabras = nombre.trim().split("\\s+");
+
+	    if (palabras.length > 5) {
+	        throw new NombreInvalidoException("El nombre de la asignatura debe tener máximo cinco palabras");
+	    }
+	}
 
 	/**
 	 * Verifica el apellido: no puede estar vacío, tener espacios dobles ni
