@@ -1,10 +1,9 @@
-import {ChangeDetectorRef, Component, HostListener, inject, signal} from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { TimeoutError, finalize, timeout } from 'rxjs';
 import { AdministradorService } from '../services/administrador.service';
 import { AdministradorModel } from '../models/administrador.model';
-import {AuthAdminService} from '../services/auth-admin';
+import { AuthAdminService } from '../services/auth-admin';
 
 @Component({
   selector: 'app-crear-administrador',
@@ -13,10 +12,8 @@ import {AuthAdminService} from '../services/auth-admin';
   styleUrl: './crear-administrador.css',
 })
 export class CrearAdministrador {
-
   mostrarMenuUsuario = signal<boolean>(false);
 
-  // Propiedades del formulario
   nombre: string = '';
   apellido: string = '';
   documento: number | null = null;
@@ -31,23 +28,22 @@ export class CrearAdministrador {
     visible: false,
     titulo: '',
     mensaje: '',
-    tipo: 'error'
+    tipo: 'error', // 'error' | 'exito'
   };
 
   constructor(
     private router: Router,
-    private authAdminService: AuthAdminService
+    private authAdminService: AuthAdminService,
+    private adminService: AdministradorService,
   ) {}
 
   ngOnInit(): void {}
 
-  // Abrir/Cerrar menú del avatar
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
-    this.mostrarMenuUsuario.update(v => !v);
+    this.mostrarMenuUsuario.update((v) => !v);
   }
 
-  // Cierre de sesión enviando al login
   cerrarSesion(): void {
     this.mostrarMenuUsuario.set(false);
     if (this.authAdminService?.cerrarSesionAdmin) {
@@ -56,7 +52,6 @@ export class CrearAdministrador {
     this.router.navigate(['/loginn']);
   }
 
-  // Ocultar al hacer clic fuera del desplegable
   @HostListener('document:click')
   cerrarMenuAlHacerClicFuera(): void {
     if (this.mostrarMenuUsuario()) {
@@ -73,7 +68,65 @@ export class CrearAdministrador {
   }
 
   guardarAdministrador(): void {
-    // Lógica para guardar
+    // Validaciones básicas antes de enviar
+    if (
+      !this.nombre ||
+      !this.apellido ||
+      !this.documento ||
+      !this.correo ||
+      !this.codigoAdministrador ||
+      !this.contrasenia
+    ) {
+      this.modalError = {
+        visible: true,
+        titulo: 'Campos incompletos',
+        mensaje: 'Por favor, diligencie todos los campos obligatorios.',
+        tipo: 'error',
+      };
+      return;
+    }
+
+    this.estaCargando = true;
+
+    const nuevoAdmin: AdministradorModel = {
+      nombre: this.nombre,
+      apellido: this.apellido,
+      documento: this.documento,
+      correo: this.correo,
+      contrasenia: this.contrasenia,
+      codigoAdministrador: this.codigoAdministrador,
+      estado: this.estado,
+    };
+
+    this.adminService.crearAdministrador(nuevoAdmin).subscribe({
+      next: (response) => {
+        this.estaCargando = false;
+        this.modalError = {
+          visible: true,
+          titulo: '¡Registro Exitoso!',
+          mensaje: 'El administrador ha sido creado correctamente en el sistema.',
+          tipo: 'exito',
+        };
+      },
+      error: (error: HttpErrorResponse) => {
+        this.estaCargando = false;
+        let msjError =
+          'Ocurrió un error al intentar crear el administrador. Verifica tu conexión o intenta nuevamente.';
+
+        if (error.error && typeof error.error === 'string') {
+          msjError = error.error;
+        } else if (error.error && error.error.message) {
+          msjError = error.error.message;
+        }
+
+        this.modalError = {
+          visible: true,
+          titulo: 'Error de validación',
+          mensaje: msjError,
+          tipo: 'error',
+        };
+      },
+    });
   }
 
   cancelar(): void {

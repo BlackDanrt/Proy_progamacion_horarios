@@ -73,47 +73,29 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		List<FranjaHoraria> sesiones;
 	}
 
-	/**
-	 * Cuenta el total de grupos registrados.
-	 *
-	 * @return número total de grupos.
-	 */
 	@Override
 	public long count() {
 		return grupoRep.count();
 	}
 
-	/**
-	 * Verifica si existe un grupo por ID.
-	 *
-	 * @param id identificador del grupo.
-	 * @return true si existe, false si no.
-	 */
 	@Override
 	public boolean exist(Long id) {
-
 		LanzadorDeException.verificarId(id);
-
 		return grupoRep.existsById(id);
 	}
 
-	/**
-	 * Crea un nuevo grupo. Valida cupos, salón, profesor, sesiones y horarios, y
-	 * guarda las sesiones del grupo como franjas horarias nuevas.
-	 *
-	 * @param data información del grupo (asignatura, profesor y salón se
-	 *             identifican por su id).
-	 * @return 0 si se crea correctamente.
-	 */
 	@Override
 	@Transactional
 	public int create(GrupoDTO data) {
-
 		LanzadorDeException.verificarGrupo(data);
 		LanzadorDeException.verificarNumeroGrupo(data.getNumeroGrupo());
-		LanzadorDeException.verificarNumeroGrupoDuplicado(grupoRep.existsByNumeroGrupo(data.getNumeroGrupo()));
 
+		// 1. Cargamos y validamos la asignatura y dependencias primero
 		DatosGrupo datos = validar(data, 0);
+
+		// 2. Validamos duplicidad pero ahora DEPENDIENDO DE LA ASIGNATURA
+		LanzadorDeException.verificarNumeroGrupoDuplicado(
+				grupoRep.existsByNumeroGrupoAndAsignatura(data.getNumeroGrupo(), datos.asignatura));
 
 		Grupo entity = new Grupo(datos.asignatura, data.getNumeroGrupo(), data.getCapacidadMinima(),
 				data.getCapacidadMaxima(), datos.profesor, datos.salon, guardarSesiones(datos.sesiones),
@@ -126,56 +108,27 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		return 0;
 	}
 
-	/**
-	 * Obtiene todos los grupos registrados.
-	 *
-	 * @return lista de grupos en formato DTO.
-	 */
 	@Override
 	public List<GrupoDTO> getAll() {
-
 		Iterable<Grupo> entityList = grupoRep.findAll();
-
 		List<GrupoDTO> dtoList = new ArrayList<>();
-
 		entityList.forEach(entity -> dtoList.add(mapper.map(entity, GrupoDTO.class)));
-
 		return dtoList;
 	}
 
-	/**
-	 * Elimina un grupo por ID.
-	 *
-	 * @param id identificador del grupo.
-	 * @return 0 si se elimina, 1 si no existe.
-	 */
 	@Override
 	public int deleteById(Long id) {
-
 		LanzadorDeException.verificarId(id);
-
 		if (grupoRep.existsById(id)) {
-
 			grupoRep.deleteById(id);
-
 			return 0;
 		}
-
 		return 1;
 	}
 
-	/**
-	 * Actualiza un grupo por ID. Aplica las mismas validaciones que la creación y
-	 * reemplaza las sesiones del grupo.
-	 *
-	 * @param id   identificador del grupo.
-	 * @param data nuevos datos del grupo.
-	 * @return 0 si se actualiza correctamente, 1 si no existe.
-	 */
 	@Override
 	@Transactional
 	public int updateById(Long id, GrupoDTO data) {
-
 		LanzadorDeException.verificarId(id);
 		LanzadorDeException.verificarGrupo(data);
 
@@ -188,14 +141,16 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		LanzadorDeException.verificarNumeroGrupo(data.getNumeroGrupo());
 
 		DatosGrupo datos = validar(data, id);
-
 		Grupo temp = encontrado.get();
 
 		/*
-		 * Solo se verifica duplicado si el número del grupo realmente está cambiando.
+		 * Se verifica duplicidad solo si el número del grupo cambia O si cambiaron la
+		 * asignatura a la que pertenece.
 		 */
-		if (temp.getNumeroGrupo() != data.getNumeroGrupo()) {
-			LanzadorDeException.verificarNumeroGrupoDuplicado(grupoRep.existsByNumeroGrupo(data.getNumeroGrupo()));
+		if (temp.getNumeroGrupo() != data.getNumeroGrupo()
+				|| temp.getAsignatura().getId() != datos.asignatura.getId()) {
+			LanzadorDeException.verificarNumeroGrupoDuplicado(
+					grupoRep.existsByNumeroGrupoAndAsignatura(data.getNumeroGrupo(), datos.asignatura));
 		}
 
 		temp.setAsignatura(datos.asignatura);
@@ -214,36 +169,11 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		return 0;
 	}
 
-	/**
-	 * Busca un grupo por número.
-	 *
-	 * @param numeroGrupo número del grupo.
-	 * @return lista con el grupo encontrado.
-	 */
 	public List<GrupoDTO> findByNumeroGrupo(int numeroGrupo) {
-
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
 
-		Optional<Grupo> encontrado = grupoRep.findByNumeroGrupo(numeroGrupo);
-
-		List<GrupoDTO> dtoList = new ArrayList<>();
-
-		encontrado.ifPresent(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
-
-		return dtoList;
-	}
-
-	/**
-	 * Busca grupos por asignatura.
-	 *
-	 * @param asignaturaDTO asignatura asociada (se usa su id).
-	 * @return lista de grupos encontrados.
-	 */
-	public List<GrupoDTO> findByAsignatura(AsignaturaDTO asignaturaDTO) {
-
-		Asignatura asignatura = mapper.map(asignaturaDTO, Asignatura.class);
-		List<Grupo> encontrados = grupoRep.findByAsignatura(asignatura);
-
+		// Ahora devuelve una lista, porque puede haber un "Grupo 1" en varias materias
+		List<Grupo> encontrados = grupoRep.findByNumeroGrupo(numeroGrupo);
 		List<GrupoDTO> dtoList = new ArrayList<>();
 
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
@@ -251,90 +181,48 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		return dtoList;
 	}
 
-	/**
-	 * Busca grupos por profesor.
-	 *
-	 * @param profesorDTO profesor asociado (se usa su id).
-	 * @return lista de grupos encontrados.
-	 */
-	public List<GrupoDTO> findByProfesor(ProfesorDTO profesorDTO) {
+	public List<GrupoDTO> findByAsignatura(AsignaturaDTO asignaturaDTO) {
+		Asignatura asignatura = mapper.map(asignaturaDTO, Asignatura.class);
+		List<Grupo> encontrados = grupoRep.findByAsignatura(asignatura);
+		List<GrupoDTO> dtoList = new ArrayList<>();
+		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
+		return dtoList;
+	}
 
+	public List<GrupoDTO> findByProfesor(ProfesorDTO profesorDTO) {
 		Profesor profesor = mapper.map(profesorDTO, Profesor.class);
 		LanzadorDeException.verificarProfesor(profesor);
 
 		List<Grupo> encontrados = grupoRep.findByProfesor(profesor);
-
 		List<GrupoDTO> dtoList = new ArrayList<>();
-
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
-
 		return dtoList;
 	}
 
-	/**
-	 * Busca grupos por estado.
-	 *
-	 * @param estado estado del grupo.
-	 * @return lista de grupos encontrados.
-	 */
 	public List<GrupoDTO> findByEstado(EstadoGrupo estado) {
-
 		LanzadorDeException.verificarEstadoGrupo(estado);
 
 		List<Grupo> encontrados = grupoRep.findByEstado(estado);
-
 		List<GrupoDTO> dtoList = new ArrayList<>();
-
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
-
 		return dtoList;
 	}
 
-	/**
-	 * Verifica si un número de grupo ya está registrado.
-	 *
-	 * @param numeroGrupo número del grupo.
-	 * @return true si ya existe, false si no.
-	 */
 	public boolean findNumeroGrupoAlreadyTaken(int numeroGrupo) {
-
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
-
 		return grupoRep.existsByNumeroGrupo(numeroGrupo);
 	}
 
-	/**
-	 * Elimina un grupo mediante su número.
-	 *
-	 * @param numeroGrupo número del grupo.
-	 * @return 0 si se elimina, 1 si no existe.
-	 */
 	public int deleteByNumeroGrupo(int numeroGrupo) {
-
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
-
 		if (grupoRep.existsByNumeroGrupo(numeroGrupo)) {
-
 			grupoRep.deleteByNumeroGrupo(numeroGrupo);
-
 			return 0;
 		}
-
 		return 1;
 	}
 
-	/**
-	 * Carga los datos reales del grupo y aplica todas las reglas de negocio:
-	 * capacidades, cupos, salón (capacidad y características), frecuencia y horario
-	 * de las sesiones, días de las sesiones, especialidad del profesor,
-	 * disponibilidad, cruces de horario y carga horaria del profesor.
-	 *
-	 * @param data     datos recibidos del grupo.
-	 * @param idActual identificador del grupo que se edita (0 si es nuevo).
-	 * @return asignatura, profesor, salón y sesiones validados.
-	 */
 	private DatosGrupo validar(GrupoDTO data, long idActual) {
-
 		DatosGrupo datos = new DatosGrupo();
 		datos.profesor = cargarProfesor(data.getProfesor());
 		datos.salon = cargarSalon(data.getSalon());
@@ -379,12 +267,6 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		return datos;
 	}
 
-	/**
-	 * Guarda las sesiones del grupo como franjas horarias nuevas.
-	 *
-	 * @param sesiones sesiones validadas (sin guardar).
-	 * @return franjas horarias ya guardadas.
-	 */
 	private List<FranjaHoraria> guardarSesiones(List<FranjaHoraria> sesiones) {
 		List<FranjaHoraria> guardadas = new ArrayList<>();
 		for (FranjaHoraria sesion : sesiones) {
@@ -394,54 +276,27 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		return guardadas;
 	}
 
-	/**
-	 * Carga el profesor registrado a partir del DTO recibido.
-	 *
-	 * @param dto profesor recibido (se usa su id).
-	 * @return profesor registrado o null si el DTO es null.
-	 */
 	private Profesor cargarProfesor(ProfesorDTO dto) {
-		if (dto == null) {
+		if (dto == null)
 			return null;
-		}
 		return profesorRep.findById(dto.getId())
 				.orElseThrow(() -> new ProfesorInvalidoException("El profesor indicado no existe"));
 	}
 
-	/**
-	 * Carga el salón registrado a partir del DTO recibido.
-	 *
-	 * @param dto salón recibido (se usa su id).
-	 * @return salón registrado o null si el DTO es null.
-	 */
 	private Salon cargarSalon(SalonDTO dto) {
-		if (dto == null) {
+		if (dto == null)
 			return null;
-		}
 		return salonRep.findById(dto.getId())
 				.orElseThrow(() -> new SalonInvalidoException("El salón indicado no existe"));
 	}
 
-	/**
-	 * Carga la asignatura registrada a partir del DTO recibido.
-	 *
-	 * @param dto asignatura recibida (se usa su id).
-	 * @return asignatura registrada o null si el DTO es null.
-	 */
 	private Asignatura cargarAsignatura(AsignaturaDTO dto) {
-		if (dto == null) {
+		if (dto == null)
 			return null;
-		}
 		return asignaturaRep.findById(dto.getId())
 				.orElseThrow(() -> new AsignaturaInvalidaException("La asignatura indicada no existe"));
 	}
 
-	/**
-	 * Convierte una lista de franjas horarias DTO a entidades.
-	 *
-	 * @param dtos lista de franjas en formato DTO.
-	 * @return lista de franjas en formato entidad (vacía si dtos es null).
-	 */
 	private List<FranjaHoraria> aEntidades(List<FranjaHorariaDTO> dtos) {
 		List<FranjaHoraria> resultado = new ArrayList<>();
 		if (dtos != null) {
