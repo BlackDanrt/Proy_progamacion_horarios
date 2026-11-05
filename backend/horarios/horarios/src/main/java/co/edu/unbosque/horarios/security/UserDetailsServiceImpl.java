@@ -4,6 +4,7 @@ import co.edu.unbosque.horarios.entity.Administrador;
 import co.edu.unbosque.horarios.entity.Profesor;
 import co.edu.unbosque.horarios.repository.AdministradorRepository;
 import co.edu.unbosque.horarios.repository.ProfesorRepository;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -56,16 +57,21 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	 * @param correo correo electrónico del usuario.
 	 * @return detalles del usuario autenticado.
 	 * @throws UsernameNotFoundException si no existe un usuario con el correo dado.
+	 * @throws DisabledException         si el administrador se encuentra inactivo.
 	 */
 	@Override
 	public UserDetails loadUserByUsername(String correo) throws UsernameNotFoundException {
-		// 1. Buscamos si es Administrador
 		Optional<Administrador> admin = adminRepo.findByCorreo(correo);
 		if (admin.isPresent()) {
-			return admin.get();
+			Administrador administrador = admin.get();
+
+			if (!administrador.isEstado()) {
+				throw new DisabledException("Cuenta de administrador inactiva. Contacte a soporte.");
+			}
+
+			return administrador;
 		}
 
-		// 2. Buscamos si es Profesor
 		Optional<Profesor> prof = profesorRepo.findByCorreo(correo);
 		if (prof.isPresent()) {
 			return prof.get();
