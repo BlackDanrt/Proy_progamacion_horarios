@@ -1,6 +1,8 @@
 import { ChangeDetectorRef, Component, HostListener, OnInit, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { ProfesorService } from '../services/profesor.service';
 import { SesionService } from '../services/sesion.service';
 import { Dia } from '../enums/dia.enum';
@@ -32,6 +34,7 @@ interface Mensaje {
 export class RegistroProfesor implements OnInit {
 
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly profesorService = inject(ProfesorService);
   private readonly sesion = inject(SesionService);
@@ -49,6 +52,13 @@ export class RegistroProfesor implements OnInit {
   escalafon: Escalafon = Escalafon.INSTRUCTOR_ASISTENTE;
   horasMaximasSemanales: number = 16;
   especialidadesSeleccionadas: Especialidad[] = [];
+
+  // ---- Modo edición (el administrador edita un profesor existente) ----
+  /** true cuando se llega con ?id=<idProfesor> (desde Gestión de bases de datos). */
+  modoEdicion: boolean = false;
+  private idEdicion: number | null = null;
+  /** Objeto original del back: se usa como base para no perder campos al guardar. */
+  private profesorOriginal: ProfesorModel | null = null;
 
   // ---- Profesor con sesión (modo profesor) ----
   profesor: ProfesorModel | null = null;
@@ -96,6 +106,15 @@ export class RegistroProfesor implements OnInit {
 
     if (!this.esAdministrador) {
       this.cargarProfesorConSesion();
+      return;
+    }
+
+    // Administrador: si viene ?id=..., se edita ese profesor
+    const idParam = this.route.snapshot.queryParamMap.get('id');
+    if (idParam !== null && !isNaN(Number(idParam))) {
+      this.modoEdicion = true;
+      this.idEdicion = Number(idParam);
+      this.cargarProfesorParaEdicion(this.idEdicion);
     }
   }
 
@@ -305,6 +324,33 @@ export class RegistroProfesor implements OnInit {
     });
   }
 
+  /** Carga los datos ya registrados del profesor en el formulario y su malla en la grilla. */
+  private cargarProfesorParaEdicion(id: number): void {
+    this.profesorService.mostrarTodo().subscribe({
+      next: (respuesta) => {
+        const encontrado = (respuesta.body ?? []).find(p => p.id === id) ?? null;
+        if (!encontrado) {
+          this.mostrarMensaje('error', 'No se encontró el profesor que intentas editar.');
+          return;
+        }
+
+        this.profesorOriginal = encontrado;
+        this.nombre = encontrado.nombre ?? '';
+        this.apellido = encontrado.apellido ?? '';
+        this.documento = encontrado.documento != null ? String(encontrado.documento) : '';
+        this.correo = encontrado.correo ?? '';
+        this.contrasenia = ''; // vacía = no se cambia
+        this.tipoVinculacion = encontrado.tipoVinculacion;
+        this.escalafon = encontrado.escalafon;
+        this.horasMaximasSemanales = encontrado.horasMaximasSemanales;
+        this.especialidadesSeleccionadas = [...(encontrado.especialidades ?? [])];
+        this.cargarSeleccion(encontrado.disponibilidadHoraria ?? []);
+        this.cdr.detectChanges();
+      },
+      error: (error: HttpErrorResponse) => this.mostrarError(error),
+    });
+  }
+
   // ------------------------------------------------------------------
   // Guardar
   // ------------------------------------------------------------------
@@ -315,7 +361,9 @@ export class RegistroProfesor implements OnInit {
     }
     this.mensaje = null;
 
-    if (this.esAdministrador) {
+    if (this.esAdministrador && this.modoEdicion) {
+      this.actualizarProfesorExistente();
+    } else if (this.esAdministrador) {
       this.crearProfesor();
     } else {
       this.guardarDisponibilidadPropia();
@@ -361,6 +409,73 @@ export class RegistroProfesor implements OnInit {
         this.guardando = false;
         this.mostrarMensaje('exito', texto);
         this.limpiarFormulario();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.guardando = false;
+        this.mostrarError(error);
+      },
+    });
+  }
+
+  /** Edición por el administrador: actualiza los datos y luego reemplaza la malla horaria. */
+  private actualizarProfesorExistente(): void {
+    if (this.idEdicion === null || !this.profesorOriginal) {
+      this.mostrarMensaje('error', 'Aún no se han cargado los datos del profesor.');
+      return;
+    }
+    if (!this.nombre.trim() || !this.apellido.trim() || !this.documento || !this.correo.trim()) {
+      this.mostrarMensaje('error', 'Completa nombre, apellido, documento y correo.');
+      return;
+    }
+    if (this.especialidadesSeleccionadas.length === 0) {
+      this.mostrarMensaje('error', 'Selecciona al menos una especialidad.');
+      return;
+    }
+    if (this.horasMaximasSemanales < 1 || this.horasMaximasSemanales > this.maximoHoras) {
+      this.mostrarMensaje('error', `Las horas máximas deben estar entre 1 y ${this.maximoHoras}.`);
+      return;
+    }
+    if (this.horasSeleccionadas > this.horasMaximasSemanales) {
+      this.mostrarMensaje('error',
+        `Marcaste ${this.horasSeleccionadas} h de disponibilidad y el máximo es ${this.horasMaximasSemanales} h.`);
+      return;
+    }
+
+    const idProfesor: number = this.idEdicion;
+    const franjas: FranjahorariaModel[] = this.construirFranjas();
+    const teniaMalla: boolean = (this.profesorOriginal.disponibilidadHoraria ?? []).length > 0;
+
+    const profesor = {
+      ...this.profesorOriginal,
+      nombre: this.nombre.trim(),
+      apellido: this.apellido.trim(),
+      documento: Number(this.documento),
+      correo: this.correo.trim(),
+      tipoVinculacion: this.tipoVinculacion,
+      escalafon: this.escalafon,
+      especialidades: this.especialidadesSeleccionadas,
+      horasMaximasSemanales: Number(this.horasMaximasSemanales),
+      disponibilidadHoraria: franjas,
+    } as ProfesorModel;
+
+    // Contraseña: solo se envía si el administrador escribió una nueva
+    if (this.contrasenia) {
+      profesor.contrasenia = this.contrasenia;
+    } else {
+      delete (profesor as any).contrasenia;
+    }
+
+    this.guardando = true;
+    this.profesorService.actualizarInformacionProfesor(profesor).pipe(
+      switchMap(() =>
+        (franjas.length > 0 || teniaMalla)
+          ? this.profesorService.guardarDisponibilidad(idProfesor, franjas)
+          : of('')
+      )
+    ).subscribe({
+      next: () => {
+        this.guardando = false;
+        this.router.navigate(['/gestion-bases-datos']);
       },
       error: (error: HttpErrorResponse) => {
         this.guardando = false;

@@ -27,6 +27,9 @@ export class GestionBasesDatos implements OnInit {
   private administradorService = inject(AdministradorService);
   private router = inject(Router);
 
+  // Objetos originales del back (para no perder campos al actualizar)
+  private originales = new Map<string, any>();
+
   // Estado como signals
   registros = signal<RegistroBaseDatos[]>([]);
   cargando = signal<boolean>(false);
@@ -36,6 +39,13 @@ export class GestionBasesDatos implements OnInit {
   paginaActual = signal<number>(1);
   mostrarModalRegistro = signal<boolean>(false);
   mostrarMenuUsuario = signal<boolean>(false);
+
+  // Estado del modal de edición
+  registroEditando = signal<RegistroBaseDatos | null>(null);
+  editNombre = signal<string>('');
+  editApellido = signal<string>('');
+  editHoras = signal<string>('');
+  guardando = signal<boolean>(false);
 
   // Derivados con computed
   registrosFiltrados = computed(() => {
@@ -112,6 +122,11 @@ export class GestionBasesDatos implements OnInit {
           cargaAsignada: '—'
         }));
 
+        // Guardamos los objetos originales para poder actualizarlos sin perder datos
+        this.originales.clear();
+        profesores.forEach(p => this.originales.set(`Docente-${p.id}`, p));
+        administradores.forEach(a => this.originales.set(`Administrador-${a.id}`, a));
+
         this.registros.set([...docentes, ...admins]);
         this.error.set(mensajes.join(' '));
         this.ajustarPagina();
@@ -185,16 +200,97 @@ export class GestionBasesDatos implements OnInit {
     this.router.navigate(['/consulta-horario'], { queryParams: { id: reg.id } });
   }
 
+  // ───────────────────────── EDITAR ─────────────────────────
+
   actualizarRegistro(reg: RegistroBaseDatos): void {
-    // TODO: llamar al servicio según reg.rol (profesorService / administradorService)
-    console.log('Actualizar registro:', reg.rol, reg.id);
+    // Docente: se edita en la pantalla de registro (datos + malla horaria)
+    if (reg.rol === 'Docente') {
+      this.router.navigate(['/registro-profesor'], { queryParams: { id: reg.id } }); // ajusta la ruta
+      return;
+    }
+
+    // Administrador: modal simple (nombre y apellido)
+    const original = this.originales.get(reg.clave);
+    if (!original) return;
+
+    this.error.set('');
+    this.editNombre.set(original.nombre ?? '');
+    this.editApellido.set(original.apellido ?? '');
+    this.editHoras.set(
+      original.horasMaximasSemanales != null ? String(original.horasMaximasSemanales) : ''
+    );
+    this.registroEditando.set(reg);
   }
 
+  cancelarEdicion(): void {
+    this.registroEditando.set(null);
+  }
+
+  guardarEdicion(): void {
+    const reg = this.registroEditando();
+    if (!reg) return;
+
+    const original = this.originales.get(reg.clave);
+    if (!original) return;
+
+    const nombre = this.editNombre().trim();
+    const apellido = this.editApellido().trim();
+    if (!nombre || !apellido) {
+      this.error.set('El nombre y el apellido son obligatorios.');
+      return;
+    }
+
+    this.guardando.set(true);
+    this.error.set('');
+
+    const onSuccess = () => {
+      this.guardando.set(false);
+      this.registroEditando.set(null);
+      this.cargarRegistros(); // recarga la tabla con los datos del back
+    };
+    const onError = (err: any) => {
+      console.error('Error actualizando registro', err);
+      this.guardando.set(false);
+      this.error.set(`No se pudo actualizar a ${reg.nombre}.`);
+    };
+
+    if (reg.rol === 'Docente') {
+      const horas = this.editHoras().trim();
+      const payload = {
+        ...original,
+        nombre,
+        apellido,
+        horasMaximasSemanales: horas !== '' ? Number(horas) : original.horasMaximasSemanales,
+      };
+      this.profesorService.actualizarInformacionProfesor(payload)
+        .subscribe({ next: onSuccess, error: onError });
+    } else {
+      const payload = { ...original, nombre, apellido };
+      this.administradorService.actualizarAdministrador(payload)
+        .subscribe({ next: onSuccess, error: onError });
+    }
+  }
+
+  // ───────────────────────── ELIMINAR ─────────────────────────
+
   eliminarRegistro(reg: RegistroBaseDatos): void {
-    // TODO: llamar al servicio según reg.rol y, al tener éxito, quitar el registro localmente:
-    // this.registros.update(lista => lista.filter(r => r.clave !== reg.clave));
-    // this.ajustarPagina();
-    console.log('Eliminar registro:', reg.rol, reg.id);
+    if (!confirm(`¿Seguro que deseas eliminar a ${reg.nombre}?`)) return;
+
+    const onSuccess = () => {
+      this.registros.update(lista => lista.filter(r => r.clave !== reg.clave));
+      this.originales.delete(reg.clave);
+      this.ajustarPagina();
+    };
+    const onError = (err: any) => {
+      console.error('Error eliminando registro', err);
+      this.error.set(`No se pudo eliminar a ${reg.nombre}.`);
+    };
+
+    const peticion$ = reg.rol === 'Docente'
+      ? this.profesorService.eliminarProfesor(reg.id)
+      : this.administradorService.eliminarAdministrador(reg.id);
+
+    peticion$.subscribe({ next: onSuccess, error: onError });
   }
 
   toggleMenuUsuario(event: Event): void {

@@ -56,7 +56,7 @@ export const disponibilidadGuard: CanActivateFn = (route: ActivatedRouteSnapshot
       const tieneDisponibilidad: boolean = (profesor?.disponibilidadHoraria ?? []).length > 0;
 
       if (esPantallaRegistro) {
-        return tieneDisponibilidad ? router.parseUrl('/mi-horario') : true;
+        return tieneDisponibilidad ? router.parseUrl('/inicio-docente') : true;
       }
       return tieneDisponibilidad ? true : router.parseUrl('/registro-profesor');
     }),

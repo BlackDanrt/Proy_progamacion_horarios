@@ -15,6 +15,7 @@
   overflow-x: hidden;
 }
 
+/* --- BARRA LATERAL --- */
 .sidebar {
   width: 85px;
   background-color: #17522d;
@@ -94,182 +95,7 @@
   opacity: 0.85;
 }
 
-.main-content {
-  flex: 1;
-  padding: 32px 28px;
-  display: flex;
-  justify-content: center;
-  overflow-y: auto;
-}
-
-.dashboard-container {
-  width: 100%;
-  max-width: 980px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.welcome-card {
-  background: linear-gradient(135deg, #17522d 0%, #27813a 100%);
-  color: #ffffff;
-  border-radius: 12px;
-  padding: 28px;
-  box-shadow: 0 4px 15px rgba(23, 82, 45, 0.15);
-}
-
-.badge-role {
-  display: inline-block;
-  background-color: #f25100;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
-
-.welcome-text h1 {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.welcome-text p {
-  font-size: 14px;
-  opacity: 0.9;
-  margin-bottom: 16px;
-}
-
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.metric-card {
-  background: #ffffff;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #eef2f6;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-}
-
-.metric-title {
-  display: block;
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.metric-value {
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a2b49;
-}
-
-.section-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1a2b49;
-  margin-top: 8px;
-}
-
-.modules-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.module-card {
-  background: #ffffff;
-  padding: 24px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.module-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-  border-color: #f25100;
-}
-
-.module-badge {
-  background-color: #f1f5f9;
-  color: #475569;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
-}
-
-.module-card h3 {
-  font-size: 18px;
-  color: #17522d;
-  margin: 12px 0 8px 0;
-}
-
-.module-card p {
-  font-size: 13px;
-  color: #64748b;
-  line-height: 1.5;
-  flex: 1;
-}
-
-.module-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 18px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #f25100;
-}
-
-.right-decor-panel {
-  width: 140px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding-top: 10px;
-  pointer-events: none;
-  flex-shrink: 0;
-}
-
-.circle-top-outline {
-  width: 160px;
-  height: 160px;
-  border: 3px solid #b2d4c0;
-  border-radius: 50%;
-  position: absolute;
-  top: -40px;
-  right: -50px;
-  opacity: 0.75;
-}
-
-.circle-middle-orange {
-  width: 52px;
-  height: 52px;
-  border: 3px solid #f25100;
-  border-radius: 50%;
-  margin-top: 210px;
-}
-
-.circle-bottom-green {
-  width: 32px;
-  height: 32px;
-  background-color: #17522d;
-  border-radius: 50%;
-  margin-top: 48px;
-}
-
+/* --- MENÚ DESPLEGABLE USUARIO --- */
 .user-menu-container {
   position: relative;
   display: inline-block;
@@ -310,34 +136,156 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* --- CONTENIDO PRINCIPAL CENTRADO --- */
+.main-content {
+  flex: 1;
+  padding: 40px 28px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-y: auto;
+}
+
+.dashboard-container {
+  width: 100%;
+  max-width: 650px; /* Reducido para que la vista única no se vea vacía */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centramos todo horizontalmente */
+  gap: 32px;
+  margin-top: 6vh; /* Lo empujamos un poco hacia abajo para centrar verticalmente */
+}
+
+.welcome-card {
+  width: 100%;
+  background: linear-gradient(135deg, #17522d 0%, #27813a 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 32px 24px;
+  box-shadow: 0 8px 25px rgba(23, 82, 45, 0.15);
+  text-align: center; /* Centramos el texto del banner */
+}
+
+.welcome-text h1 {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2b49;
+  text-align: center; /* Centramos la pregunta */
+  margin-top: 8px;
+}
+
+/* --- TARJETA ÚNICA (FOCALIZADA) --- */
+.modules-grid {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.module-card {
+  background: #ffffff;
+  padding: 36px 24px; /* Un poco más de espacio interno (padding) */
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centramos el contenido dentro de la tarjeta */
+  text-align: center;
+  width: 100%;
+  max-width: 420px; /* Evita que la tarjeta sea gigante */
+}
+
+.module-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+  border-color: #f25100;
+}
+
+.module-badge {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+.module-card h3 {
+  font-size: 20px;
+  color: #17522d;
+  margin: 8px 0;
+}
+
+.module-card p {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.module-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f25100;
+}
+
+/* --- DECORACIÓN DERECHA --- */
+.right-decor-panel {
+  width: 140px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 10px;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.circle-top-outline {
+  width: 160px;
+  height: 160px;
+  border: 3px solid #b2d4c0;
+  border-radius: 50%;
+  position: absolute;
+  top: -40px;
+  right: -50px;
+  opacity: 0.75;
+}
+
+.circle-middle-orange {
+  width: 52px;
+  height: 52px;
+  border: 3px solid #f25100;
+  border-radius: 50%;
+  margin-top: 210px;
+}
+
+.circle-bottom-green {
+  width: 32px;
+  height: 32px;
+  background-color: #17522d;
+  border-radius: 50%;
+  margin-top: 48px;
 }
 
 @media (max-width: 850px) {
-  .metrics-grid {
-    grid-template-columns: 1fr;
-  }
-  .modules-grid {
-    grid-template-columns: 1fr;
-  }
-  .right-decor-panel {
-    display: none;
-  }
+  .right-decor-panel { display: none; }
 }
-
-/* Busca esta parte en tu CSS y reemplázala */
-.modules-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  max-width: 450px; /* Evita que la única tarjeta se haga gigante */
-  gap: 20px;
-}
-
-/* El resto de tu CSS se mantiene exactamente igual (layout-wrapper, sidebar, tarjetas, colores, etc.) */
