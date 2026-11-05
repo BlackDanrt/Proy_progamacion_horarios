@@ -1,6 +1,6 @@
-import {Component, HostListener, OnInit} from '@angular/core';
-import {Router} from '@angular/router';
-import {AuthAdminService} from '../services/auth-admin';
+import { Component, HostListener, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthAdminService } from '../services/auth-admin';
 
 interface TarjetaAcceso {
   titulo: string;
@@ -33,6 +33,7 @@ export class InicioAdministrador implements OnInit {
     { titulo: 'Personas en la Base de Datos', valor: '10', icono: 'database' }
   ];
 
+  // 4 Tarjetas separadas independientes
   accesosDirectos: TarjetaAcceso[] = [
     {
       titulo: 'Gestión de Bases de Datos',
@@ -47,21 +48,38 @@ export class InicioAdministrador implements OnInit {
       icono: 'calendar',
       ruta: '/horarios',
       badge: 'Semana Actual'
+    },
+    {
+      titulo: 'Gestión de Aulas',
+      descripcion: 'Crea, edita o consulta el catálogo de asignaturas y materias curriculares.',
+      icono: 'book',
+      ruta: '/gestion-asignatura',
+      badge: 'Asignaturas'
+    },
+    {
+      titulo: 'Gestión de Salones',
+      descripcion: 'Administra los bloques físicos, salones y capacidad de las aulas institucionales.',
+      icono: 'building',
+      ruta: '/gestion-aulas',
+      badge: 'Infraestructura'
     }
   ];
 
   ngOnInit(): void {
-    // Si no hay sesión de administrador, se regresa al login
     if (!this.authAdminService.estaAutenticadoAdmin()) {
       this.router.navigate(['/loginn']);
       return;
     }
 
-    // Muestra el nombre real guardado al iniciar sesión
     const nombre = this.authAdminService.getNombreAdmin();
     if (nombre) {
       this.nombreAdmin = nombre;
     }
+  }
+
+  // Navegación directa para todas las tarjetas
+  ejecutarAccion(item: TarjetaAcceso): void {
+    this.router.navigate([item.ruta]);
   }
 
   navegarA(ruta: string): void {

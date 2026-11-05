@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
@@ -105,6 +106,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @return 0 si se elimina, 1 si no existe.
 	 */
 	@Override
+	
 	public int deleteById(Long id) {
 
 		LanzadorDeException.verificarId(id);
@@ -238,6 +240,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @param nombre nombre de la asignatura.
 	 * @return 0 si se elimina, 1 si no existe.
 	 */
+	@Transactional
 	public int deleteByNombre(String nombre) {
 
 		LanzadorDeException.verificarNombre(nombre);
