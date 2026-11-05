@@ -81,8 +81,13 @@ export class RegistroProfesor implements OnInit {
 
   private seleccion: Set<string> = new Set<string>();
 
+  /** Duración de una clase en horas. */
+  private readonly HORAS_POR_CLASE = 2;
+
   // ---- Estado de pantalla ----
   mensaje: Mensaje | null = null;
+  /** Aviso que se muestra junto a la grilla cuando un clic no es válido. */
+  avisoGrilla: string | null = null;
   guardando: boolean = false;
   mostrarMenuUsuario: boolean = false;
 
@@ -137,7 +142,7 @@ export class RegistroProfesor implements OnInit {
       filas.push({
         inicio: this.formatoHora(hora),
         fin: this.formatoHora(hora + 1),
-        esAlmuerzo: hora === 12,
+        esAlmuerzo: hora === 13,
       });
     }
     return filas;
@@ -160,15 +165,83 @@ export class RegistroProfesor implements OnInit {
     return this.seleccion.has(this.clave(dia, fila));
   }
 
+  /** Tope de horas semanales: el del formulario (admin) o el del profesor con sesión. */
+  get limiteHoras(): number {
+    return this.esAdministrador
+      ? Number(this.horasMaximasSemanales) || 0
+      : (this.profesor?.horasMaximasSemanales ?? 0);
+  }
+
+  get horasSeleccionadas(): number {
+    return this.seleccion.size;
+  }
+
   toggleCelda(dia: Dia, fila: FilaHora): void {
     if (this.estaDeshabilitada(dia, fila)) {
       return;
     }
-    const clave: string = this.clave(dia, fila);
-    if (this.seleccion.has(clave)) {
-      this.seleccion.delete(clave);
-    } else {
-      this.seleccion.add(clave);
+    this.avisoGrilla = null;
+
+    // Clic sobre un bloque ya marcado: se desmarca completo.
+    if (this.estaSeleccionada(dia, fila)) {
+      this.quitarBloque(dia, fila);
+      return;
+    }
+
+    const problema: string | null = this.validarNuevoBloque(dia, fila);
+    if (problema) {
+      this.avisoGrilla = problema;
+      return;
+    }
+
+    const i: number = this.filas.indexOf(fila);
+    this.seleccion.add(this.clave(dia, this.filas[i]));
+    this.seleccion.add(this.clave(dia, this.filas[i + 1]));
+  }
+
+  /** Devuelve el motivo por el que no se puede marcar el bloque, o null si es válido. */
+  private validarNuevoBloque(dia: Dia, fila: FilaHora): string | null {
+    if (!this.esAdministrador && !this.profesor) {
+      return 'Espera a que cargue tu información.';
+    }
+
+    const i: number = this.filas.indexOf(fila);
+    const siguiente: FilaHora | undefined = this.filas[i + 1];
+
+    if (!siguiente) {
+      return 'Las clases duran 2 horas y no alcanzan a terminar antes de las 10:00 p. m.';
+    }
+    if (this.estaDeshabilitada(dia, siguiente)) {
+      return 'Una clase de 2 horas desde esta hora chocaría con el almuerzo o con el cierre del sábado.';
+    }
+
+    const marcada = (idx: number): boolean =>
+      idx >= 0 && idx < this.filas.length && this.seleccion.has(this.clave(dia, this.filas[idx]));
+
+    // Bloque nuevo = filas i e i+1. No puede tocar otro bloque (ni antes ni después).
+    if (marcada(i - 1) || marcada(i + 1) || marcada(i + 2)) {
+      return 'No puedes tener clases seguidas: deja al menos 1 hora libre entre bloques.';
+    }
+
+    if (this.horasSeleccionadas + this.HORAS_POR_CLASE > this.limiteHoras) {
+      return `No puedes superar tus horas máximas por semana (${this.limiteHoras} h).`;
+    }
+    return null;
+  }
+
+  /** Quita de la grilla el bloque (horas seguidas) al que pertenece la celda. */
+  private quitarBloque(dia: Dia, fila: FilaHora): void {
+    const marcada = (idx: number): boolean =>
+      idx >= 0 && idx < this.filas.length && this.seleccion.has(this.clave(dia, this.filas[idx]));
+
+    const i: number = this.filas.indexOf(fila);
+    let desde: number = i;
+    let hasta: number = i;
+    while (marcada(desde - 1)) desde--;
+    while (marcada(hasta + 1)) hasta++;
+
+    for (let k = desde; k <= hasta; k++) {
+      this.seleccion.delete(this.clave(dia, this.filas[k]));
     }
   }
 
@@ -263,6 +336,11 @@ export class RegistroProfesor implements OnInit {
       this.mostrarMensaje('error', `Las horas máximas deben estar entre 1 y ${this.maximoHoras}.`);
       return;
     }
+    if (this.horasSeleccionadas > this.horasMaximasSemanales) {
+      this.mostrarMensaje('error',
+        `Marcaste ${this.horasSeleccionadas} h de disponibilidad y el máximo es ${this.horasMaximasSemanales} h.`);
+      return;
+    }
 
     const profesor: ProfesorModel = {
       nombre: this.nombre.trim(),
@@ -303,12 +381,17 @@ export class RegistroProfesor implements OnInit {
       this.mostrarMensaje('error', 'Marca al menos una hora de disponibilidad.');
       return;
     }
+    if (this.horasSeleccionadas > this.limiteHoras) {
+      this.mostrarMensaje('error',
+        `Marcaste ${this.horasSeleccionadas} h y tu máximo semanal es ${this.limiteHoras} h. Quita algunos bloques.`);
+      return;
+    }
 
     this.guardando = true;
     this.profesorService.guardarDisponibilidad(id, franjas).subscribe({
-      next: (texto: string) => {
+      next: () => {
         this.guardando = false;
-        this.mostrarMensaje('exito', texto);
+        this.router.navigate(['/inicio-docente']);
       },
       error: (error: HttpErrorResponse) => {
         this.guardando = false;
@@ -328,6 +411,7 @@ export class RegistroProfesor implements OnInit {
     this.horasMaximasSemanales = 16;
     this.especialidadesSeleccionadas = [];
     this.seleccion.clear();
+    this.avisoGrilla = null;
     this.cdr.detectChanges();
   }
 

@@ -1,0 +1,76 @@
+import { Component, HostListener, OnInit, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { SesionService } from '../services/sesion.service';
+import { AuthProfesorService } from '../services/auth-profesor';
+
+interface TarjetaAcceso {
+  titulo: string;
+  descripcion: string;
+  icono: string;
+  ruta: string;
+  badge: string;
+}
+
+@Component({
+  selector: 'app-inicio-docente',
+  standalone: false,
+  templateUrl: './inicio-docente.html',
+  styleUrl: './inicio-docente.css'
+})
+export class InicioDocente implements OnInit {
+  private router = inject(Router);
+  private sesion = inject(SesionService);
+  private authProfesor = inject(AuthProfesorService);
+
+  nombreDocente: string = 'Docente';
+  mostrarMenuUsuario: boolean = false;
+
+  // Única tarjeta habilitada
+  accesosDirectos: TarjetaAcceso[] = [
+    {
+      titulo: 'Mi Horario',
+      descripcion: 'Consulta tus clases asignadas, aulas y bloques para la semana actual.',
+      icono: 'calendar',
+      ruta: '/mi-horario',
+      badge: 'Semana Actual'
+    }
+  ];
+
+  ngOnInit(): void {
+    if (!this.sesion.esProfesor()) {
+      this.router.navigate(['/loginn']);
+      return;
+    }
+    const nombre = this.authProfesor.getNombreProfesor();
+    if (nombre) {
+      this.nombreDocente = nombre;
+    }
+  }
+
+  ejecutarAccion(item: TarjetaAcceso): void {
+    this.router.navigate([item.ruta]);
+  }
+
+  navegarA(ruta: string): void {
+    this.router.navigate([ruta]);
+  }
+
+  toggleMenuUsuario(event: Event): void {
+    event.stopPropagation();
+    this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
+  }
+
+  cerrarSesion(): void {
+    this.mostrarMenuUsuario = false;
+    this.authProfesor.cerrarSesionProfesor();
+    this.sesion.cerrarSesion();
+    this.router.navigate(['/loginn']);
+  }
+
+  @HostListener('document:click')
+  cerrarMenuAlHacerClicFuera(): void {
+    if (this.mostrarMenuUsuario) {
+      this.mostrarMenuUsuario = false;
+    }
+  }
+}
