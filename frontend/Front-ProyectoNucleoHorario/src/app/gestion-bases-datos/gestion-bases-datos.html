@@ -1,4 +1,3 @@
-
 <div class="layout-wrapper">
 
   <aside class="sidebar">
@@ -238,6 +237,31 @@
     </footer>
 
   </main>
+
+  <!-- Modal de edición -->
+  <div class="modal-overlay" *ngIf="registroEditando()" (click)="cancelarEdicion()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h2>Editar {{ registroEditando()!.rol }}</h2>
+
+      <label>Nombre</label>
+      <input type="text" [value]="editNombre()" (input)="editNombre.set($any($event.target).value)">
+
+      <label>Apellido</label>
+      <input type="text" [value]="editApellido()" (input)="editApellido.set($any($event.target).value)">
+
+      <ng-container *ngIf="registroEditando()!.rol === 'Docente'">
+        <label>Horas máximas semanales</label>
+        <input type="number" min="0" [value]="editHoras()" (input)="editHoras.set($any($event.target).value)">
+      </ng-container>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancelar" (click)="cancelarEdicion()">Cancelar</button>
+        <button type="button" class="btn-crear" [disabled]="guardando()" (click)="guardarEdicion()">
+          {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </div>
+  </div>
 
   <app-seleccion-crear-registro
     *ngIf="mostrarModalRegistro()"

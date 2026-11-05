@@ -25,15 +25,20 @@ export class InicioDocente implements OnInit {
   nombreDocente: string = 'Docente';
   mostrarMenuUsuario: boolean = false;
 
-  // Única tarjeta habilitada
   accesosDirectos: TarjetaAcceso[] = [
     {
-      titulo: 'Mi Horario',
-      descripcion: 'Consulta tus clases asignadas, aulas y bloques para la semana actual.',
+      titulo: 'Mi Horario Completo',
+      descripcion: 'Consulta tus clases asignadas, aulas y bloques para toda la semana.',
       icono: 'calendar',
       ruta: '/mi-horario',
       badge: 'Semana Actual'
     }
+  ];
+
+  // Datos de relleno para llenar el espacio de forma útil
+  clasesDeHoy = [
+    { materia: 'Cálculo Diferencial', hora: '08:00 AM - 10:00 AM', salon: 'Bloque A - A402' },
+    { materia: 'Física I', hora: '11:00 AM - 01:00 PM', salon: 'Bloque B - B210' }
   ];
 
   ngOnInit(): void {
