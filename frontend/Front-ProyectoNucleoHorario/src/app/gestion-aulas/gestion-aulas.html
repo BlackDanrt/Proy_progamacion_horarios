@@ -207,9 +207,8 @@
               id="bloque"
               name="bloque"
               [(ngModel)]="nuevoRegistro.bloque"
-              required
-              [disabled]="modoEdicion">
-              <option value="" disabled selected>Seleccionar...</option>
+              required>
+              <option value="" disabled>Seleccionar...</option>
               <option *ngFor="let b of bloques" [value]="b">{{ b }}</option>
             </select>
           </div>
@@ -223,7 +222,6 @@
               min="100"
               [(ngModel)]="nuevoRegistro.numeroSalon"
               required
-              [disabled]="modoEdicion"
               placeholder="Ej: 402">
           </div>
         </div>

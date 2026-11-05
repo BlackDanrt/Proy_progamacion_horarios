@@ -17,6 +17,7 @@ import { ConsultaHorario } from './consulta-horario/consulta-horario';
 import { authInterceptor } from './services/auth.interceptor';
 import { GestionAsignatura } from './gestion-asignatura/gestion-asignatura';
 import { GestionAulas } from './gestion-aulas/gestion-aulas';
+import { InicioDocente } from './inicio-docente/inicio-docente';
 
 @NgModule({
   declarations: [
@@ -31,6 +32,7 @@ import { GestionAulas } from './gestion-aulas/gestion-aulas';
     ConsultaHorario,
     GestionAsignatura,
     GestionAulas,
+    InicioDocente,
   ],
   imports: [BrowserModule, AppRoutingModule, RouterModule, FormsModule],
   providers: [

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import { Router } from '@angular/router';
 import { NgForm } from '@angular/forms';
 import { SalonService } from '../services/salon.service'; // Ajusta la ruta exacta a tu servicio
@@ -38,7 +38,8 @@ export class GestionAulas implements OnInit {
 
   constructor(
     private router: Router,
-    private salonService: SalonService
+    private salonService: SalonService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -61,19 +62,20 @@ export class GestionAulas implements OnInit {
   cargarSalones(): void {
     this.cargando = true;
     this.error = null;
+    this.cdr.markForCheck();
 
     this.salonService.mostrarTodo().subscribe({
       next: (response) => {
-        if (response.body) {
-          this.registros = response.body;
-          this.aplicarFiltro();
-        }
+        this.registros = response.body ?? [];
+        this.aplicarFiltro();
         this.cargando = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('Error al cargar salones:', err);
         this.error = 'No se pudieron cargar los registros de salones desde el servidor.';
         this.cargando = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -127,35 +129,24 @@ export class GestionAulas implements OnInit {
     this.guardando = true;
     this.errorModal = null;
 
-    if (this.modoEdicion) {
-      this.salonService.actualizarSalon(this.nuevoRegistro).subscribe({
-        next: (respuesta) => {
-          alert('Salón actualizado con éxito');
-          this.guardando = false;
-          this.cerrarModalRegistro();
-          this.cargarSalones();
-        },
-        error: (err) => {
-          console.error('Error al actualizar salón:', err);
-          this.errorModal = 'Error al actualizar: ' + (err.error || err.message);
-          this.guardando = false;
-        }
-      });
-    } else {
-      this.salonService.crearSalon(this.nuevoRegistro).subscribe({
-        next: (respuesta) => {
-          alert('Salón creado con éxito');
-          this.guardando = false;
-          this.cerrarModalRegistro();
-          this.cargarSalones();
-        },
-        error: (err) => {
-          console.error('Error al crear salón:', err);
-          this.errorModal = 'Error al crear: ' + (err.error || err.message);
-          this.guardando = false;
-        }
-      });
-    }
+    const peticion = this.modoEdicion
+      ? this.salonService.actualizarSalon(this.nuevoRegistro)
+      : this.salonService.crearSalon(this.nuevoRegistro);
+
+    peticion.subscribe({
+      next: () => {
+        this.guardando = false;
+        this.mostrarModalRegistro = false;
+        this.cdr.markForCheck();
+        this.cargarSalones();
+      },
+      error: (err) => {
+        console.error('Error al guardar salón:', err);
+        this.errorModal = 'Error al guardar: ' + (err.error?.message || err.error || err.message);
+        this.guardando = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   // Modales y Edición
