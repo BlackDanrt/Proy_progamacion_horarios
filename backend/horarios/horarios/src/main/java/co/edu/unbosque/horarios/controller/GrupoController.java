@@ -20,6 +20,7 @@ import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.dto.GrupoDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
 import co.edu.unbosque.horarios.service.GrupoService;
+import co.edu.unbosque.horarios.util.enums.Bloque;
 import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
 
 /**
@@ -133,17 +134,57 @@ public class GrupoController {
 	/**
 	 * Crea un nuevo grupo.
 	 *
-	 * @param grupoDTO datos del grupo a crear.
-	 * @return mensaje de confirmación con estado 201 o el error con estado 400.
+	 * @param profesorId id del profesor.
+	 * @param asignaturaId id de la asignatura.
+	 * @param numeroGrupo número del grupo.
+	 * @param capacidadMinima capacidad mínima.
+	 * @param capacidadMaxima capacidad máxima.
+	 * @param salonId id del salón.
+	 * @param estado estado del grupo.
+	 * @param periodo periodo académico.
+	 * @param inscritos cantidad de estudiantes inscritos.
+	 * @param franjaIds ids de las franjas horarias (opcional).
+	 * @return mensaje de confirmación.
 	 */
 	@PostMapping("/crear")
-	public ResponseEntity<String> crearGrupo(@RequestBody GrupoDTO grupoDTO) {
-		try {
-			grupoSer.create(grupoDTO);
-			return new ResponseEntity<>("Grupo creado con éxito", HttpStatus.CREATED);
-		} catch (Exception e) {
-			return new ResponseEntity<>("Error al crear el grupo: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-		}
+	public ResponseEntity<String> crearGrupo(
+	        @RequestParam long profesorId,
+	        @RequestParam long asignaturaId,
+	        @RequestParam int numeroGrupo,
+	        @RequestParam int capacidadMinima,
+	        @RequestParam int capacidadMaxima,
+	        @RequestParam long salonId,
+	        @RequestParam EstadoGrupo estado,
+	        @RequestParam String periodo,
+	        @RequestParam int inscritos,
+	        @RequestParam(required = false) List<Long> franjaIds) {
+
+	    int resultado;
+	    try {
+	        resultado = grupoSer.create(profesorId, asignaturaId, numeroGrupo,
+	                capacidadMinima, capacidadMaxima, salonId, estado,
+	                periodo, inscritos, franjaIds);
+	    } catch (RuntimeException e) {
+	        return new ResponseEntity<>("Los datos enviados no son válidos: " + e.getMessage(),
+	                HttpStatus.BAD_REQUEST);
+	    }
+
+	    switch (resultado) {
+	        case 0:
+	            return new ResponseEntity<>("Grupo creado con éxito", HttpStatus.CREATED);
+	        case -1:
+	            return new ResponseEntity<>("No existe un profesor con ese id", HttpStatus.NOT_FOUND);
+	        case -2:
+	            return new ResponseEntity<>("No existe la asignatura indicada", HttpStatus.NOT_FOUND);
+	        case -3:
+	            return new ResponseEntity<>("No existe un salón con ese id", HttpStatus.NOT_FOUND);
+	        case -4:
+	            return new ResponseEntity<>("Los datos enviados no son válidos", HttpStatus.BAD_REQUEST);
+	        case -5:
+	            return new ResponseEntity<>("Una o más franjas horarias no existen", HttpStatus.NOT_FOUND);
+	        default:
+	            return new ResponseEntity<>("Error desconocido al crear el grupo", HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
 	}
 
 	/**

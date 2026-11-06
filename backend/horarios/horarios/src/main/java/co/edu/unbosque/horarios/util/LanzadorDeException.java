@@ -48,10 +48,12 @@ import co.edu.unbosque.horarios.exception.HoraInicioInvalidaException;
 import co.edu.unbosque.horarios.exception.HorarioInvalidoException;
 import co.edu.unbosque.horarios.exception.HorasMaximasSemanalesInvalidasException;
 import co.edu.unbosque.horarios.exception.IdInvalidoException;
+import co.edu.unbosque.horarios.exception.InscritosInvalidosException;
 import co.edu.unbosque.horarios.exception.NombreInvalidoException;
 import co.edu.unbosque.horarios.exception.NumeroCreditosInvalidoException;
 import co.edu.unbosque.horarios.exception.NumeroGrupoInvalidoException;
 import co.edu.unbosque.horarios.exception.NumeroSalonInvalidoException;
+import co.edu.unbosque.horarios.exception.PeriodoInvalidoException;
 import co.edu.unbosque.horarios.exception.ProfesorInvalidoException;
 import co.edu.unbosque.horarios.exception.ProfesorNoCalificadoException;
 import co.edu.unbosque.horarios.exception.ProfesorNoDisponibleException;
@@ -527,17 +529,15 @@ public class LanzadorDeException {
 	}
 
 	/**
-	 * Verifica que el número del grupo sea mayor que cero.
-	 *
+	 * Verifica que el número del grupo sea mayor que cero y menor que 800.
+	 * 
 	 * @param numeroGrupo número del grupo a verificar.
-	 * @throws NumeroGrupoInvalidoException si el número no es mayor que cero.
+	 * @throws NumeroGrupoInvalidoException si el número no es mayor que cero o es igual o mayor a 800.
 	 */
 	public static void verificarNumeroGrupo(int numeroGrupo) {
-
-		if (numeroGrupo <= 0) {
-
-			throw new NumeroGrupoInvalidoException("El número del grupo debe ser mayor que cero");
-		}
+	    if (numeroGrupo <= 0 || numeroGrupo >= 800) {
+	        throw new NumeroGrupoInvalidoException("El número del grupo debe ser mayor que cero y menor que 800");
+	    }
 	}
 
 	/**
@@ -1156,4 +1156,44 @@ public class LanzadorDeException {
 			}
 		}
 	}
+	
+
+/**
+ * Verifica que el periodo academico tenga el formato AAAA-N.
+ *
+ * El año debe contener exactamente cuatro digitos y el
+ * periodo debe ser 1 o 2.
+ *
+ * @param periodo periodo academico que se desea validar.
+ * @throws PeriodoInvalidoException si el periodo no cumple
+ *         con el formato establecido.
+ */
+public static void verificarPeriodo(String periodo) {
+
+    if (periodo == null || !periodo.matches("\\d{4}-[12]")) {
+        throw new PeriodoInvalidoException(
+            "El periodo debe tener el formato AAAA-N. Ejemplo: 2026-1 o 2026-2."
+        );
+    }
+}
+
+
+/**
+ * Verifica que la cantidad de inscritos se encuentre
+ * entre 0 y 44, ambos valores incluidos.
+ *
+ * @param inscritos cantidad de inscritos que se desea validar.
+ * @throws InscritosInvalidosException si el valor es menor a 0
+ *         o mayor a 44.
+ */
+public static void verificarInscritos(int inscritos) {
+
+    if (inscritos < 0 || inscritos > 44) {
+        throw new InscritosInvalidosException(
+            "La cantidad de inscritos debe estar entre 0 y 44."
+        );
+    }
+}
+
+
 }

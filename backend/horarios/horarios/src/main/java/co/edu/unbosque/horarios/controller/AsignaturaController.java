@@ -141,21 +141,25 @@ public class AsignaturaController {
 	}
 
 	/**
-	 * Elimina una asignatura por su nombre.
+	 * Elimina una asignatura por su ID.
 	 *
-	 * @param nombre nombre de la asignatura.
+	 * @param id identificador de la asignatura.
 	 * @return mensaje de confirmación con estado 202, 404 si no existe o 400 si hay
 	 *         un error.
 	 */
 	@DeleteMapping("/eliminar")
-	public ResponseEntity<String> eliminarAsignatura(@RequestParam String nombre) {
-		try {
-			int status = asignaturaSer.deleteByNombre(nombre);
-			return (status == 0) ? new ResponseEntity<>("Asignatura eliminado exitosamente", HttpStatus.ACCEPTED)
-					: new ResponseEntity<>("Error al eliminar, asignatura no encontrada", HttpStatus.NOT_FOUND);
-		} catch (Exception e) {
-			return new ResponseEntity<>("Error al eliminar la asignatura: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-		}
+	public ResponseEntity<String> eliminarAsignatura(@RequestParam long id) {
+	    try {
+	        int status = asignaturaSer.deleteById(id);
+
+	        return (status == 0)
+	                ? new ResponseEntity<>("Asignatura eliminada exitosamente", HttpStatus.ACCEPTED)
+	                : new ResponseEntity<>("Error al eliminar, asignatura no encontrada", HttpStatus.NOT_FOUND);
+
+	    } catch (Exception e) {
+	        return new ResponseEntity<>("Error al eliminar la asignatura: " + e.getMessage(),
+	                HttpStatus.BAD_REQUEST);
+	    }
 	}
 
 	/**
