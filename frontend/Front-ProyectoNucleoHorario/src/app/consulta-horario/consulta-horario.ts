@@ -9,6 +9,8 @@ interface Clase {
   inicio: number; // minutos desde las 00:00
   fin: number;
   nombre: string;
+  grupo: string;  // "Grupo 1"
+  aula: string;   // "Aula 313 - Bloque B"
   detalle: string; // "Grupo 1 · Aula 313 - Bloque B"
   color: string;
   bg: string;
@@ -59,6 +61,9 @@ export class ConsultaHorario implements OnInit {
   clases: Clase[] = [];
   leyenda: { nombre: string; color: string }[] = [];
   cuposDisponibles: number = 0;
+
+  /** Cantidad de grupos (clases) asignados al docente. */
+  totalClases: number = 0;
 
   mostrarMenuUsuario: boolean = false;
 
@@ -115,6 +120,7 @@ export class ConsultaHorario implements OnInit {
     this.clases = [];
     this.leyenda = [];
     this.cuposDisponibles = 0;
+    this.totalClases = grupos.length; // clases asignadas = grupos del docente
 
     if (grupos.length === 0) {
       this.docente = null;
@@ -155,6 +161,8 @@ export class ConsultaHorario implements OnInit {
           inicio: this.aMinutos(s.horaInicio),
           fin: this.aMinutos(s.horaFin),
           nombre: nombreAsig,
+          grupo: `Grupo ${g.numeroGrupo}`,
+          aula,
           detalle: `Grupo ${g.numeroGrupo} · ${aula}`,
           color: paleta.color,
           bg: paleta.bg,
@@ -189,12 +197,17 @@ export class ConsultaHorario implements OnInit {
     return String(dia).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 
+  private formatearMinutos(min: number): string {
+    return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+  }
+
   private generarHoras(desde: number, hasta: number): FilaHora[] {
-    const fmt = (min: number): string =>
-      `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
     const filas: FilaHora[] = [];
     for (let m = Math.floor(desde / 60) * 60; m < hasta; m += 60) {
-      filas.push({ etiqueta: `${fmt(m)} - ${fmt(m + 60)}`, inicio: m });
+      filas.push({
+        etiqueta: `${this.formatearMinutos(m)} - ${this.formatearMinutos(m + 60)}`,
+        inicio: m,
+      });
     }
     return filas;
   }
@@ -225,10 +238,6 @@ export class ConsultaHorario implements OnInit {
     this.semanaTexto = `Semana del ${lunes.getDate()} al ${viernes.getDate()} de ${mes}, ${viernes.getFullYear()}`;
   }
 
-  get totalClases(): number {
-    return this.clases.length;
-  }
-
   /** Clase que se cruza con la fila de una hora (inicioFila en minutos). */
   getClase(dia: string, inicioFila: number): Clase | null {
     return this.clases.find(c => c.dia === dia && c.inicio < inicioFila + 60 && c.fin > inicioFila) ?? null;
@@ -251,8 +260,50 @@ export class ConsultaHorario implements OnInit {
     }
   }
 
+  // ---------- exportar ----------
+
+  /** Descarga el horario del docente como CSV (compatible con Excel). */
   exportarHorario(): void {
-    console.log('Exportar horario del docente:', this.docente?.nombre);
+    if (this.clases.length === 0) {
+      this.mensajeVacio = 'No hay clases para exportar.';
+      return;
+    }
+
+    const orden = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+    const nombreDia = (clave: string): string =>
+      this.dias.find(d => d.clave === clave)?.nombre ?? clave.toUpperCase();
+    const esc = (v: string): string => `"${String(v).replace(/"/g, '""')}"`;
+
+    const ordenadas = [...this.clases].sort((a, b) =>
+      orden.indexOf(a.dia) - orden.indexOf(b.dia) || a.inicio - b.inicio
+    );
+
+    const filas: string[][] = [
+      ['Día', 'Hora inicio', 'Hora fin', 'Asignatura', 'Grupo', 'Aula'],
+      ...ordenadas.map(c => [
+        nombreDia(c.dia),
+        this.formatearMinutos(c.inicio),
+        this.formatearMinutos(c.fin),
+        c.nombre,
+        c.grupo,
+        c.aula,
+      ]),
+    ];
+
+    // BOM UTF-8 + separador ";" para que Excel abra bien las tildes
+    const csv = '\uFEFF' + filas.map(f => f.map(esc).join(';')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const nombreArchivo = `horario-${(this.docente?.nombre ?? 'docente')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-').toLowerCase()}.csv`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombreArchivo;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   toggleMenuUsuario(event: Event): void {

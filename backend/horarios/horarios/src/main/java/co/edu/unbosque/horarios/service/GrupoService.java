@@ -1,6 +1,7 @@
 package co.edu.unbosque.horarios.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +29,7 @@ import co.edu.unbosque.horarios.repository.GrupoRepository;
 import co.edu.unbosque.horarios.repository.ProfesorRepository;
 import co.edu.unbosque.horarios.repository.SalonRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
+import co.edu.unbosque.horarios.util.enums.Bloque;
 import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
 
 /**
@@ -106,6 +108,69 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		grupoRep.save(entity);
 
 		return 0;
+	}
+	
+	@Transactional
+	public int create(long profesorId, long asignaturaId, int numeroGrupo, int capacidadMinima,
+			int capacidadMaxima, long salonId, EstadoGrupo estado, String periodo, int inscritos,
+			List<Long> franjaIds) {
+
+		LanzadorDeException.verificarId(profesorId);
+		LanzadorDeException.verificarId(asignaturaId);
+		LanzadorDeException.verificarId(salonId);
+		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
+		LanzadorDeException.verificarCapacidadMinima(capacidadMinima);
+		LanzadorDeException.verificarCapacidadMaxima(capacidadMaxima);
+		LanzadorDeException.verificarEstadoGrupo(estado);
+		LanzadorDeException.verificarPeriodo(periodo);
+		LanzadorDeException.verificarInscritos(inscritos);
+
+		if (franjaIds != null) {
+			for (Long idFranja : franjaIds) {
+				LanzadorDeException.verificarId(idFranja);
+			}
+		}
+
+		Optional<Profesor> profesor = profesorRep.findById(profesorId);
+		if (profesor.isEmpty()) {
+			return -1;
+		}
+
+		Optional<Asignatura> asignatura = asignaturaRep.findById(asignaturaId);
+		if (asignatura.isEmpty()) {
+			return -2;
+		}
+
+		Optional<Salon> salon = salonRep.findById(salonId);
+		if (salon.isEmpty()) {
+			return -3;
+		}
+
+		List<FranjaHorariaDTO> sesiones = new ArrayList<>();
+		if (franjaIds != null && !franjaIds.isEmpty()) {
+			List<FranjaHoraria> franjas = new ArrayList<>();
+			franjaRep.findAllById(franjaIds).forEach(franjas::add);
+
+			// Si alguna franja no existe, se rechaza en lugar de ignorarla en silencio
+			if (franjas.size() != new HashSet<>(franjaIds).size()) {
+				return -5;
+			}
+			franjas.forEach(f -> sesiones.add(mapper.map(f, FranjaHorariaDTO.class)));
+		}
+
+		GrupoDTO dto = new GrupoDTO();
+		dto.setProfesor(mapper.map(profesor.get(), ProfesorDTO.class));
+		dto.setAsignatura(mapper.map(asignatura.get(), AsignaturaDTO.class));
+		dto.setSalon(mapper.map(salon.get(), SalonDTO.class));
+		dto.setSesiones(sesiones);
+		dto.setNumeroGrupo(numeroGrupo);
+		dto.setCapacidadMinima(capacidadMinima);
+		dto.setCapacidadMaxima(capacidadMaxima);
+		dto.setEstado(estado);
+		dto.setPeriodo(periodo);
+		dto.setInscritos(inscritos);
+
+		return create(dto);
 	}
 
 	@Override
