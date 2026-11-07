@@ -464,8 +464,8 @@ public class LanzadorDeException {
 			throw new HoraInicioInvalidaException("La hora de inicio no puede ser antes de las 7:00 a. m.");
 		}
 
-		if (horaInicio.isAfter(LocalTime.of(21, 0))) {
-			throw new HoraInicioInvalidaException("La hora de inicio no puede ser después de las 9:00 p. m.");
+		if (horaInicio.isAfter(LocalTime.of(20, 0))) {
+			throw new HoraInicioInvalidaException("La hora de inicio no puede ser después de las 8:00 p. m.");
 		}
 	}
 
@@ -482,8 +482,8 @@ public class LanzadorDeException {
 			throw new HoraFinInvalidaException("La hora de fin no puede ser nula");
 		}
 
-		if (horaFin.isBefore(LocalTime.of(8, 0))) {
-			throw new HoraFinInvalidaException("La hora de fin no puede ser antes de las 8:00 a. m.");
+		if (horaFin.isBefore(LocalTime.of(9, 0))) {
+			throw new HoraFinInvalidaException("La hora de fin no puede ser antes de las 9:00 a. m.");
 		}
 
 		if (horaFin.isAfter(LocalTime.of(22, 0))) {
@@ -502,16 +502,26 @@ public class LanzadorDeException {
 	 */
 	public static void verificarHorario(LocalTime horaInicio, LocalTime horaFin) {
 
-		if (horaInicio == null || horaFin == null) {
-			throw new HorarioInvalidoException("Las horas de inicio y fin no pueden ser nulas");
-		}
+	    if (horaInicio == null || horaFin == null) {
+	        throw new HorarioInvalidoException("Las horas de inicio y fin no pueden ser nulas");
+	    }
 
-		verificarHoraInicio(horaInicio);
-		verificarHoraFin(horaFin);
+	    verificarHoraInicio(horaInicio);
+	    verificarHoraFin(horaFin);
 
-		if (!horaInicio.isBefore(horaFin)) {
-			throw new HorarioInvalidoException("La hora de inicio debe ser anterior a la hora de fin");
-		}
+	    if (horaInicio.isAfter(LocalTime.of(12, 0)) &&
+	        horaInicio.isBefore(LocalTime.of(13, 0)) ||
+	        horaFin.isAfter(LocalTime.of(12, 0)) &&
+	        horaFin.isBefore(LocalTime.of(13, 0))) {
+
+	        throw new HorarioInvalidoException(
+	            "Las horas de inicio y fin no pueden estar entre las 12:00 p. m. y la 1:00 p. m."
+	        );
+	    }
+
+	    if (!horaInicio.isBefore(horaFin)) {
+	        throw new HorarioInvalidoException("La hora de inicio debe ser anterior a la hora de fin");
+	    }
 	}
 
 	/**
