@@ -900,3 +900,23 @@
   background: repeating-linear-gradient(45deg, #fafafa, #fafafa 8px, #f1f5f9 8px, #f1f5f9 16px);
   cursor: not-allowed;
 }
+
+/* Segunda hora de una clase de 2 h */
+.slot-cell.has-event-cont {
+  padding: 0;
+}
+.event-cont {
+  height: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  border-left: 4px solid #16a34a;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 10px;
+  color: #64748b;
+  pointer-events: none;   /* el arrastre y el drop se manejan en la celda */
+}
+.event-cont em {
+  font-style: normal;
+  opacity: 0.8;
+}
