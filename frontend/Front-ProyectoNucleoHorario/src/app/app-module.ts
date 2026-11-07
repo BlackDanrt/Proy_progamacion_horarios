@@ -19,6 +19,7 @@ import { GestionAsignatura } from './gestion-asignatura/gestion-asignatura';
 import { GestionAulas } from './gestion-aulas/gestion-aulas';
 import { InicioDocente } from './inicio-docente/inicio-docente';
 
+/** Configura el módulo raíz, sus componentes, dependencias y proveedores. */
 @NgModule({
   declarations: [
     App,
@@ -41,4 +42,5 @@ import { InicioDocente } from './inicio-docente/inicio-docente';
   ],
   bootstrap: [App],
 })
+/** Módulo principal que inicializa la aplicación Angular. */
 export class AppModule {}

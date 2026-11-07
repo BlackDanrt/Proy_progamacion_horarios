@@ -4,29 +4,47 @@ import { SesionService } from '../services/sesion.service';
 import { GrupoService } from '../services/grupo.service';
 import { GrupoModel } from '../models/grupo.model';
 
+/** Clase del horario con sus datos de presentación y posición temporal. */
 interface Clase {
+  /** Día normalizado al que pertenece la clase. */
   dia: string;
+  /** Minuto del día en que comienza la clase. */
   inicio: number; // minutos desde las 00:00
+  /** Minuto del día en que termina la clase. */
   fin: number;
+  /** Nombre de la asignatura. */
   nombre: string;
+  /** Etiqueta del grupo al que pertenece la clase. */
   grupo: string;  // "Grupo 1"
+  /** Salón y bloque asignados. */
   aula: string;   // "Aula 313 - Bloque B"
+  /** Texto auxiliar con el grupo y el aula. */
   detalle: string; // "Grupo 1 · Aula 313 - Bloque B"
+  /** Color del texto de la clase en el horario. */
   color: string;
+  /** Color de fondo de la clase en el horario. */
   bg: string;
 }
 
+/** Información del docente cuyo horario se está consultando. */
 interface DocenteInfo {
+  /** Identificador del docente. */
   id: number;
+  /** Nombre completo del docente. */
   nombre: string;
+  /** Especialidades del docente presentadas como texto. */
   especialidad: string;
 }
 
+/** Fila de tiempo que se muestra en la cuadrícula del horario. */
 interface FilaHora {
+  /** Rango horario visible en la fila. */
   etiqueta: string;
+  /** Minuto del día correspondiente al inicio de la fila. */
   inicio: number;
 }
 
+/** Colores alternos para distinguir asignaturas en el horario. */
 const PALETA: { color: string; bg: string }[] = [
   { color: '#16a34a', bg: '#dcfce7' },
   { color: '#2563eb', bg: '#dbeafe' },
@@ -44,27 +62,38 @@ const PALETA: { color: string; bg: string }[] = [
   templateUrl: './consulta-horario.html',
   styleUrl: './consulta-horario.css',
 })
+/** Carga y presenta el horario semanal de un docente. */
 export class ConsultaHorario implements OnInit {
 
   // true = administrador (ruta /consulta-horario), false = docente (ruta /mi-horario)
+  /** Indica si la consulta se realiza desde la vista administrativa. */
   esAdministrador: boolean = true;
 
+  /** Datos del docente consultado, o null si no se pudieron obtener. */
   docente: DocenteInfo | null = null;
 
+  /** Indica si se están cargando los grupos del docente. */
   cargando: boolean = false;
   /** Si tiene valor, se muestra la ventana emergente con el aviso. */
   mensajeVacio: string | null = null;
 
+  /** Días que forman la semana que se presenta en el horario. */
   dias: { clave: string; nombre: string; fecha: string }[] = [];
+  /** Texto descriptivo del rango semanal. */
   semanaTexto: string = '';
+  /** Filas horarias visibles en la cuadrícula. */
   horas: FilaHora[] = [];
+  /** Clases programadas para la semana. */
   clases: Clase[] = [];
+  /** Colores asociados a las asignaturas del horario. */
   leyenda: { nombre: string; color: string }[] = [];
+  /** Total de cupos disponibles en los grupos del docente. */
   cuposDisponibles: number = 0;
 
   /** Cantidad de grupos (clases) asignados al docente. */
   totalClases: number = 0;
 
+  /** Controla la visibilidad del menú de usuario. */
   mostrarMenuUsuario: boolean = false;
 
   private sesion = inject(SesionService);
@@ -73,6 +102,7 @@ export class ConsultaHorario implements OnInit {
 
   constructor(private route: ActivatedRoute, private router: Router) {}
 
+  /** Inicializa la semana, las filas horarias y la consulta del docente. */
   ngOnInit(): void {
     // En /mi-horario entra el docente; en /consulta-horario entra el admin
     this.esAdministrador = this.route.snapshot.data['modo'] !== 'docente';
@@ -95,6 +125,7 @@ export class ConsultaHorario implements OnInit {
 
   // ---------- carga de datos ----------
 
+  /** Solicita al backend los grupos asignados al docente indicado. */
   private cargarHorario(idProfesor: number): void {
     this.cargando = true;
     this.mensajeVacio = null;
@@ -116,6 +147,7 @@ export class ConsultaHorario implements OnInit {
     });
   }
 
+  /** Convierte los grupos en clases, leyenda y datos para la vista. */
   private procesarGrupos(grupos: GrupoModel[], idProfesor: number): void {
     this.clases = [];
     this.leyenda = [];
@@ -184,6 +216,7 @@ export class ConsultaHorario implements OnInit {
   // ---------- helpers ----------
 
   /** Acepta "08:00", "08:00:00" o [8, 0] (por si Jackson serializa LocalTime como arreglo). */
+  /** Convierte una hora serializada a minutos desde la medianoche. */
   private aMinutos(valor: any): number {
     if (Array.isArray(valor)) {
       return valor[0] * 60 + (valor[1] ?? 0);
@@ -193,14 +226,17 @@ export class ConsultaHorario implements OnInit {
   }
 
   /** "MIÉRCOLES" / "MIERCOLES" / "Miercoles" -> "miercoles" */
+  /** Normaliza el nombre de un día para compararlo en el horario. */
   private normalizarDia(dia: string): string {
     return String(dia).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 
+  /** Convierte minutos desde medianoche al formato HH:mm. */
   private formatearMinutos(min: number): string {
     return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
   }
 
+  /** Genera filas horarias entre los límites recibidos. */
   private generarHoras(desde: number, hasta: number): FilaHora[] {
     const filas: FilaHora[] = [];
     for (let m = Math.floor(desde / 60) * 60; m < hasta; m += 60) {
@@ -212,6 +248,7 @@ export class ConsultaHorario implements OnInit {
     return filas;
   }
 
+  /** Construye los días y el rango de fechas de la semana actual. */
   private construirSemana(): void {
     const hoy = new Date();
     const lunes = new Date(hoy);
@@ -239,20 +276,24 @@ export class ConsultaHorario implements OnInit {
   }
 
   /** Clase que se cruza con la fila de una hora (inicioFila en minutos). */
+  /** Busca la clase que se cruza con el día y la fila indicados. */
   getClase(dia: string, inicioFila: number): Clase | null {
     return this.clases.find(c => c.dia === dia && c.inicio < inicioFila + 60 && c.fin > inicioFila) ?? null;
   }
 
   // ---------- navegación y menú ----------
 
+  /** Navega a la ruta indicada. */
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
   }
 
+  /** Vuelve a la pantalla de gestión de bases de datos. */
   volver(): void {
     this.router.navigate(['/gestion-bases-datos']);
   }
 
+  /** Cierra el aviso y, en la vista administrativa, regresa a la gestión. */
   cerrarAviso(): void {
     this.mensajeVacio = null;
     if (this.esAdministrador) {
@@ -306,11 +347,13 @@ export class ConsultaHorario implements OnInit {
     URL.revokeObjectURL(url);
   }
 
+  /** Alterna el menú de usuario y evita propagar el clic. */
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
   }
 
+  /** Cierra la sesión actual y vuelve a la pantalla de acceso. */
   cerrarSesion(): void {
     this.mostrarMenuUsuario = false;
     this.sesion.cerrarSesion();
@@ -318,6 +361,7 @@ export class ConsultaHorario implements OnInit {
   }
 
   @HostListener('document:click')
+  /** Cierra el menú cuando se hace clic fuera de él. */
   cerrarMenuAlHacerClicFuera(): void {
     if (this.mostrarMenuUsuario) {
       this.mostrarMenuUsuario = false;
