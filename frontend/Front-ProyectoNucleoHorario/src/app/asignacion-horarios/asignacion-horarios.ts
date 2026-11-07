@@ -13,7 +13,9 @@ import { SalonModel } from '../models/salon.model';
 const ALMUERZO_INICIO = '12:00';
 const ALMUERZO_FIN = '13:00';
 const SABADO_FIN = '13:00';                 // el sábado solo hay clases hasta la 1:00 PM
-const HORAS_POR_BLOQUE = 2;                 // cada clase dura 2 h y ocupa un bloque del calendario
+const HORAS_POR_CLASE = 2;                  // cada clase dura 2 h
+const MIN_POR_BLOQUE = 60;                  // cada fila del calendario es de 1 h
+const BLOQUES_POR_CLASE = (HORAS_POR_CLASE * 60) / MIN_POR_BLOQUE;   // una clase ocupa 2 filas seguidas
 
 /** Reglas de periodos académicos */
 const PREFIJO_INTERSEMESTRAL = 'Intersemestral';
@@ -135,13 +137,21 @@ export class AsignacionHorarios implements OnInit {
    * por eso se pinta deshabilitado automáticamente (ver esAlmuerzo()).
    */
   horasBloques: string[] = [
-    '07:00 - 09:00',
-    '09:00 - 11:00',
-    '11:00 - 13:00',
-    '14:00 - 16:00',
-    '16:00 - 18:00',
-    '18:00 - 20:00',
-    '20:00 - 22:00'
+    '07:00 - 08:00',
+    '08:00 - 09:00',
+    '09:00 - 10:00',
+    '10:00 - 11:00',
+    '11:00 - 12:00',
+    '12:00 - 13:00',
+    '13:00 - 14:00',
+    '14:00 - 15:00',
+    '15:00 - 16:00',
+    '16:00 - 17:00',
+    '17:00 - 18:00',
+    '18:00 - 19:00',
+    '19:00 - 20:00',
+    '20:00 - 21:00',
+    '21:00 - 22:00',
   ];
 
   ngOnInit(): void {
@@ -349,21 +359,40 @@ export class AsignacionHorarios implements OnInit {
     return ini < this.aMin(ALMUERZO_FIN) && this.aMin(ALMUERZO_INICIO) < fin;
   }
 
-  /** Valida que el bloque no sea de almuerzo ni esté cerrado (sábado después de la 1:00 PM) */
+  /** Filas (bloques de 1 h) que ocupa una clase de 2 h que empieza en `hora`; null si no cabe en el calendario */
+  private bloquesQueOcupa(hora: string): string[] | null {
+    const idx = this.horasBloques.indexOf(hora);
+    if (idx < 0) return null;
+    const bloques = this.horasBloques.slice(idx, idx + BLOQUES_POR_CLASE);
+    return bloques.length === BLOQUES_POR_CLASE ? bloques : null;
+  }
+
+  /** Valida que NINGUNA de las filas que ocupará la clase sea almuerzo ni esté cerrada */
   private validarBloque(dia: string, hora: string): string | null {
-    if (this.esAlmuerzo(hora)) {
-      return `No se pueden asignar clases en la hora de almuerzo (${ALMUERZO_INICIO} - ${ALMUERZO_FIN}).`;
+    const bloques = this.bloquesQueOcupa(hora);
+    if (!bloques) {
+      return `La clase dura ${HORAS_POR_CLASE} horas y no cabe en el calendario a partir de ese horario.`;
     }
-    if (this.esCerrado(dia, hora)) {
+    if (bloques.some(b => this.esAlmuerzo(b))) {
+      return `La clase de ${HORAS_POR_CLASE} horas se cruzaría con el almuerzo (${ALMUERZO_INICIO} - ${ALMUERZO_FIN}).`;
+    }
+    if (bloques.some(b => this.esCerrado(dia, b))) {
       return 'El sábado solo se pueden asignar clases hasta la 1:00 PM.';
     }
     return null;
   }
 
-  /** Busca la clase que ya ocupa ese bloque (ignorando la que se está moviendo) */
+  /** Busca una clase que se solape con la nueva (ignorando la que se está moviendo) */
   private buscarCruce(dia: string, hora: string, ignorar: { dia: string; hora: string } | null): AsignaturaUI | undefined {
-    return this.clasesAsignadas.find(c =>
-      c.dia === dia && c.hora === hora && !(ignorar && c.dia === ignorar.dia && c.hora === ignorar.hora));
+    const ini = this.rango(hora)[0];
+    const fin = ini + HORAS_POR_CLASE * 60;
+    return this.clasesAsignadas.find(c => {
+      if (c.dia !== dia || !c.hora) return false;
+      if (ignorar && c.dia === ignorar.dia && c.hora === ignorar.hora) return false;
+      const cIni = this.rango(c.hora)[0];
+      const cFin = cIni + HORAS_POR_CLASE * 60;
+      return cIni < fin && ini < cFin;
+    });
   }
 
   /* ===================== CARGA DE DATOS ===================== */
@@ -751,6 +780,16 @@ export class AsignacionHorarios implements OnInit {
     return this.clasesAsignadas.find(c => c.dia === dia && c.hora === hora) || null;
   }
 
+  /** Clase que empezó en la fila anterior y sigue ocupando esta celda (su 2.ª hora) */
+  getClaseContinuacion(dia: string, hora: string): AsignaturaUI | null {
+    const ini = this.rango(hora)[0];
+    return this.clasesAsignadas.find(c => {
+      if (c.dia !== dia || !c.hora) return false;
+      const cIni = this.rango(c.hora)[0];
+      return cIni < ini && ini < cIni + HORAS_POR_CLASE * 60;
+    }) || null;
+  }
+
   quitarClase(dia: string, hora: string): void {
     this.clasesAsignadas = this.clasesAsignadas.filter(c => !(c.dia === dia && c.hora === hora));
   }
@@ -834,7 +873,7 @@ export class AsignacionHorarios implements OnInit {
           return {
             dia: c.dia,
             horaInicio: this.aTexto(inicioMin),
-            horaFin: this.aTexto(inicioMin + HORAS_POR_BLOQUE * 60)
+            horaFin: this.aTexto(inicioMin + HORAS_POR_CLASE * 60)
           };
         })
       };
