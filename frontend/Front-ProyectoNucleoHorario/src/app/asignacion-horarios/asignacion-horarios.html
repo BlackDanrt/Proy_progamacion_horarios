@@ -105,6 +105,10 @@
         </div>
 
         <div class="header-controls">
+          <div class="chip-horas" *ngIf="profesorActual"
+               [class.chip-horas-alerta]="horasAsignadas < minimoHoras || horasAsignadas > maximoHoras">
+            <strong>{{ horasAsignadas }} h</strong> asignadas · contrato {{ minimoHoras }}–{{ maximoHoras }} h
+          </div>
           <button type="button" class="btn-guardar-cambios" (click)="guardarCambios()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -270,7 +274,7 @@
 
         <div class="form-group">
           <label>Asignatura (solo sin profesor vinculado)</label>
-          <select [(ngModel)]="materiaSeleccionadaModal" name="materia">
+          <select [(ngModel)]="materiaSeleccionadaModal" name="materia" (change)="onMateriaChange()">
             <option [ngValue]="null" disabled selected>Seleccione una materia</option>
             <option *ngFor="let mat of materiasSinProfesor" [ngValue]="mat">{{ mat.nombre }}</option>
           </select>
@@ -279,18 +283,35 @@
           </small>
         </div>
 
-        <div class="form-group">
-          <label>Número de Grupo</label>
-          <input type="number" [(ngModel)]="numeroGrupoModal" name="numeroGrupo" placeholder="Ej. 1, 2, 3..." min="1"
-                 max="10">
+        <div class="form-group" *ngIf="materiaSeleccionadaModal">
+          <label>Grupo (lo asigna el sistema)</label>
+          <div class="docente-chip">Grupo <strong>{{ numeroGrupoModal }}</strong></div>
+        </div>
+
+        <div class="form-group" *ngIf="materiaSeleccionadaModal">
+          <label>¿La materia necesita…?</label>
+          <label class="check-requisito">
+            <input type="checkbox" [(ngModel)]="necesitaComputadoresModal" name="necesitaComputadores"
+                   [disabled]="!!materiaSeleccionadaModal.requiereComputadores" (change)="onRequisitosChange()">
+            Computadores
+          </label>
+          <label class="check-requisito">
+            <input type="checkbox" [(ngModel)]="necesitaSillasModal" name="necesitaSillas"
+                   [disabled]="!!materiaSeleccionadaModal.requiereSillasMoviles" (change)="onRequisitosChange()">
+            Sillas móviles
+          </label>
+          <small class="modal-ayuda">Solo se muestran los salones que coinciden exactamente con esta selección.</small>
         </div>
 
         <div class="form-group">
           <label>Bloque</label>
           <select [(ngModel)]="bloqueSeleccionadoModal" name="bloque" (change)="onBloqueChange()">
             <option value="" disabled selected>Seleccione un bloque</option>
-            <option *ngFor="let b of listaBloques" [value]="b">{{ b }}</option>
+            <option *ngFor="let b of bloquesFiltrados" [value]="b">{{ b }}</option>
           </select>
+          <small class="modal-ayuda" *ngIf="materiaSeleccionadaModal && bloquesFiltrados.length === 0">
+            No hay salones con esas características.
+          </small>
         </div>
 
         <div class="form-group" *ngIf="bloqueSeleccionadoModal">
@@ -304,7 +325,9 @@
         <div class="form-group">
           <label>Número de estudiantes</label>
           <input type="number" [(ngModel)]="numEstudiantesModal" name="numEstudiantes"
-                 placeholder="Ingrese el número de estudiantes" min="1" max="44">
+                 placeholder="Ingrese el número de estudiantes" [min]="minEstudiantes" [max]="maxEstudiantes">
+          <small class="modal-ayuda">Mínimo {{ minEstudiantes }} y máximo {{ maxEstudiantes }} (40 + 10 % de
+            tolerancia).</small>
         </div>
 
         <div class="modal-actions">

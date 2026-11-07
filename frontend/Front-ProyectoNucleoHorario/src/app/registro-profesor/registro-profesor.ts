@@ -11,6 +11,10 @@ import { Especialidad } from '../enums/especialidad.enum';
 import { TipoVinculacion } from '../enums/tipoViculacion.enum';
 import { FranjahorariaModel } from '../models/franjahoraria.model';
 import { ProfesorModel } from '../models/profesor.model';
+import { reglaDe } from '../utils/reglas-contrato';
+
+/** Ventana principal del administrador, a donde se vuelve tras crear un profesor. */
+const RUTA_PRINCIPAL = '/inicio-administrador';
 
 /** Fila de la grilla de disponibilidad (una hora). */
 interface FilaHora {
@@ -32,7 +36,6 @@ interface Mensaje {
   styleUrl: './registro-profesor.css',
 })
 export class RegistroProfesor implements OnInit {
-
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -50,7 +53,7 @@ export class RegistroProfesor implements OnInit {
   contrasenia: string = '';
   tipoVinculacion: TipoVinculacion = TipoVinculacion.TIEMPO_COMPLETO;
   escalafon: Escalafon = Escalafon.INSTRUCTOR_ASISTENTE;
-  horasMaximasSemanales: number = 16;
+  horasMaximasSemanales: number = 40;
   especialidadesSeleccionadas: Especialidad[] = [];
 
   // ---- Modo edición (el administrador edita un profesor existente) ----
@@ -67,14 +70,6 @@ export class RegistroProfesor implements OnInit {
   tiposVinculacion: TipoVinculacion[] = Object.values(TipoVinculacion);
   escalafones: Escalafon[] = Object.values(Escalafon);
   especialidades: Especialidad[] = Object.values(Especialidad);
-
-  /** Tope de horas semanales según la dedicación (Estatuto Docente, art. 8). */
-  private readonly horasPorVinculacion: Record<TipoVinculacion, number> = {
-    [TipoVinculacion.TIEMPO_COMPLETO]: 40,
-    [TipoVinculacion.TRES_CUARTOS_DE_TIEMPO]: 30,
-    [TipoVinculacion.MEDIO_TIEMPO]: 20,
-    [TipoVinculacion.CUARTO_DE_TIEMPO]: 10,
-  };
 
   // ---- Grilla de disponibilidad ----
   dias: { clave: Dia; nombre: string }[] = [
@@ -99,6 +94,9 @@ export class RegistroProfesor implements OnInit {
   /** Aviso que se muestra junto a la grilla cuando un clic no es válido. */
   avisoGrilla: string | null = null;
   guardando: boolean = false;
+  /** Mensaje de éxito que se muestra en una ventana centrada tras crear un profesor. */
+  exitoCreacion: string | null = null;
+  private temporizadorExito?: ReturnType<typeof setTimeout>;
   mostrarMenuUsuario: boolean = false;
 
   ngOnInit(): void {
@@ -129,17 +127,39 @@ export class RegistroProfesor implements OnInit {
   }
 
   etiquetaVinculacion(tipo: TipoVinculacion): string {
-    return `${this.etiqueta(tipo)} (hasta ${this.horasPorVinculacion[tipo]} h)`;
+    const r = reglaDe(tipo);
+    return `${this.etiqueta(tipo)} (${r.minHoras} a ${r.maxHoras} h)`;
+  }
+
+  /** Las horas de clase salen del contrato: el administrador no las digita. */
+  get minimoHoras(): number {
+    return reglaDe(this.esAdministrador ? this.tipoVinculacion : this.profesor?.tipoVinculacion)
+      .minHoras;
   }
 
   get maximoHoras(): number {
-    return this.horasPorVinculacion[this.tipoVinculacion];
+    return reglaDe(this.esAdministrador ? this.tipoVinculacion : this.profesor?.tipoVinculacion)
+      .maxHoras;
   }
 
   alCambiarVinculacion(): void {
-    if (this.horasMaximasSemanales > this.maximoHoras) {
-      this.horasMaximasSemanales = this.maximoHoras;
+    this.horasMaximasSemanales = this.maximoHoras;
+    // Si ya había marcado más horas de las que permite el nuevo contrato, se avisa
+    if (this.horasSeleccionadas > this.maximoHoras) {
+      this.avisoGrilla = `Con este tipo de vinculación el máximo es ${this.maximoHoras} h y tienes ${this.horasSeleccionadas} h marcadas. Quita algunos bloques.`;
     }
+  }
+
+  /** Valida las horas marcadas contra el contrato. `exigirMinimo` = false permite dejar la malla vacía (el docente la llena en su primer ingreso). */
+  private validarHorasContrato(exigirMinimo: boolean): string | null {
+    const h = this.horasSeleccionadas;
+    if (h > this.maximoHoras) {
+      return `Marcaste ${h} h y el máximo para este contrato es ${this.maximoHoras} h.`;
+    }
+    if (h < this.minimoHoras && (exigirMinimo || h > 0)) {
+      return `Marcaste ${h} h y el mínimo para este contrato es ${this.minimoHoras} h.`;
+    }
+    return null;
   }
 
   toggleEspecialidad(especialidad: Especialidad): void {
@@ -186,9 +206,7 @@ export class RegistroProfesor implements OnInit {
 
   /** Tope de horas semanales: el del formulario (admin) o el del profesor con sesión. */
   get limiteHoras(): number {
-    return this.esAdministrador
-      ? Number(this.horasMaximasSemanales) || 0
-      : (this.profesor?.horasMaximasSemanales ?? 0);
+    return this.maximoHoras;
   }
 
   get horasSeleccionadas(): number {
@@ -269,7 +287,7 @@ export class RegistroProfesor implements OnInit {
     const franjas: FranjahorariaModel[] = [];
 
     for (const dia of this.dias) {
-      const horas: FilaHora[] = this.filas.filter(f => this.estaSeleccionada(dia.clave, f));
+      const horas: FilaHora[] = this.filas.filter((f) => this.estaSeleccionada(dia.clave, f));
       let inicio: string | null = null;
       let fin: string | null = null;
 
@@ -314,7 +332,7 @@ export class RegistroProfesor implements OnInit {
 
     this.profesorService.mostrarTodo().subscribe({
       next: (respuesta) => {
-        this.profesor = (respuesta.body ?? []).find(p => p.id === id) ?? null;
+        this.profesor = (respuesta.body ?? []).find((p) => p.id === id) ?? null;
         if (this.profesor) {
           this.cargarSeleccion(this.profesor.disponibilidadHoraria ?? []);
         }
@@ -328,7 +346,7 @@ export class RegistroProfesor implements OnInit {
   private cargarProfesorParaEdicion(id: number): void {
     this.profesorService.mostrarTodo().subscribe({
       next: (respuesta) => {
-        const encontrado = (respuesta.body ?? []).find(p => p.id === id) ?? null;
+        const encontrado = (respuesta.body ?? []).find((p) => p.id === id) ?? null;
         if (!encontrado) {
           this.mostrarMensaje('error', 'No se encontró el profesor que intentas editar.');
           return;
@@ -342,7 +360,7 @@ export class RegistroProfesor implements OnInit {
         this.contrasenia = ''; // vacía = no se cambia
         this.tipoVinculacion = encontrado.tipoVinculacion;
         this.escalafon = encontrado.escalafon;
-        this.horasMaximasSemanales = encontrado.horasMaximasSemanales;
+        this.horasMaximasSemanales = this.maximoHoras;
         this.especialidadesSeleccionadas = [...(encontrado.especialidades ?? [])];
         this.cargarSeleccion(encontrado.disponibilidadHoraria ?? []);
         this.cdr.detectChanges();
@@ -371,8 +389,13 @@ export class RegistroProfesor implements OnInit {
   }
 
   private crearProfesor(): void {
-    if (!this.nombre.trim() || !this.apellido.trim() || !this.documento || !this.correo.trim()
-      || !this.contrasenia) {
+    if (
+      !this.nombre.trim() ||
+      !this.apellido.trim() ||
+      !this.documento ||
+      !this.correo.trim() ||
+      !this.contrasenia
+    ) {
       this.mostrarMensaje('error', 'Completa nombre, apellido, documento, correo y contraseña.');
       return;
     }
@@ -380,13 +403,9 @@ export class RegistroProfesor implements OnInit {
       this.mostrarMensaje('error', 'Selecciona al menos una especialidad.');
       return;
     }
-    if (this.horasMaximasSemanales < 1 || this.horasMaximasSemanales > this.maximoHoras) {
-      this.mostrarMensaje('error', `Las horas máximas deben estar entre 1 y ${this.maximoHoras}.`);
-      return;
-    }
-    if (this.horasSeleccionadas > this.horasMaximasSemanales) {
-      this.mostrarMensaje('error',
-        `Marcaste ${this.horasSeleccionadas} h de disponibilidad y el máximo es ${this.horasMaximasSemanales} h.`);
+    const errorHoras = this.validarHorasContrato(false);
+    if (errorHoras) {
+      this.mostrarMensaje('error', errorHoras);
       return;
     }
 
@@ -399,7 +418,7 @@ export class RegistroProfesor implements OnInit {
       tipoVinculacion: this.tipoVinculacion,
       escalafon: this.escalafon,
       especialidades: this.especialidadesSeleccionadas,
-      horasMaximasSemanales: Number(this.horasMaximasSemanales),
+      horasMaximasSemanales: this.maximoHoras,
       disponibilidadHoraria: this.construirFranjas(),
     };
 
@@ -407,8 +426,8 @@ export class RegistroProfesor implements OnInit {
     this.profesorService.crearProfesor(profesor).subscribe({
       next: (texto: string) => {
         this.guardando = false;
-        this.mostrarMensaje('exito', texto);
         this.limpiarFormulario();
+        this.mostrarExitoCreacion(texto);
       },
       error: (error: HttpErrorResponse) => {
         this.guardando = false;
@@ -431,13 +450,9 @@ export class RegistroProfesor implements OnInit {
       this.mostrarMensaje('error', 'Selecciona al menos una especialidad.');
       return;
     }
-    if (this.horasMaximasSemanales < 1 || this.horasMaximasSemanales > this.maximoHoras) {
-      this.mostrarMensaje('error', `Las horas máximas deben estar entre 1 y ${this.maximoHoras}.`);
-      return;
-    }
-    if (this.horasSeleccionadas > this.horasMaximasSemanales) {
-      this.mostrarMensaje('error',
-        `Marcaste ${this.horasSeleccionadas} h de disponibilidad y el máximo es ${this.horasMaximasSemanales} h.`);
+    const errorHoras = this.validarHorasContrato(false);
+    if (errorHoras) {
+      this.mostrarMensaje('error', errorHoras);
       return;
     }
 
@@ -454,7 +469,7 @@ export class RegistroProfesor implements OnInit {
       tipoVinculacion: this.tipoVinculacion,
       escalafon: this.escalafon,
       especialidades: this.especialidadesSeleccionadas,
-      horasMaximasSemanales: Number(this.horasMaximasSemanales),
+      horasMaximasSemanales: this.maximoHoras,
       disponibilidadHoraria: franjas,
     } as ProfesorModel;
 
@@ -466,22 +481,25 @@ export class RegistroProfesor implements OnInit {
     }
 
     this.guardando = true;
-    this.profesorService.actualizarInformacionProfesor(profesor).pipe(
-      switchMap(() =>
-        (franjas.length > 0 || teniaMalla)
-          ? this.profesorService.guardarDisponibilidad(idProfesor, franjas)
-          : of('')
+    this.profesorService
+      .actualizarInformacionProfesor(profesor)
+      .pipe(
+        switchMap(() =>
+          franjas.length > 0 || teniaMalla
+            ? this.profesorService.guardarDisponibilidad(idProfesor, franjas)
+            : of(''),
+        ),
       )
-    ).subscribe({
-      next: () => {
-        this.guardando = false;
-        this.router.navigate(['/gestion-bases-datos']);
-      },
-      error: (error: HttpErrorResponse) => {
-        this.guardando = false;
-        this.mostrarError(error);
-      },
-    });
+      .subscribe({
+        next: () => {
+          this.guardando = false;
+          this.router.navigate(['/gestion-bases-datos']);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.guardando = false;
+          this.mostrarError(error);
+        },
+      });
   }
 
   private guardarDisponibilidadPropia(): void {
@@ -496,9 +514,9 @@ export class RegistroProfesor implements OnInit {
       this.mostrarMensaje('error', 'Marca al menos una hora de disponibilidad.');
       return;
     }
-    if (this.horasSeleccionadas > this.limiteHoras) {
-      this.mostrarMensaje('error',
-        `Marcaste ${this.horasSeleccionadas} h y tu máximo semanal es ${this.limiteHoras} h. Quita algunos bloques.`);
+    const errorHorasPropias = this.validarHorasContrato(true);
+    if (errorHorasPropias) {
+      this.mostrarMensaje('error', errorHorasPropias);
       return;
     }
 
@@ -523,11 +541,27 @@ export class RegistroProfesor implements OnInit {
     this.contrasenia = '';
     this.tipoVinculacion = TipoVinculacion.TIEMPO_COMPLETO;
     this.escalafon = Escalafon.INSTRUCTOR_ASISTENTE;
-    this.horasMaximasSemanales = 16;
+    this.horasMaximasSemanales = this.maximoHoras;
     this.especialidadesSeleccionadas = [];
     this.seleccion.clear();
     this.avisoGrilla = null;
     this.cdr.detectChanges();
+  }
+
+  // ------------------------------------------------------------------
+  // Éxito al crear: ventana centrada y regreso a la ventana principal
+  // ------------------------------------------------------------------
+
+  private mostrarExitoCreacion(texto: string): void {
+    this.exitoCreacion = texto && texto.trim() ? texto : 'Se ha creado el profesor con éxito.';
+    this.cdr.detectChanges();
+    this.temporizadorExito = setTimeout(() => this.cerrarExitoCreacion(), 2500);
+  }
+
+  cerrarExitoCreacion(): void {
+    if (this.temporizadorExito) clearTimeout(this.temporizadorExito);
+    this.exitoCreacion = null;
+    this.router.navigate([RUTA_PRINCIPAL]);
   }
 
   // ------------------------------------------------------------------
@@ -544,11 +578,19 @@ export class RegistroProfesor implements OnInit {
     if (error.status === 0) {
       this.mostrarMensaje('error', 'No se pudo conectar con el servidor.');
     } else if (error.status === 403) {
-      this.mostrarMensaje('error', typeof error.error === 'string' && error.error
-        ? error.error : 'No tienes permiso para realizar esta acción.');
+      this.mostrarMensaje(
+        'error',
+        typeof error.error === 'string' && error.error
+          ? error.error
+          : 'No tienes permiso para realizar esta acción.',
+      );
     } else {
-      this.mostrarMensaje('error', typeof error.error === 'string' && error.error
-        ? error.error : `Ocurrió un error (código ${error.status}).`);
+      this.mostrarMensaje(
+        'error',
+        typeof error.error === 'string' && error.error
+          ? error.error
+          : `Ocurrió un error (código ${error.status}).`,
+      );
     }
   }
 

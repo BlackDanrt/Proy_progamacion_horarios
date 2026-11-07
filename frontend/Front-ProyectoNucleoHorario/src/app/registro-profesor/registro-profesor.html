@@ -44,7 +44,8 @@
         </svg>
       </button>
 
-      <button type="button" class="sidebar-btn active" (click)="navegarA('/gestion-bases-datos')" title="Bases de Datos">
+      <button type="button" class="sidebar-btn active" (click)="navegarA('/gestion-bases-datos')"
+              title="Bases de Datos">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
@@ -52,13 +53,14 @@
         </svg>
       </button>
 
-      <button type="button" class="sidebar-btn " (click)="navegarA('/gestion-asignatura')" title="Gestión de aignaturas">
+      <button type="button" class="sidebar-btn " (click)="navegarA('/gestion-asignatura')"
+              title="Gestión de aignaturas">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
         </svg>
       </button>
-      <button type="button" class="sidebar-btn "  (click)="navegarA('/gestion-aulas')" title="Gestión de Salones">
+      <button type="button" class="sidebar-btn " (click)="navegarA('/gestion-aulas')" title="Gestión de Salones">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M3 21h18"></path>
           <path d="M5 21V7l8-4 8 4v14"></path>
@@ -135,7 +137,8 @@
                 <option *ngFor="let tipo of tiposVinculacion" [value]="tipo">{{ etiquetaVinculacion(tipo) }}</option>
               </select>
               <span class="chevron-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline
+                  points="6 9 12 15 18 9"></polyline></svg>
               </span>
             </div>
           </div>
@@ -147,16 +150,16 @@
                 <option *ngFor="let e of escalafones" [value]="e">{{ etiqueta(e) }}</option>
               </select>
               <span class="chevron-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline
+                  points="6 9 12 15 18 9"></polyline></svg>
               </span>
             </div>
           </div>
 
           <div class="form-field">
-            <label>Horas máximas de clase por semana (máx. {{ maximoHoras }})</label>
-            <div class="input-group sin-icono">
-              <input type="number" [(ngModel)]="horasMaximasSemanales" name="horasMaximasSemanales"
-                     min="1" [max]="maximoHoras">
+            <label>Horas de clase por semana (según el contrato)</label>
+            <div class="dato-contrato">
+              Mínimo <strong>{{ minimoHoras }} h</strong> · Máximo <strong>{{ maximoHoras }} h</strong>
             </div>
           </div>
 
@@ -187,10 +190,13 @@
           <div class="dato"><span>Correo</span><strong>{{ profesor.correo }}</strong></div>
           <div class="dato"><span>Vinculación</span><strong>{{ etiqueta(profesor.tipoVinculacion) }}</strong></div>
           <div class="dato"><span>Escalafón</span><strong>{{ etiqueta(profesor.escalafon) }}</strong></div>
-          <div class="dato"><span>Horas máximas por semana</span><strong>{{ profesor.horasMaximasSemanales }}</strong></div>
+          <div class="dato"><span>Horas de clase por semana</span><strong>{{ minimoHoras }} a {{ maximoHoras }}</strong>
+          </div>
           <div class="dato"><span>Especialidades</span>
             <strong>
-              <ng-container *ngFor="let e of profesor.especialidades; let ultimo = last">{{ etiqueta(e) }}{{ ultimo ? '' : ', ' }}</ng-container>
+              <ng-container
+                *ngFor="let e of profesor.especialidades; let ultimo = last">{{ etiqueta(e) }}{{ ultimo ? '' : ', ' }}
+              </ng-container>
             </strong>
           </div>
         </div>
@@ -209,8 +215,10 @@
 
         <div class="horario-toolbar">
           <p class="texto-ayuda">
-            Cada clic marca un bloque de 2 horas. No puedes marcar bloques seguidos (deja al menos 1 hora libre entre ellos),
-            ni superar tus horas máximas por semana. No hay clases de 12:00 a 13:00 y el sábado solo hay clases hasta las 12:00 m.
+            Cada clic marca un bloque de 2 horas. No puedes marcar bloques seguidos (deja al menos 1 hora libre entre
+            ellos).
+            Según tu contrato debes marcar entre {{ minimoHoras }} y {{ maximoHoras }} horas por semana. No hay clases
+            de 12:00 a 13:00 y el sábado solo hay clases hasta las 12:00 m.
           </p>
           <div class="convenciones">
             <div class="item-convencion"><span class="box-disponible"></span><span>Libre</span></div>
@@ -218,6 +226,8 @@
             <div class="item-convencion contador-horas"
                  [class.contador-lleno]="horasSeleccionadas >= limiteHoras">
               <strong>{{ horasSeleccionadas }} / {{ limiteHoras }} h</strong>
+              <span class="contador-min"
+                    [class.contador-min-falta]="horasSeleccionadas < minimoHoras">(mín. {{ minimoHoras }} h)</span>
             </div>
           </div>
         </div>
@@ -268,6 +278,16 @@
 
     </div>
   </main>
+
+  <!-- ÉXITO AL CREAR PROFESOR (centrado) -->
+  <div class="modal-exito-overlay" *ngIf="exitoCreacion" (click)="cerrarExitoCreacion()">
+    <div class="modal-exito" (click)="$event.stopPropagation()">
+      <div class="modal-exito-icono">✓</div>
+      <h2>¡Profesor creado!</h2>
+      <p>{{ exitoCreacion }}</p>
+      <button type="button" class="btn-guardar" (click)="cerrarExitoCreacion()">Aceptar</button>
+    </div>
+  </div>
 
   <aside class="right-decor-panel">
     <div class="circle-top-outline"></div>
