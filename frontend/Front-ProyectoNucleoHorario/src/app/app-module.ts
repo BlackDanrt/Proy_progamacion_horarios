@@ -16,6 +16,7 @@ import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
 import { ConsultaHorario } from './consulta-horario/consulta-horario';
 import { authInterceptor } from './services/auth.interceptor';
 import { Auditoria } from './auditoria/auditoria';
+import { ParametrosSistema } from './parametros-sistema/parametros-sistema';
 
 @NgModule({
   declarations: [
@@ -29,6 +30,7 @@ import { Auditoria } from './auditoria/auditoria';
     AsignacionHorarios,
     ConsultaHorario,
     Auditoria,
+    ParametrosSistema,
   ],
   imports: [BrowserModule, AppRoutingModule, RouterModule, FormsModule],
   providers: [
