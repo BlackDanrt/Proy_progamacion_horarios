@@ -112,5 +112,7 @@ public interface GrupoRepository extends CrudRepository<Grupo, Long> {
 	 * @param asignatura  La asignatura a la que pertenece el grupo.
 	 */
 	public void deleteByNumeroGrupoAndAsignatura(int numeroGrupo, Asignatura asignatura);
+	
+	public boolean existsByNumeroGrupoAndAsignaturaAndPeriodo(int numeroGrupo, Asignatura asignatura, String periodo);
 
 }

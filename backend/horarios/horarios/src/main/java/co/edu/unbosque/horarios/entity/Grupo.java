@@ -94,7 +94,7 @@ public class Grupo {
 	/**
 	 * Periodo académico al que pertenece el grupo, por ejemplo "2026-2".
 	 */
-	@Column(length = 20)
+	@Column(length = 30)
 	private String periodo;
 
 	/**
