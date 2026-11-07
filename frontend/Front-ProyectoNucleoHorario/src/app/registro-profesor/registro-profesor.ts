@@ -161,7 +161,7 @@ export class RegistroProfesor implements OnInit {
       filas.push({
         inicio: this.formatoHora(hora),
         fin: this.formatoHora(hora + 1),
-        esAlmuerzo: hora === 13,
+        esAlmuerzo: hora === 12,
       });
     }
     return filas;
