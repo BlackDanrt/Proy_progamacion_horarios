@@ -12,18 +12,29 @@ import { AuthAdminService } from '../services/auth-admin';
   styleUrl: './crear-administrador.css',
 })
 export class CrearAdministrador {
+  /** Controla la apertura del menú de usuario. */
   mostrarMenuUsuario = signal<boolean>(false);
 
+  /** Nombre del administrador que se va a registrar. */
   nombre: string = '';
+  /** Apellido del administrador que se va a registrar. */
   apellido: string = '';
+  /** Número de documento ingresado en el formulario. */
   documento: number | null = null;
+  /** Correo electrónico del administrador. */
   correo: string = '';
+  /** Código institucional del administrador. */
   codigoAdministrador: string = '';
+  /** Contraseña de acceso del administrador. */
   contrasenia: string = '';
+  /** Estado inicial de la cuenta registrada. */
   estado: boolean = true;
+  /** Controla si la contraseña se muestra en texto legible. */
   mostrarContrasenia: boolean = false;
+  /** Indica si el envío del formulario está en curso. */
   estaCargando: boolean = false;
 
+  /** Estado y contenido del modal de resultado del registro. */
   modalError = {
     visible: false,
     titulo: '',
@@ -37,13 +48,16 @@ export class CrearAdministrador {
     private adminService: AdministradorService,
   ) {}
 
+  /** Inicializa los servicios de navegación y administración. */
   ngOnInit(): void {}
 
+  /** Alterna el menú de usuario y evita propagar el clic al documento. */
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario.update((v) => !v);
   }
 
+  /** Cierra la sesión administrativa y navega a la pantalla de acceso. */
   cerrarSesion(): void {
     this.mostrarMenuUsuario.set(false);
     if (this.authAdminService?.cerrarSesionAdmin) {
@@ -53,20 +67,24 @@ export class CrearAdministrador {
   }
 
   @HostListener('document:click')
+  /** Cierra el menú cuando se hace clic fuera de él. */
   cerrarMenuAlHacerClicFuera(): void {
     if (this.mostrarMenuUsuario()) {
       this.mostrarMenuUsuario.set(false);
     }
   }
 
+  /** Alterna la visibilidad de la contraseña. */
   toggleMostrarContrasenia(): void {
     this.mostrarContrasenia = !this.mostrarContrasenia;
   }
 
+  /** Navega a la ruta indicada. */
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
   }
 
+  /** Valida y envía al backend los datos del nuevo administrador. */
   guardarAdministrador(): void {
     // Validaciones básicas antes de enviar
     if (
@@ -129,14 +147,17 @@ export class CrearAdministrador {
     });
   }
 
+  /** Cancela el registro y vuelve a la gestión de bases de datos. */
   cancelar(): void {
     this.router.navigate(['/gestion-bases-datos']);
   }
 
+  /** Regresa a la pantalla de gestión de bases de datos. */
   volverAGestion(): void {
     this.router.navigate(['/gestion-bases-datos']);
   }
 
+  /** Oculta el modal de confirmación o error. */
   cerrarModal(): void {
     this.modalError.visible = false;
   }

@@ -137,8 +137,8 @@ public class LanzadorDeException {
 
 		String[] palabras = nombre.trim().split("\\s+");
 
-		if (palabras.length > 5) {
-			throw new NombreInvalidoException("El nombre de la asignatura debe tener máximo cinco palabras");
+		if (palabras.length > 10) {
+			throw new NombreInvalidoException("El nombre de la asignatura debe tener máximo diez palabras");
 		}
 	}
 

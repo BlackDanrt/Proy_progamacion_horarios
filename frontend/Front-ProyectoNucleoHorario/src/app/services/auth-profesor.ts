@@ -12,6 +12,7 @@ import { environment } from '../../environments/environment';
 })
 export class AuthProfesorService {
 
+  /** Cliente HTTP para comunicarse con el backend de autenticación. */
   private http = inject(HttpClient);
 
   /** URL base del módulo de autenticación. */
@@ -43,24 +44,29 @@ export class AuthProfesorService {
     );
   }
 
+  /** Recupera el token JWT de la sesión del profesor. */
   getToken(): string | null {
     return localStorage.getItem('profesor_token');
   }
 
+  /** Recupera el nombre completo guardado en la sesión. */
   getNombreProfesor(): string {
     return localStorage.getItem('profesor_nombre') || '';
   }
 
+  /** Construye el encabezado Authorization con el token actual. */
   getHeaders(): HttpHeaders {
     return new HttpHeaders({
       Authorization: `Bearer ${this.getToken()}`
     });
   }
 
+  /** Indica si existe un token de profesor guardado. */
   estaAutenticadoProfesor(): boolean {
     return !!localStorage.getItem('profesor_token');
   }
 
+  /** Elimina los datos de la sesión del profesor. */
   cerrarSesionProfesor() {
     localStorage.removeItem('profesor_token');
     localStorage.removeItem('profesor_rol');

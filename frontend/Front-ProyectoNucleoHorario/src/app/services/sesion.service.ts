@@ -17,14 +17,17 @@ export class SesionService {
     return localStorage.getItem('admin_token') || localStorage.getItem('profesor_token');
   }
 
+  /** Indica si la sesión activa pertenece a un administrador. */
   esAdministrador(): boolean {
     return !!localStorage.getItem('admin_token');
   }
 
+  /** Indica si la sesión activa pertenece a un profesor. */
   esProfesor(): boolean {
     return !!localStorage.getItem('profesor_token') && !this.esAdministrador();
   }
 
+  /** Indica si existe una sesión autenticada. */
   estaAutenticado(): boolean {
     return !!this.getToken();
   }

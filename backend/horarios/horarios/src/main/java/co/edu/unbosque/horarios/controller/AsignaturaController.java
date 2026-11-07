@@ -141,16 +141,16 @@ public class AsignaturaController {
 	}
 
 	/**
-	 * Elimina una asignatura por su ID.
+	 * Elimina una asignatura por su nombre.
 	 *
-	 * @param id identificador de la asignatura.
+	 * @param nombre nombre de la asignatura.
 	 * @return mensaje de confirmación con estado 202, 404 si no existe o 400 si hay
 	 *         un error.
 	 */
 	@DeleteMapping("/eliminar")
-	public ResponseEntity<String> eliminarAsignatura(@RequestParam long id) {
+	public ResponseEntity<String> eliminarAsignatura(@RequestParam String nombre) {
 	    try {
-	        int status = asignaturaSer.deleteById(id);
+	        int status = asignaturaSer.deleteByNombre(nombre);
 
 	        return (status == 0)
 	                ? new ResponseEntity<>("Asignatura eliminada exitosamente", HttpStatus.ACCEPTED)
