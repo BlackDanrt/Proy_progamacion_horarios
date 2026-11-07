@@ -182,6 +182,7 @@
                     <td class="slot-cell"
                         [ngClass]="{
                           'has-event': getClase(d.clave, hora),
+                          'has-event-cont': getClaseContinuacion(d.clave, hora),
                           'slot-cerrado': esCerrado(d.clave, hora),
                           'drag-over': celdaActiva === d.clave + '|' + hora
                         }"
@@ -200,6 +201,11 @@
                         <button type="button" class="btn-quitar" (click)="quitarClaseDesdeCalendario(d.clave, hora)"
                                 title="Quitar">×
                         </button>
+                      </div>
+                      <div class="event-cont" *ngIf="getClaseContinuacion(d.clave, hora) as k"
+                           [style.border-left-color]="k.color"
+                           [style.background-color]="k.bgLight">
+                        {{ k.nombre }} <em>(continúa)</em>
                       </div>
                     </td>
                   </ng-container>
