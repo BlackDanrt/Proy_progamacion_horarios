@@ -27,7 +27,7 @@
           </button>
         </div>
       </div>
-    </div> <!-- Cierre correcto de sidebar-top -->
+    </div>
 
     <!-- Menú de navegación de la barra lateral -->
     <nav class="sidebar-menu">
@@ -55,24 +55,23 @@
         </svg>
       </button>
 
-      <button type="button" class="sidebar-btn " (click)="navegarA('/gestion-asignatura')" title="Gestión de aignaturas">
+      <button type="button" class="sidebar-btn" (click)="navegarA('/gestion-asignatura')" title="Gestión de asignaturas">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
         </svg>
       </button>
 
-      <button type="button" class="sidebar-btn "  (click)="navegarA('/gestion-aulas')" title="Gestión de Salones">
+      <button type="button" class="sidebar-btn" (click)="navegarA('/gestion-aulas')" title="Gestión de Salones">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M3 21h18"></path>
           <path d="M5 21V7l8-4 8 4v14"></path>
         </svg>
       </button>
-
     </nav>
 
     <div class="sidebar-corner-decor"></div>
-  </aside> <!-- Cierre correcto del aside -->
+  </aside>
 
   <!-- CONTENIDO PRINCIPAL -->
   <main class="main-content">
@@ -107,13 +106,11 @@
 
       <div class="workspace-grid">
 
-        <!-- PANEL IZQUIERDO: ASIGNATURAS ARRASTRABLES -->
+        <!-- PANEL IZQUIERDO: ASIGNATURAS ARRASTRABLES (DINÁMICAS) -->
         <div class="asignaturas-sidebar-panel">
           <div class="panel-header-asig">
             <h3>Asignaturas</h3>
-            <button type="button" class="btn-add-asig" (click)="abrirModalCrear()" title="Agregar Asignatura">
-              +
-            </button>
+            <button type="button" class="btn-add-asig" (click)="abrirModalCrear()" title="Agregar Asignatura">+</button>
           </div>
           <div class="asignaturas-list">
             <div class="asignatura-card"
@@ -128,7 +125,6 @@
               <div class="badge-aula" [style.color]="asig.color" [style.background-color]="asig.bgLight">{{ asig.aula }}</div>
               <div class="docente-info">Docente: {{ asig.docente }}</div>
             </div>
-
           </div>
         </div>
 
@@ -165,7 +161,7 @@
                        draggable="true"
                        (dragstart)="onDragStartClase($event, d.clave, hora)">
                     <strong>{{ c.nombre }}</strong>
-                    <span>{{ c.aula }} - {{ c.bloque }}</span>
+                    <span>{{ c.aula }} - {{ c.docente }}</span>
                     <button type="button" class="btn-quitar" (click)="quitarClase(d.clave, hora)" title="Quitar">×</button>
                   </div>
                 </td>
@@ -187,22 +183,25 @@
     </div>
   </main>
 
-  <!-- VENTANA EMERGENTE PARA CREAR ASIGNATURA -->
+  <!-- VENTANA EMERGENTE PARA ASIGNAR / CREAR CLASE -->
   <div class="modal-overlay" *ngIf="mostrarModalAsignatura" (click)="cerrarModalCrear()">
     <div class="modal-card-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>Nueva Asignatura</h3>
+        <h3>Asignar Materia a Docente y Aula</h3>
         <button type="button" class="btn-close-modal" (click)="cerrarModalCrear()">×</button>
       </div>
 
       <form class="modal-form" (submit)="$event.preventDefault()">
-        <!-- Campo Docente -->
+        <!-- Docentes reales desde BD -->
         <div class="form-group">
           <label>Docente</label>
-          <input type="text" [(ngModel)]="nuevaAsignatura.docente" name="docente" placeholder="Nombre del profesor">
+          <select [(ngModel)]="nuevaAsignatura.docente" name="docente">
+            <option value="" disabled selected>Seleccione un profesor</option>
+            <option *ngFor="let prof of listaProfesores" [value]="prof">{{ prof }}</option>
+          </select>
         </div>
 
-        <!-- Campo Materia -->
+        <!-- Asignaturas reales desde BD -->
         <div class="form-group">
           <label>Asignatura</label>
           <select [(ngModel)]="nuevaAsignatura.nombre" name="materia">
@@ -211,7 +210,7 @@
           </select>
         </div>
 
-        <!-- Campo Bloque -->
+        <!-- Bloques reales desde BD -->
         <div class="form-group">
           <label>Bloque</label>
           <select [(ngModel)]="nuevaAsignatura.bloque" name="bloque" (change)="onBloqueChange()">
@@ -220,7 +219,7 @@
           </select>
         </div>
 
-        <!-- Campo Salón (Depende del Bloque seleccionado) -->
+        <!-- Salón dependiente del bloque seleccionado -->
         <div class="form-group" *ngIf="nuevaAsignatura.bloque">
           <label>Salón</label>
           <select [(ngModel)]="nuevaAsignatura.aula" name="salon">
@@ -237,7 +236,7 @@
             name="numEstudiantes"
             placeholder="Ingrese el número de estudiantes"
             min="1"
-            max="40">
+            max="44">
         </div>
 
         <div class="modal-actions">
