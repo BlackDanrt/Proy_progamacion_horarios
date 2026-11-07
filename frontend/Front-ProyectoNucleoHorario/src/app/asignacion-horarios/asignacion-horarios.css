@@ -786,6 +786,25 @@
   margin-bottom: 8px;
 }
 
+.aviso-exito-titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aviso-exito-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .toast-container {
   position: fixed;
   top: 20px;
