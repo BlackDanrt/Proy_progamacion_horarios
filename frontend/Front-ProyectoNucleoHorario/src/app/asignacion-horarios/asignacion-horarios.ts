@@ -29,18 +29,31 @@ const PREFIJO_INTERSEMESTRAL = 'Intersemestral';
 const ANIOS_ADELANTE_PERMITIDOS = 1; // año actual y el siguiente (hoy: 2026 y 2027)
 const CLAVE_PERIODOS_STORAGE = 'horarios.periodosCreados';
 
+/** Representación de una asignatura o grupo en el calendario de asignación. */
 export interface AsignaturaUI {
+  /** Identificador de la asignatura. */
   id?: number;
+  /** Identificador del grupo persistido en el backend. */
   grupoId?: number;
+  /** Nombre de la asignatura. */
   nombre: string;
+  /** Salón asignado. */
   aula: string;
+  /** Bloque del salón asignado. */
   bloque: string;
+  /** Nombre del docente asignado. */
   docente: string;
+  /** Identificador del docente asignado. */
   docenteId?: number;
+  /** Identificador del salón asignado. */
   salonId?: number;
+  /** Número del grupo dentro de la asignatura. */
   numeroGrupo?: number;
+  /** Color usado para identificar la asignatura. */
   color?: string;
+  /** Color claro de fondo usado en el calendario. */
   bgLight?: string;
+  /** Cantidad de estudiantes del grupo. */
   numEstudiantes?: number;
   persistido?: boolean; // true = ya existe en la base de datos
   dia?: string;
@@ -48,22 +61,34 @@ export interface AsignaturaUI {
 }
 
 /** Franja de disponibilidad del profesor ya normalizada (minutos desde las 00:00) */
+/** Intervalo de disponibilidad del docente expresado en minutos del día. */
 export interface FranjaDisponible {
+  /** Día de la semana normalizado. */
   dia: string; // LUNES, MARTES, MIERCOLES...
+  /** Minuto de inicio de la disponibilidad. */
   inicio: number;
+  /** Minuto de fin de la disponibilidad. */
   fin: number;
 }
 
+/** Identificación visible de una columna del calendario. */
 export interface BloqueCalendario {
+  /** Nombre mostrado para el día o bloque. */
   nombre: string;
+  /** Clave utilizada para comparar el bloque. */
   clave: string;
 }
 
+/** Tipos de notificación mostrados en la interfaz. */
 export type TipoToast = 'exito' | 'error' | 'advertencia' | 'info';
 
+/** Notificación temporal visible para el usuario. */
 export interface Toast {
+  /** Identificador usado para cerrar la notificación. */
   id: number;
+  /** Estilo asociado al tipo de mensaje. */
   tipo: TipoToast;
+  /** Texto que se muestra en la notificación. */
   mensaje: string;
 }
 
@@ -73,6 +98,7 @@ export interface Toast {
   templateUrl: './asignacion-horarios.html',
   styleUrls: ['./asignacion-horarios.css'],
 })
+/** Administra la asignación de grupos, docentes, salones y franjas horarias. */
 export class AsignacionHorarios implements OnInit {
   private asignaturaService = inject(AsignaturaService);
   private salonService = inject(SalonService);
@@ -91,6 +117,7 @@ export class AsignacionHorarios implements OnInit {
   toasts: Toast[] = [];
   private toastSeq = 0;
   confirmacion: { titulo: string; mensaje: string; textoAceptar: string } | null = null;
+  avisoExito: { titulo: string; mensaje: string } | null = null;
   private accionAceptar?: () => void;
   private accionCancelar?: () => void;
 
@@ -180,6 +207,7 @@ export class AsignacionHorarios implements OnInit {
     '21:00 - 22:00',
   ];
 
+  /** Inicializa los periodos académicos y carga los datos del backend. */
   ngOnInit(): void {
     this.inicializarPeriodos();
     this.cargarDatosBackend();
@@ -187,16 +215,19 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== NOTIFICACIONES VISUALES ===================== */
 
+  /** Muestra una notificación temporal del tipo indicado. */
   mostrarToast(tipo: TipoToast, mensaje: string, duracionMs: number = 6000): void {
     const id = ++this.toastSeq;
     this.toasts.push({ id, tipo, mensaje });
     setTimeout(() => this.cerrarToast(id), duracionMs);
   }
 
+  /** Cierra la notificación identificada. */
   cerrarToast(id: number): void {
     this.toasts = this.toasts.filter((t) => t.id !== id);
   }
 
+  /** Abre una confirmación y registra las acciones para aceptar o cancelar. */
   pedirConfirmacion(
     titulo: string,
     mensaje: string,
@@ -209,6 +240,7 @@ export class AsignacionHorarios implements OnInit {
     this.accionCancelar = onCancelar;
   }
 
+  /** Ejecuta la acción asociada a la aceptación de la confirmación. */
   aceptarConfirmacion(): void {
     const accion = this.accionAceptar;
     this.confirmacion = null;
@@ -217,12 +249,23 @@ export class AsignacionHorarios implements OnInit {
     if (accion) accion();
   }
 
+  /** Ejecuta la acción asociada a la cancelación de la confirmación. */
   cancelarConfirmacion(): void {
     const accion = this.accionCancelar;
     this.confirmacion = null;
     this.accionAceptar = undefined;
     this.accionCancelar = undefined;
     if (accion) accion();
+  }
+
+  /** Ventana emergente de éxito (misma apariencia que las ventanas de confirmación) */
+  mostrarAvisoExito(titulo: string, mensaje: string): void {
+    this.avisoExito = { titulo, mensaje };
+  }
+
+  /** Cierra la ventana de aviso de éxito. */
+  cerrarAvisoExito(): void {
+    this.avisoExito = null;
   }
 
   /** Obtiene un mensaje corto y legible de un error HTTP (sin volcar el JSON ni el stack trace) */
@@ -251,6 +294,7 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== PERIODOS ACADÉMICOS ===================== */
 
+  /** Construye la lista de periodos permitidos y guardados localmente. */
   private inicializarPeriodos(): void {
     this.aniosPermitidos = [];
     for (let i = 0; i <= ANIOS_ADELANTE_PERMITIDOS; i++) {
@@ -280,12 +324,14 @@ export class AsignacionHorarios implements OnInit {
     return new RegExp(`^(${PREFIJO_INTERSEMESTRAL} )?\\d{4}-[12]$`).test(p);
   }
 
+  /** Añade el periodo si su formato es válido y aún no está registrado. */
   private agregarPeriodoSiNoExiste(p: string): void {
     if (p && this.formatoPeriodoValido(p) && !this.existePeriodo(p)) {
       this.listaPeriodos.push(p);
     }
   }
 
+  /** Indica si el periodo ya aparece en la lista. */
   existePeriodo(p: string): boolean {
     return this.listaPeriodos.some((x) => x.toLowerCase() === p.toLowerCase());
   }
@@ -298,10 +344,12 @@ export class AsignacionHorarios implements OnInit {
     return anio * 100 + sem * 10 + inter;
   }
 
+  /** Ordena los periodos por año, semestre y tipo. */
   private ordenarPeriodos(): void {
     this.listaPeriodos.sort((a, b) => this.clavePeriodo(a) - this.clavePeriodo(b));
   }
 
+  /** Inicializa y abre el formulario para crear un periodo. */
   abrirModalPeriodo(): void {
     this.tipoPeriodoModal = 'SEMESTRAL';
     this.anioPeriodoModal = this.anioActual;
@@ -309,6 +357,7 @@ export class AsignacionHorarios implements OnInit {
     this.mostrarModalPeriodo = true;
   }
 
+  /** Cierra el formulario de creación de periodos. */
   cerrarModalPeriodo(): void {
     this.mostrarModalPeriodo = false;
   }
@@ -318,6 +367,7 @@ export class AsignacionHorarios implements OnInit {
     return this.tipoPeriodoModal === 'INTERSEMESTRAL' ? `${PREFIJO_INTERSEMESTRAL} ${base}` : base;
   }
 
+  /** Valida y agrega el periodo académico seleccionado. */
   crearPeriodo(): void {
     const nombre = this.nombrePeriodoModal;
     const anio = Number(this.anioPeriodoModal);
@@ -361,6 +411,7 @@ export class AsignacionHorarios implements OnInit {
     }
   }
 
+  /** Cambia de periodo, solicitando confirmación si hay cambios pendientes. */
   onPeriodoChange(): void {
     const nuevo = this.periodoSeleccionado;
     if (nuevo === this.periodoActual) return;
@@ -393,17 +444,20 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== UTILIDADES DE HORA ===================== */
 
+  /** Convierte una hora HH:mm a minutos desde medianoche. */
   private aMin(h: string): number {
     const [hh, mm] = h.trim().split(':').map(Number);
     return hh * 60 + (mm || 0);
   }
 
+  /** Convierte minutos desde medianoche a una cadena de hora. */
   private aTexto(min: number): string {
     const hh = String(Math.floor(min / 60)).padStart(2, '0');
     const mm = String(min % 60).padStart(2, '0');
     return `${hh}:${mm}:00`;
   }
 
+  /** Convierte la etiqueta de un bloque en sus minutos de inicio y fin. */
   private rango(bloque: string): [number, number] {
     const [ini, fin] = bloque.split(' - ');
     return [this.aMin(ini), this.aMin(fin)];
@@ -416,6 +470,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** Filas (bloques de 1 h) que ocupa una clase de 2 h que empieza en `hora`; null si no cabe en el calendario */
+  /** Obtiene los bloques horarios consecutivos ocupados por una clase. */
   private bloquesQueOcupa(hora: string): string[] | null {
     const idx = this.horasBloques.indexOf(hora);
     if (idx < 0) return null;
@@ -424,6 +479,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** Valida que NINGUNA de las filas que ocupará la clase sea almuerzo ni esté cerrada */
+  /** Valida que una clase quepa y cumpla almuerzo, cierre y disponibilidad. */
   private validarBloque(dia: string, hora: string): string | null {
     const bloques = this.bloquesQueOcupa(hora);
     if (!bloques) {
@@ -483,6 +539,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** Busca una clase que se solape con la nueva (ignorando la que se está moviendo) */
+  /** Busca una clase que se solape con la posición propuesta. */
   private buscarCruce(
     dia: string,
     hora: string,
@@ -501,9 +558,11 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== HORAS SEGÚN CONTRATO ===================== */
 
+  /** Mínimo semanal de horas permitido por el contrato del docente. */
   get minimoHoras(): number {
     return reglaDe(this.profesorActual?.tipoVinculacion).minHoras;
   }
+  /** Máximo semanal de horas permitido por el contrato del docente. */
   get maximoHoras(): number {
     return reglaDe(this.profesorActual?.tipoVinculacion).maxHoras;
   }
@@ -514,6 +573,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** Especialidades del profesor y de la asignatura como texto comparable */
+  /** Normaliza especialidades para facilitar su comparación. */
   private normEsp(v: any): string[] {
     const arr = Array.isArray(v) ? v : v ? [v] : [];
     return arr.map((x) =>
@@ -530,6 +590,7 @@ export class AsignacionHorarios implements OnInit {
    * true si la asignatura corresponde a alguna especialidad del profesor.
    * Si la asignatura no trae especialidad en el modelo, no se puede filtrar y se permite.
    */
+  /** Indica si la asignatura coincide con las especialidades del docente. */
   private coincideEspecialidad(m: AsignaturaModel): boolean {
     const deMateria = this.normEsp((m as any).especialidad ?? (m as any).especialidades);
     if (deMateria.length === 0) return true;
@@ -539,6 +600,7 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== CARGA DE DATOS ===================== */
 
+  /** Carga las asignaturas, profesores y salones necesarios para asignar horarios. */
   cargarDatosBackend(): void {
     this.asignaturaService.mostrarTodo().subscribe({
       next: (response) => {
@@ -586,6 +648,7 @@ export class AsignacionHorarios implements OnInit {
    * Consulta todos los grupos para saber qué asignaturas ya tienen profesor en el periodo
    * seleccionado y, de paso, descubre los periodos que ya existen en la base de datos.
    */
+  /** Carga los grupos existentes para el periodo seleccionado. */
   cargarGruposGlobales(): void {
     this.grupoService.mostrarTodo().subscribe({
       next: (response: any) => {
@@ -617,6 +680,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** Materias que NO tienen profesor vinculado (ni guardado ni pendiente en pantalla) */
+  /** Materias sin profesor asignado en el periodo seleccionado. */
   get materiasSinProfesor(): AsignaturaModel[] {
     return this.listaMaterias.filter(
       (m) =>
@@ -628,6 +692,7 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== CAMBIO DE DOCENTE ===================== */
 
+  /** Indica si el calendario contiene cambios aún no persistidos. */
   hayCambiosSinGuardar(): boolean {
     return (
       this.clasesAsignadas.some((c) => !c.persistido) ||
@@ -636,6 +701,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** Cambia de profesor (con confirmación si hay cambios sin guardar) y carga sus materias */
+  /** Cambia el docente activo y carga su horario correspondiente. */
   private cambiarDocente(nombre: string): void {
     if (!nombre) {
       this.docenteActual = '';
@@ -667,10 +733,12 @@ export class AsignacionHorarios implements OnInit {
     }
   }
 
+  /** Actualiza la selección de docente según el filtro actual. */
   onDocenteFiltroChange(): void {
     this.cambiarDocente(this.docenteSeleccionFiltro);
   }
 
+  /** Carga el horario y disponibilidad del docente seleccionado. */
   cargarHorarioDocente(nombreDocente: string): void {
     const profObj = this.listaProfesoresObj.find(
       (p) => `${p.nombre} ${p.apellido}` === nombreDocente,
@@ -758,16 +826,19 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== MODAL: ELEGIR PROFESOR ===================== */
 
+  /** Abre la selección de docente para cargar su horario. */
   abrirModalProfesor(): void {
     this.docenteSeleccionadoModal = this.docenteActual || '';
     this.mostrarModalProfesor = true;
   }
 
+  /** Cierra el modal de selección de docente. */
   cerrarModalProfesor(): void {
     this.mostrarModalProfesor = false;
   }
 
   /** Continúa con el profesor elegido: carga sus materias y horario de una vez */
+  /** Confirma el docente seleccionado y carga su horario. */
   continuarConDocente(): void {
     if (!this.docenteSeleccionadoModal) {
       this.mostrarToast('advertencia', 'Seleccione un profesor para continuar.');
@@ -779,6 +850,7 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== MODAL: VINCULAR MATERIA LIBRE (+) ===================== */
 
+  /** Abre el formulario para asignar una asignatura a un grupo. */
   abrirModalCrear(): void {
     // Sin profesor no se puede vincular nada: primero se elige el profesor
     if (!this.docenteActual) {
@@ -797,6 +869,7 @@ export class AsignacionHorarios implements OnInit {
     this.mostrarModalAsignatura = true;
   }
 
+  /** Cierra el formulario de creación de asignación. */
   cerrarModalCrear(): void {
     this.mostrarModalAsignatura = false;
   }
@@ -818,6 +891,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** Siguiente número de grupo de la materia en el periodo (guardados + pendientes en pantalla) */
+  /** Calcula el siguiente número de grupo disponible para la asignatura. */
   private siguienteNumeroGrupo(m: AsignaturaModel): number {
     const guardados = this.gruposGlobales
       .filter((g) => g.asignatura?.id === m.id && g.periodo === this.periodoSeleccionado)
@@ -829,6 +903,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** El salón cumple exactamente lo que la materia pide (con o sin computadores, con o sin sillas móviles) */
+  /** Comprueba si el salón cumple los requisitos de la materia seleccionada. */
   private cumpleRequisitos(s: SalonModel): boolean {
     return (
       !!s.tieneComputadores === this.necesitaComputadoresModal &&
@@ -837,12 +912,14 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** Bloques que tienen al menos un salón que cumple los requisitos */
+  /** Bloques que contienen salones compatibles con los requisitos elegidos. */
   get bloquesFiltrados(): string[] {
     const set = new Set<string>();
     this.listaSalonesObj.filter((s) => this.cumpleRequisitos(s)).forEach((s) => set.add(s.bloque));
     return Array.from(set);
   }
 
+  /** Actualiza los salones disponibles al cambiar el bloque seleccionado. */
   onBloqueChange(): void {
     this.salonesDisponibles = this.listaSalonesObj
       .filter((s) => s.bloque === this.bloqueSeleccionadoModal && this.cumpleRequisitos(s))
@@ -850,6 +927,7 @@ export class AsignacionHorarios implements OnInit {
     this.salonSeleccionadoModal = '';
   }
 
+  /** Valida y agrega una asignatura al calendario del periodo actual. */
   agregarNuevaAsignatura(): void {
     if (
       !this.docenteActual ||
@@ -963,10 +1041,12 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== DRAG & DROP ===================== */
 
+  /** Inicia el arrastre de una asignatura pendiente de ubicar. */
   onDragStartAsignatura(event: DragEvent, asig: AsignaturaUI): void {
     event.dataTransfer?.setData('text/plain', JSON.stringify(asig));
   }
 
+  /** Inicia el arrastre de una clase ya colocada en el calendario. */
   onDragStartClase(event: DragEvent, dia: string, hora: string): void {
     const clase = this.getClase(dia, hora);
     if (clase) {
@@ -974,16 +1054,19 @@ export class AsignacionHorarios implements OnInit {
     }
   }
 
+  /** Permite soltar un elemento y marca la celda destino. */
   onDragOver(event: DragEvent, dia: string, hora: string): void {
     event.preventDefault(); // se permite el drop para que onDrop explique por qué no se puede
     this.celdaActiva =
       this.esNoDisponible(dia, hora) || this.esCerrado(dia, hora) ? null : `${dia}|${hora}`;
   }
 
+  /** Limpia el indicador visual al salir de una celda durante el arrastre. */
   onDragLeave(): void {
     this.celdaActiva = null;
   }
 
+  /** Procesa la asignatura o clase soltada en una celda del calendario. */
   onDrop(event: DragEvent, dia: string, hora: string): void {
     event.preventDefault();
     this.celdaActiva = null;
@@ -1051,16 +1134,19 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** true si la celda no admite clases (sábado después de la 1:00 PM) */
+  /** Indica si el bloque horario está cerrado para el día especificado. */
   esCerrado(dia: string, hora: string): boolean {
     return dia === 'SABADO' && this.rango(hora)[1] > this.aMin(SABADO_FIN);
   }
 
   /** Clase que INICIA en esta celda */
+  /** Obtiene la clase que comienza en la celda indicada. */
   getClase(dia: string, hora: string): AsignaturaUI | null {
     return this.clasesAsignadas.find((c) => c.dia === dia && c.hora === hora) || null;
   }
 
   /** Clase que empezó en la fila anterior y sigue ocupando esta celda (su 2.ª hora) */
+  /** Obtiene la clase que ocupa la celda como continuación de su bloque. */
   getClaseContinuacion(dia: string, hora: string): AsignaturaUI | null {
     const ini = this.rango(hora)[0];
     return (
@@ -1072,11 +1158,13 @@ export class AsignacionHorarios implements OnInit {
     );
   }
 
+  /** Quita del calendario la clase ubicada en la celda indicada. */
   quitarClase(dia: string, hora: string): void {
     this.clasesAsignadas = this.clasesAsignadas.filter((c) => !(c.dia === dia && c.hora === hora));
   }
 
   /** Botón × del calendario */
+  /** Quita una clase del calendario y la devuelve a la lista pendiente. */
   quitarClaseDesdeCalendario(dia: string, hora: string): void {
     const c = this.getClase(dia, hora);
     if (c?.persistido) {
@@ -1091,6 +1179,7 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== GUARDAR ===================== */
 
+  /** Valida y persiste los cambios del calendario de asignación. */
   guardarCambios(): void {
     const nuevas = this.clasesAsignadas.filter((c) => !c.persistido);
     const gruposSinUbicar = this.asignaturasDisponibles.filter(
@@ -1122,6 +1211,7 @@ export class AsignacionHorarios implements OnInit {
     this.ejecutarGuardado(nuevas, gruposSinUbicar);
   }
 
+  /** Persiste los grupos modificados y comunica los resultados al usuario. */
   private ejecutarGuardado(nuevas: AsignaturaUI[], gruposSinUbicar: AsignaturaUI[]): void {
     // Un grupo = un registro, con todas sus sesiones
     const porGrupo = new Map<string, AsignaturaUI[]>();
@@ -1138,8 +1228,8 @@ export class AsignacionHorarios implements OnInit {
     const finalizar = () => {
       if (pendientes > 0) return;
       if (exitosos > 0) {
-        this.mostrarToast(
-          'exito',
+        this.mostrarAvisoExito(
+          'Guardado con éxito',
           `${exitosos} grupo(s) guardado(s) con éxito en el periodo ${this.periodoSeleccionado}.`,
         );
       }
@@ -1235,6 +1325,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   /** Quita null / NaN de un objeto (el back rechaza null en campos numéricos primitivos) */
+  /** Elimina propiedades nulas del objeto antes de enviarlo al backend. */
   private sinNulos<T>(obj: T): T {
     return JSON.parse(
       JSON.stringify(obj, (_k, v) =>
@@ -1245,15 +1336,18 @@ export class AsignacionHorarios implements OnInit {
 
   /* ===================== NAVEGACIÓN / SESIÓN ===================== */
 
+  /** Navega a la ruta indicada. */
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
   }
 
+  /** Alterna el menú de usuario y evita propagar el clic. */
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
   }
 
+  /** Cierra la sesión y vuelve a la pantalla de acceso. */
   cerrarSesion(): void {
     this.mostrarMenuUsuario = false;
     this.sesion.cerrarSesion();
@@ -1261,6 +1355,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   @HostListener('document:click')
+  /** Cierra el menú de usuario al hacer clic fuera de él. */
   cerrarMenuAlHacerClicFuera(): void {
     if (this.mostrarMenuUsuario) {
       this.mostrarMenuUsuario = false;

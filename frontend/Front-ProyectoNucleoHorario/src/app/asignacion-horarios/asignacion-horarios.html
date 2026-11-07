@@ -400,6 +400,19 @@
     </div>
   </div>
 
+  <!-- AVISO DE ÉXITO (VENTANA) -->
+  <div class="modal-overlay confirm-overlay" *ngIf="avisoExito" (click)="cerrarAvisoExito()">
+    <div class="modal-card-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="aviso-exito-titulo"><span class="aviso-exito-icono">✓</span> {{ avisoExito.titulo }}</h3>
+      </div>
+      <p class="confirm-texto">{{ avisoExito.mensaje }}</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-agregar" (click)="cerrarAvisoExito()">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- NOTIFICACIONES (TOASTS) -->
   <div class="toast-container">
     <div class="toast" *ngFor="let t of toasts" [ngClass]="'toast-' + t.tipo">

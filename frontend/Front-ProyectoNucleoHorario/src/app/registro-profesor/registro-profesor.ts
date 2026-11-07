@@ -16,16 +16,21 @@ import { reglaDe } from '../utils/reglas-contrato';
 /** Ventana principal del administrador, a donde se vuelve tras crear un profesor. */
 const RUTA_PRINCIPAL = '/inicio-administrador';
 
-/** Fila de la grilla de disponibilidad (una hora). */
+/** Intervalo de una hora mostrado en la grilla de disponibilidad. */
 interface FilaHora {
+  /** Hora de inicio de la fila. */
   inicio: string;
+  /** Hora de fin de la fila. */
   fin: string;
+  /** Indica si la fila corresponde al almuerzo. */
   esAlmuerzo: boolean;
 }
 
-/** Mensaje que se muestra al usuario. */
+/** Mensaje de estado presentado en el formulario. */
 interface Mensaje {
+  /** Tipo visual del mensaje. */
   tipo: 'exito' | 'error';
+  /** Texto del mensaje. */
   texto: string;
 }
 
@@ -35,6 +40,7 @@ interface Mensaje {
   templateUrl: './registro-profesor.html',
   styleUrl: './registro-profesor.css',
 })
+/** Permite registrar profesores y gestionar la disponibilidad horaria docente. */
 export class RegistroProfesor implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -46,14 +52,23 @@ export class RegistroProfesor implements OnInit {
   esAdministrador: boolean = false;
 
   // ---- Datos del profesor (modo administrador) ----
+  /** Nombre del profesor. */
   nombre: string = '';
+  /** Apellido del profesor. */
   apellido: string = '';
+  /** Documento del profesor, conservado como texto durante la edición. */
   documento: string = '';
+  /** Correo institucional del profesor. */
   correo: string = '';
+  /** Contraseña para crear o actualizar la cuenta. */
   contrasenia: string = '';
+  /** Tipo de vinculación laboral seleccionado. */
   tipoVinculacion: TipoVinculacion = TipoVinculacion.TIEMPO_COMPLETO;
+  /** Nivel de escalafón seleccionado. */
   escalafon: Escalafon = Escalafon.INSTRUCTOR_ASISTENTE;
+  /** Horas máximas semanales derivadas del contrato. */
   horasMaximasSemanales: number = 40;
+  /** Especialidades seleccionadas para el profesor. */
   especialidadesSeleccionadas: Especialidad[] = [];
 
   // ---- Modo edición (el administrador edita un profesor existente) ----
@@ -64,14 +79,19 @@ export class RegistroProfesor implements OnInit {
   private profesorOriginal: ProfesorModel | null = null;
 
   // ---- Profesor con sesión (modo profesor) ----
+  /** Perfil del profesor autenticado en modo docente. */
   profesor: ProfesorModel | null = null;
 
   // ---- Listas de opciones ----
+  /** Tipos de vinculación disponibles en el formulario. */
   tiposVinculacion: TipoVinculacion[] = Object.values(TipoVinculacion);
+  /** Niveles de escalafón disponibles. */
   escalafones: Escalafon[] = Object.values(Escalafon);
+  /** Especialidades disponibles para seleccionar. */
   especialidades: Especialidad[] = Object.values(Especialidad);
 
   // ---- Grilla de disponibilidad ----
+  /** Días que aparecen en la grilla de disponibilidad. */
   dias: { clave: Dia; nombre: string }[] = [
     { clave: Dia.LUNES, nombre: 'Lunes' },
     { clave: Dia.MARTES, nombre: 'Martes' },
@@ -84,21 +104,26 @@ export class RegistroProfesor implements OnInit {
   /** Filas de 1 hora de 7:00 a 22:00; la de 12:00 a 13:00 es el almuerzo. */
   filas: FilaHora[] = this.construirFilas();
 
+  /** Filas seleccionadas, identificadas por día y hora. */
   private seleccion: Set<string> = new Set<string>();
 
   /** Duración de una clase en horas. */
   private readonly HORAS_POR_CLASE = 2;
 
   // ---- Estado de pantalla ----
+  /** Mensaje de resultado del formulario. */
   mensaje: Mensaje | null = null;
   /** Aviso que se muestra junto a la grilla cuando un clic no es válido. */
   avisoGrilla: string | null = null;
+  /** Indica si se está enviando información al backend. */
   guardando: boolean = false;
   /** Mensaje de éxito que se muestra en una ventana centrada tras crear un profesor. */
   exitoCreacion: string | null = null;
   private temporizadorExito?: ReturnType<typeof setTimeout>;
+  /** Controla la visibilidad del menú de usuario. */
   mostrarMenuUsuario: boolean = false;
 
+  /** Determina el rol activo y carga los datos necesarios para la pantalla. */
   ngOnInit(): void {
     this.esAdministrador = this.sesion.esAdministrador();
 
@@ -126,22 +151,26 @@ export class RegistroProfesor implements OnInit {
     return texto.charAt(0).toUpperCase() + texto.slice(1);
   }
 
+  /** Devuelve el nombre legible de la vinculación y su rango de horas. */
   etiquetaVinculacion(tipo: TipoVinculacion): string {
     const r = reglaDe(tipo);
     return `${this.etiqueta(tipo)} (${r.minHoras} a ${r.maxHoras} h)`;
   }
 
   /** Las horas de clase salen del contrato: el administrador no las digita. */
+  /** Mínimo de horas semanales establecido por el tipo de vinculación. */
   get minimoHoras(): number {
     return reglaDe(this.esAdministrador ? this.tipoVinculacion : this.profesor?.tipoVinculacion)
       .minHoras;
   }
 
+  /** Máximo de horas semanales establecido por el tipo de vinculación. */
   get maximoHoras(): number {
     return reglaDe(this.esAdministrador ? this.tipoVinculacion : this.profesor?.tipoVinculacion)
       .maxHoras;
   }
 
+  /** Actualiza el límite semanal y avisa si la selección lo supera. */
   alCambiarVinculacion(): void {
     this.horasMaximasSemanales = this.maximoHoras;
     // Si ya había marcado más horas de las que permite el nuevo contrato, se avisa
@@ -162,6 +191,7 @@ export class RegistroProfesor implements OnInit {
     return null;
   }
 
+  /** Añade o quita una especialidad de la selección actual. */
   toggleEspecialidad(especialidad: Especialidad): void {
     const indice: number = this.especialidadesSeleccionadas.indexOf(especialidad);
     if (indice >= 0) {
@@ -175,6 +205,7 @@ export class RegistroProfesor implements OnInit {
   // Grilla de disponibilidad
   // ------------------------------------------------------------------
 
+  /** Genera las filas horarias de la grilla diaria. */
   private construirFilas(): FilaHora[] {
     const filas: FilaHora[] = [];
     for (let hora = 7; hora <= 21; hora++) {
@@ -187,10 +218,12 @@ export class RegistroProfesor implements OnInit {
     return filas;
   }
 
+  /** Formatea una hora entera como HH:00. */
   private formatoHora(hora: number): string {
     return `${hora.toString().padStart(2, '0')}:00`;
   }
 
+  /** Construye la clave única de una celda de disponibilidad. */
   private clave(dia: Dia, fila: FilaHora): string {
     return `${dia}|${fila.inicio}`;
   }
@@ -200,19 +233,23 @@ export class RegistroProfesor implements OnInit {
     return fila.esAlmuerzo || (dia === Dia.SABADO && fila.inicio >= '13:00');
   }
 
+  /** Indica si la celda de día y hora está seleccionada. */
   estaSeleccionada(dia: Dia, fila: FilaHora): boolean {
     return this.seleccion.has(this.clave(dia, fila));
   }
 
   /** Tope de horas semanales: el del formulario (admin) o el del profesor con sesión. */
+  /** Límite semanal de horas según el contrato activo. */
   get limiteHoras(): number {
     return this.maximoHoras;
   }
 
+  /** Cantidad de horas actualmente seleccionadas en la grilla. */
   get horasSeleccionadas(): number {
     return this.seleccion.size;
   }
 
+  /** Selecciona o deselecciona un bloque, validando las reglas horarias. */
   toggleCelda(dia: Dia, fila: FilaHora): void {
     if (this.estaDeshabilitada(dia, fila)) {
       return;
@@ -327,6 +364,7 @@ export class RegistroProfesor implements OnInit {
   // Carga del profesor con sesión
   // ------------------------------------------------------------------
 
+  /** Carga el perfil y disponibilidad del profesor autenticado. */
   private cargarProfesorConSesion(): void {
     const id: number | null = this.sesion.getProfesorId();
 
@@ -373,6 +411,7 @@ export class RegistroProfesor implements OnInit {
   // Guardar
   // ------------------------------------------------------------------
 
+  /** Guarda el perfil o disponibilidad según el rol y modo actual. */
   guardar(): void {
     if (this.guardando) {
       return;
@@ -388,6 +427,7 @@ export class RegistroProfesor implements OnInit {
     }
   }
 
+  /** Valida y envía al backend el nuevo perfil docente. */
   private crearProfesor(): void {
     if (
       !this.nombre.trim() ||
@@ -502,6 +542,7 @@ export class RegistroProfesor implements OnInit {
       });
   }
 
+  /** Valida y guarda la disponibilidad del profesor autenticado. */
   private guardarDisponibilidadPropia(): void {
     const id: number | null = this.sesion.getProfesorId();
     if (id === null) {
@@ -533,6 +574,7 @@ export class RegistroProfesor implements OnInit {
     });
   }
 
+  /** Restablece los campos y la grilla a sus valores iniciales. */
   private limpiarFormulario(): void {
     this.nombre = '';
     this.apellido = '';
@@ -558,6 +600,7 @@ export class RegistroProfesor implements OnInit {
     this.temporizadorExito = setTimeout(() => this.cerrarExitoCreacion(), 2500);
   }
 
+  /** Cierra el aviso de creación exitosa y vuelve a la pantalla principal. */
   cerrarExitoCreacion(): void {
     if (this.temporizadorExito) clearTimeout(this.temporizadorExito);
     this.exitoCreacion = null;
@@ -598,15 +641,18 @@ export class RegistroProfesor implements OnInit {
   // Navegación y sesión
   // ------------------------------------------------------------------
 
+  /** Navega a la ruta indicada. */
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
   }
 
+  /** Alterna el menú de usuario y evita propagar el clic. */
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
   }
 
+  /** Cierra la sesión actual y vuelve a la pantalla de acceso. */
   cerrarSesion(): void {
     this.mostrarMenuUsuario = false;
     this.sesion.cerrarSesion();
@@ -614,6 +660,7 @@ export class RegistroProfesor implements OnInit {
   }
 
   @HostListener('document:click')
+  /** Cierra el menú cuando se hace clic fuera de él. */
   cerrarMenuAlHacerClicFuera(): void {
     if (this.mostrarMenuUsuario) {
       this.mostrarMenuUsuario = false;
