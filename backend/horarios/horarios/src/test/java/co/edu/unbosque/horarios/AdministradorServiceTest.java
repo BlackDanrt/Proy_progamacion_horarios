@@ -22,6 +22,7 @@ import co.edu.unbosque.horarios.dto.AdministradorDTO;
 import co.edu.unbosque.horarios.entity.Administrador;
 import co.edu.unbosque.horarios.repository.AdministradorRepository;
 import co.edu.unbosque.horarios.service.AdministradorService;
+import co.edu.unbosque.horarios.service.AuditoriaService;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +37,9 @@ class AdministradorServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private AuditoriaService auditoriaService;
+    
     @InjectMocks
     private AdministradorService administradorService;
 

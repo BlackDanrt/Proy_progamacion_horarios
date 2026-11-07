@@ -533,10 +533,9 @@ public class LanzadorDeException {
 	 *                                          44.
 	 */
 	public static void verificarCapacidadMaxima(int capacidadMaxima, ParametrosSistemaDTO parametrosSistemaDTO) {
-		int maximo = parametrosSistemaDTO.getCapacidadMaximaGrupo();
-		if (capacidadMaxima > maximo) {
-			throw new CapacidadMaximaInvalidaException("La capacidad máxima no puede ser mayor que "+maximo);
-		}
+	    if (capacidadMaxima <= 0) {
+	        throw new CapacidadMaximaInvalidaException("La capacidad máxima debe ser mayor que cero");
+	    }
 	}
 
 	/**
@@ -577,7 +576,7 @@ public class LanzadorDeException {
 	 */
 	public static void verificarSesiones(int sesiones, ParametrosSistemaDTO parametrosSistemaDTO) {
 		
-		if (sesiones < 0) {
+		if (sesiones <= 0) {
 			throw new SesionesInvalidasException("El número de sesiones no puede ser menor que 0");
 		}
 		int maximo = parametrosSistemaDTO.getMaxSesionesPorSemana();
@@ -1014,12 +1013,6 @@ public class LanzadorDeException {
 	}
 
 	/**
-	 * Indica si se exige que las sesiones de un grupo con dos o tres sesiones no
-	 * sean en días consecutivos.
-	 */
-	private static final boolean EXIGIR_DIAS_NO_CONSECUTIVOS = true;
-
-	/**
 	 * Verifica que las horas máximas semanales no superen el tope de la dedicación
 	 * (Estatuto Docente, artículo 8): tiempo completo 40, tres cuartos 30, medio
 	 * tiempo 20 y un cuarto de tiempo 10.
@@ -1060,7 +1053,7 @@ public class LanzadorDeException {
 	 * @throws SesionesInvalidasException si dos sesiones coinciden en el día o son
 	 *                                    en días consecutivos.
 	 */
-	public static void verificarDiasSesiones(List<FranjaHoraria> sesiones) {
+	public static void verificarDiasSesiones(List<FranjaHoraria> sesiones, ParametrosSistemaDTO parametrosSistemaDTO) {
 		List<Integer> dias = new ArrayList<>();
 		for (FranjaHoraria sesion : sesiones) {
 			dias.add(sesion.getDia().ordinal());
@@ -1070,13 +1063,14 @@ public class LanzadorDeException {
 			if (dias.get(i).equals(dias.get(i - 1))) {
 				throw new SesionesInvalidasException("Las sesiones de un mismo grupo deben ser en días distintos");
 			}
-			if (EXIGIR_DIAS_NO_CONSECUTIVOS && sesiones.size() <= 3 && dias.get(i) - dias.get(i - 1) == 1) {
+			if (parametrosSistemaDTO.isExigirDiasNoConsecutivos() && sesiones.size() <= 3
+					&& dias.get(i) - dias.get(i - 1) == 1) {
 				throw new SesionesInvalidasException(
 						"Las sesiones de un grupo con dos o tres sesiones no pueden ser en días consecutivos");
 			}
 		}
 	}
-
+	
 	/**
 	 * Verifica que los inscritos no sean negativos ni superen los cupos del grupo.
 	 *

@@ -44,6 +44,9 @@ public class ParametrosSistemaDTO {
 	@Column(nullable = false)
 	private int minEstudiantesParaAbrir;
 
+	@Column(nullable = false)
+	private boolean exigirDiasNoConsecutivos = true;
+
 	public ParametrosSistemaDTO() {
 	}
 
@@ -53,6 +56,14 @@ public class ParametrosSistemaDTO {
 
 	public void setId(Long id) {
 		this.id = id;
+	}
+
+	public boolean isExigirDiasNoConsecutivos() {
+		return exigirDiasNoConsecutivos;
+	}
+
+	public void setExigirDiasNoConsecutivos(boolean exigirDiasNoConsecutivos) {
+		this.exigirDiasNoConsecutivos = exigirDiasNoConsecutivos;
 	}
 
 	public LocalTime getHoraInicioEntreSemana() {
@@ -151,23 +162,15 @@ public class ParametrosSistemaDTO {
 				+ ", horaFinAlmuerzo=" + horaFinAlmuerzo + ", maxSesionesPorSemana=" + maxSesionesPorSemana
 				+ ", duracionSesionMinutos=" + duracionSesionMinutos + ", capacidadMaximaGrupo=" + capacidadMaximaGrupo
 				+ ", toleranciaCapacidad=" + toleranciaCapacidad + ", minEstudiantesParaAbrir="
-				+ minEstudiantesParaAbrir + ", getId()=" + getId() + ", getHoraInicioEntreSemana()="
-				+ getHoraInicioEntreSemana() + ", getHoraFinEntreSemana()=" + getHoraFinEntreSemana()
-				+ ", getHoraInicioSabado()=" + getHoraInicioSabado() + ", getHoraFinSabado()=" + getHoraFinSabado()
-				+ ", getHoraInicioAlmuerzo()=" + getHoraInicioAlmuerzo() + ", getHoraFinAlmuerzo()="
-				+ getHoraFinAlmuerzo() + ", getMaxSesionesPorSemana()=" + getMaxSesionesPorSemana()
-				+ ", getDuracionSesionMinutos()=" + getDuracionSesionMinutos() + ", getCapacidadMaximaGrupo()="
-				+ getCapacidadMaximaGrupo() + ", getToleranciaCapacidad()=" + getToleranciaCapacidad()
-				+ ", getMinEstudiantesParaAbrir()=" + getMinEstudiantesParaAbrir() + ", getClass()=" + getClass()
-				+ ", hashCode()=" + hashCode() + ", toString()=" + super.toString() + "]";
+				+ minEstudiantesParaAbrir + ", exigirDiasNoConsecutivos=" + exigirDiasNoConsecutivos + "]";
 	}
 
 	@Override
 	public int hashCode() {
 		return Objects.hash(Integer.valueOf(capacidadMaximaGrupo), Integer.valueOf(duracionSesionMinutos),
-				horaFinAlmuerzo, horaFinEntreSemana, horaFinSabado, horaInicioAlmuerzo, horaInicioEntreSemana,
-				horaInicioSabado, id, Integer.valueOf(maxSesionesPorSemana), Integer.valueOf(minEstudiantesParaAbrir),
-				Integer.valueOf(toleranciaCapacidad));
+				Boolean.valueOf(exigirDiasNoConsecutivos), horaFinAlmuerzo, horaFinEntreSemana, horaFinSabado,
+				horaInicioAlmuerzo, horaInicioEntreSemana, horaInicioSabado, id, Integer.valueOf(maxSesionesPorSemana),
+				Integer.valueOf(minEstudiantesParaAbrir), Integer.valueOf(toleranciaCapacidad));
 	}
 
 	@Override
@@ -181,6 +184,7 @@ public class ParametrosSistemaDTO {
 		ParametrosSistemaDTO other = (ParametrosSistemaDTO) obj;
 		return capacidadMaximaGrupo == other.capacidadMaximaGrupo
 				&& duracionSesionMinutos == other.duracionSesionMinutos
+				&& exigirDiasNoConsecutivos == other.exigirDiasNoConsecutivos
 				&& Objects.equals(horaFinAlmuerzo, other.horaFinAlmuerzo)
 				&& Objects.equals(horaFinEntreSemana, other.horaFinEntreSemana)
 				&& Objects.equals(horaFinSabado, other.horaFinSabado)

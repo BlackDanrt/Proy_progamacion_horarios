@@ -382,7 +382,7 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 				asignatura.isRequiereSillasMoviles(), salon.isTieneSillasMoviles());
 		LanzadorDeException.verificarSesionesFrecuencia(sesiones.size(), asignatura.getFrecuenciaSemanal());
 		LanzadorDeException.verificarSesionesGrupo(sesiones, parametros);
-		LanzadorDeException.verificarDiasSesiones(sesiones);
+		LanzadorDeException.verificarDiasSesiones(sesiones, parametros);
 		LanzadorDeException.verificarProfesorCalificado(asignatura.getEspecialidadRequerida(),
 				profesor.getEspecialidades());
 		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(profesor.getDisponibilidadHoraria(), sesiones);
