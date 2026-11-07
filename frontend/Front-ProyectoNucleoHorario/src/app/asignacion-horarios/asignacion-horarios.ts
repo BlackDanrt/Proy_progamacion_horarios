@@ -9,8 +9,15 @@ import { AsignaturaModel } from '../models/asignatura.model';
 import { ProfesorModel } from '../models/profesor.model';
 import { SalonModel } from '../models/salon.model';
 
+/** Reglas institucionales de horario */
+const ALMUERZO_INICIO = '12:00';
+const ALMUERZO_FIN = '13:00';
+const HORAS_POR_BLOQUE = 2; // cada fila del calendario dura 2 h
+const DURACIONES_PERMITIDAS = [2, 4]; // una clase dura 2 h (1 bloque) o 4 h (2 bloques seguidos)
+
 export interface AsignaturaUI {
   id?: number;
+  grupoId?: number;
   nombre: string;
   aula: string;
   bloque: string;
@@ -21,8 +28,10 @@ export interface AsignaturaUI {
   color?: string;
   bgLight?: string;
   numEstudiantes?: number;
+  duracion?: number; // 2 o 4 horas
+  persistido?: boolean; // true = ya existe en la base de datos
   dia?: string;
-  hora?: string;
+  hora?: string; // bloque de INICIO, ej. '07:00 - 09:00'
 }
 
 export interface BloqueCalendario {
@@ -35,10 +44,9 @@ export interface BloqueCalendario {
   selector: 'app-asignacion-horarios',
   standalone: false,
   templateUrl: './asignacion-horarios.html',
-  styleUrls: ['./asignacion-horarios.css']
+  styleUrls: ['./asignacion-horarios.css'],
 })
 export class AsignacionHorarios implements OnInit {
-
   private asignaturaService = inject(AsignaturaService);
   private salonService = inject(SalonService);
   private profesorService = inject(ProfesorService);
@@ -46,7 +54,9 @@ export class AsignacionHorarios implements OnInit {
   private router = inject(Router);
   private sesion = inject(SesionService);
 
-  mostrarModalAsignatura: boolean = false;
+  // Modales
+  mostrarModalProfesor: boolean = false; // paso 1: elegir profesor
+  mostrarModalAsignatura: boolean = false; // paso 2: vincular materia libre
   mostrarMenuUsuario: boolean = false;
 
   listaMaterias: AsignaturaModel[] = [];
@@ -58,24 +68,25 @@ export class AsignacionHorarios implements OnInit {
   salonesDisponibles: string[] = [];
   mapaSalones: { [key: string]: string[] } = {};
 
+  /** IDs de asignaturas que ya tienen un profesor vinculado en el periodo seleccionado */
+  idsMateriasConProfesor: Set<number> = new Set<number>();
+
   // Filtros de Docente y Periodo Académico
   docenteSeleccionFiltro: string = '';
-  periodoSeleccionado: string = '2026-1'; // Periodo por defecto
+  docenteActual: string = ''; // docente cuyo horario está cargado
+  periodoSeleccionado: string = '2026-1';
 
-  listaPeriodos: string[] = [
-    '2026-1',
-    '2026-2',
-    'Intersemestral 2026-1',
-    'Intersemestral 2026-2'
-  ];
+  listaPeriodos: string[] = ['2026-1', '2026-2', 'Intersemestral 2026-1', 'Intersemestral 2026-2'];
 
-  // Campos del Modal
+  // Campos de los modales
   docenteSeleccionadoModal: string = '';
   materiaSeleccionadaModal: AsignaturaModel | null = null;
   numeroGrupoModal: number = 1;
   bloqueSeleccionadoModal: string = '';
   salonSeleccionadoModal: string = '';
   numEstudiantesModal: number = 30;
+  duracionModal: number = 2;
+  duracionesPermitidas: number[] = DURACIONES_PERMITIDAS;
 
   asignaturasDisponibles: AsignaturaUI[] = [];
   clasesAsignadas: AsignaturaUI[] = [];
@@ -85,6 +96,12 @@ export class AsignacionHorarios implements OnInit {
   textoRangoSemana: string = '12–16 de mayo, 2026';
   dias: BloqueCalendario[] = [];
 
+  textoAlmuerzo: string = `Almuerzo ${ALMUERZO_INICIO} - ${ALMUERZO_FIN} · no se pueden asignar clases`;
+
+  /**
+   * Bloques del calendario. El bloque 11:00 - 13:00 se cruza con el almuerzo (12:00 - 13:00),
+   * por eso se pinta deshabilitado automáticamente (ver esAlmuerzo()).
+   */
   horasBloques: string[] = [
     '07:00 - 09:00',
     '09:00 - 11:00',
@@ -92,13 +109,79 @@ export class AsignacionHorarios implements OnInit {
     '14:00 - 16:00',
     '16:00 - 18:00',
     '18:00 - 20:00',
-    '20:00 - 22:00'
+    '20:00 - 22:00',
   ];
 
   ngOnInit(): void {
     this.calcularFechasSemana();
     this.cargarDatosBackend();
   }
+
+  /* ===================== UTILIDADES DE HORA ===================== */
+
+  private aMin(h: string): number {
+    const [hh, mm] = h.trim().split(':').map(Number);
+    return hh * 60 + (mm || 0);
+  }
+
+  private aTexto(min: number): string {
+    const hh = String(Math.floor(min / 60)).padStart(2, '0');
+    const mm = String(min % 60).padStart(2, '0');
+    return `${hh}:${mm}:00`;
+  }
+
+  private rango(bloque: string): [number, number] {
+    const [ini, fin] = bloque.split(' - ');
+    return [this.aMin(ini), this.aMin(fin)];
+  }
+
+  /** true si el bloque se cruza con la hora de almuerzo */
+  esAlmuerzo(bloque: string): boolean {
+    const [ini, fin] = this.rango(bloque);
+    return ini < this.aMin(ALMUERZO_FIN) && this.aMin(ALMUERZO_INICIO) < fin;
+  }
+
+  /** Cuántos bloques ocupa una clase según su duración */
+  bloquesDe(duracion?: number): number {
+    return Math.ceil((duracion || HORAS_POR_BLOQUE) / HORAS_POR_BLOQUE);
+  }
+
+  /** Valida que la clase quepa desde el bloque idx sin tocar almuerzo y en bloques consecutivos */
+  private validarBloques(idx: number, n: number): string | null {
+    if (idx < 0 || idx + n > this.horasBloques.length) {
+      return 'La clase no cabe en los bloques disponibles de ese día.';
+    }
+    for (let k = idx; k < idx + n; k++) {
+      if (this.esAlmuerzo(this.horasBloques[k])) {
+        return `Una clase no puede ocupar la hora de almuerzo (${ALMUERZO_INICIO} - ${ALMUERZO_FIN}).`;
+      }
+      if (
+        k > idx &&
+        this.rango(this.horasBloques[k])[0] !== this.rango(this.horasBloques[k - 1])[1]
+      ) {
+        return 'Una clase de 4 horas debe ocupar dos bloques consecutivos, sin saltos entre ellos.';
+      }
+    }
+    return null;
+  }
+
+  /** Busca una clase que se solape con [idx, idx+n) en ese día */
+  private buscarCruce(
+    dia: string,
+    idx: number,
+    n: number,
+    ignorar: { dia: string; hora: string } | null,
+  ): AsignaturaUI | undefined {
+    return this.clasesAsignadas.find((c) => {
+      if (c.dia !== dia || !c.hora) return false;
+      if (ignorar && c.dia === ignorar.dia && c.hora === ignorar.hora) return false;
+      const ci = this.horasBloques.indexOf(c.hora);
+      const cn = this.bloquesDe(c.duracion);
+      return idx < ci + cn && ci < idx + n;
+    });
+  }
+
+  /* ===================== CALENDARIO ===================== */
 
   calcularFechasSemana(): void {
     const clavesDias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
@@ -109,7 +192,20 @@ export class AsignacionHorarios implements OnInit {
     const lunes = new Date(curr.setDate(firstDay));
 
     this.dias = [];
-    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const meses = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
 
     for (let i = 0; i < 6; i++) {
       const d = new Date(lunes);
@@ -120,7 +216,7 @@ export class AsignacionHorarios implements OnInit {
       this.dias.push({
         nombre: nombresDias[i],
         fecha: `${diaStr}/${mesStr}`,
-        clave: clavesDias[i]
+        clave: clavesDias[i],
       });
     }
 
@@ -141,10 +237,14 @@ export class AsignacionHorarios implements OnInit {
     this.calcularFechasSemana();
   }
 
+  /* ===================== CARGA DE DATOS ===================== */
+
   cargarDatosBackend(): void {
     this.asignaturaService.mostrarTodo().subscribe({
-      next: (response) => { if (response.body) this.listaMaterias = response.body; },
-      error: (err) => console.error('Error al cargar asignaturas:', err)
+      next: (response) => {
+        if (response.body) this.listaMaterias = response.body;
+      },
+      error: (err) => console.error('Error al cargar asignaturas:', err),
     });
 
     this.salonService.mostrarTodo().subscribe({
@@ -161,7 +261,7 @@ export class AsignacionHorarios implements OnInit {
           this.listaBloques = Array.from(bloquesSet);
         }
       },
-      error: (err) => console.error('Error al cargar salones:', err)
+      error: (err) => console.error('Error al cargar salones:', err),
     });
 
     this.profesorService.mostrarTodo().subscribe({
@@ -170,32 +270,96 @@ export class AsignacionHorarios implements OnInit {
           this.listaProfesoresObj = response.body;
           this.listaProfesores = response.body.map((p) => `${p.nombre} ${p.apellido}`);
 
-          if (this.asignaturasDisponibles.length === 0) {
-            this.abrirModalCrear();
+          // Al entrar, primero se elige el profesor
+          if (!this.docenteSeleccionFiltro) {
+            this.abrirModalProfesor();
           }
         }
       },
-      error: (err) => console.error('Error al cargar profesores:', err)
+      error: (err) => console.error('Error al cargar profesores:', err),
+    });
+
+    this.cargarGruposGlobales();
+  }
+
+  /**
+   * Consulta todos los grupos del periodo para saber qué asignaturas ya tienen profesor.
+   * NOTA: se asume que GrupoService tiene mostrarTodo() devolviendo grupos con
+   * { asignatura: {id}, profesor: {id}, periodo }. Ajusta el nombre si es distinto.
+   */
+  cargarGruposGlobales(): void {
+    this.grupoService.mostrarTodo().subscribe({
+      next: (response: any) => {
+        const grupos: any[] = response?.body && response.status !== 204 ? response.body : [];
+        const ids = grupos
+          .filter(
+            (g) =>
+              g.profesor?.id &&
+              (!this.periodoSeleccionado || g.periodo === this.periodoSeleccionado),
+          )
+          .map((g) => g.asignatura?.id)
+          .filter((id) => id !== undefined && id !== null);
+        this.idsMateriasConProfesor = new Set<number>(ids);
+      },
+      error: (err: any) => console.error('Error al cargar grupos:', err),
     });
   }
 
-  onDocenteFiltroChange(): void {
-    if (!this.docenteSeleccionFiltro) {
+  /** Materias que NO tienen profesor vinculado (ni guardado ni pendiente en pantalla) */
+  get materiasSinProfesor(): AsignaturaModel[] {
+    return this.listaMaterias.filter(
+      (m) =>
+        !this.idsMateriasConProfesor.has(m.id as number) &&
+        !this.asignaturasDisponibles.some((a) => a.id === m.id),
+    );
+  }
+
+  /* ===================== CAMBIO DE DOCENTE / PERIODO ===================== */
+
+  hayCambiosSinGuardar(): boolean {
+    return (
+      this.clasesAsignadas.some((c) => !c.persistido) ||
+      this.asignaturasDisponibles.some((a) => !a.persistido)
+    );
+  }
+
+  /** Cambia de profesor (con confirmación si hay cambios sin guardar) y carga sus materias */
+  private cambiarDocente(nombre: string): void {
+    if (!nombre) {
+      this.docenteActual = '';
       this.asignaturasDisponibles = [];
       this.clasesAsignadas = [];
       return;
     }
-    this.cargarHorarioDocente(this.docenteSeleccionFiltro);
+    if (nombre === this.docenteActual) return;
+
+    if (
+      this.hayCambiosSinGuardar() &&
+      !confirm('Hay cambios sin guardar. Si cambia de docente se perderán. ¿Desea continuar?')
+    ) {
+      this.docenteSeleccionFiltro = this.docenteActual;
+      return;
+    }
+    this.docenteActual = nombre;
+    this.docenteSeleccionFiltro = nombre;
+    this.cargarHorarioDocente(nombre);
+  }
+
+  onDocenteFiltroChange(): void {
+    this.cambiarDocente(this.docenteSeleccionFiltro);
   }
 
   onPeriodoChange(): void {
-    if (this.docenteSeleccionFiltro) {
-      this.cargarHorarioDocente(this.docenteSeleccionFiltro);
+    this.cargarGruposGlobales();
+    if (this.docenteActual) {
+      this.cargarHorarioDocente(this.docenteActual);
     }
   }
 
   cargarHorarioDocente(nombreDocente: string): void {
-    const profObj = this.listaProfesoresObj.find(p => `${p.nombre} ${p.apellido}` === nombreDocente);
+    const profObj = this.listaProfesoresObj.find(
+      (p) => `${p.nombre} ${p.apellido}` === nombreDocente,
+    );
     if (!profObj || !profObj.id) return;
 
     this.grupoService.buscarPorProfesor(profObj.id).subscribe({
@@ -204,21 +368,34 @@ export class AsignacionHorarios implements OnInit {
         this.clasesAsignadas = [];
 
         if (response.body && response.status !== 204) {
-          // Filtrar opcionalmente por periodo seleccionado si el backend lo retorna
-          const grupos = response.body.filter(g => !this.periodoSeleccionado || g.periodo === this.periodoSeleccionado);
+          const grupos = response.body.filter(
+            (g) => !this.periodoSeleccionado || g.periodo === this.periodoSeleccionado,
+          );
           const coloresPill = [
             { color: '#16a34a', bgLight: '#dcfce7' },
             { color: '#2563eb', bgLight: '#dbeafe' },
             { color: '#9333ea', bgLight: '#f3e8ff' },
-            { color: '#ea580c', bgLight: '#ffedd5' }
+            { color: '#ea580c', bgLight: '#ffedd5' },
           ];
 
           grupos.forEach((grupo, index) => {
-            const randCol = coloresPill[index % coloresPill.length];
-            const aulaStr = grupo.salon ? `${grupo.salon.bloque}${grupo.salon.numeroSalon}` : 'Por asignar';
+            const col = coloresPill[index % coloresPill.length];
+            const aulaStr = grupo.salon
+              ? `${grupo.salon.bloque}${grupo.salon.numeroSalon}`
+              : 'Por asignar';
+
+            // Duración del grupo: la de su primera sesión (por defecto 2 h)
+            let duracionGrupo = HORAS_POR_BLOQUE;
+            if (grupo.sesiones && grupo.sesiones.length > 0) {
+              const s0 = grupo.sesiones[0];
+              duracionGrupo =
+                (this.aMin(s0.horaFin.substring(0, 5)) - this.aMin(s0.horaInicio.substring(0, 5))) /
+                60;
+            }
 
             const asigUI: AsignaturaUI = {
               id: grupo.asignatura?.id,
+              grupoId: (grupo as any).id,
               nombre: `${grupo.asignatura?.nombre} (G${grupo.numeroGrupo})`,
               aula: aulaStr,
               bloque: grupo.salon ? `Bloque ${grupo.salon.bloque}` : 'Sin bloque',
@@ -226,22 +403,32 @@ export class AsignacionHorarios implements OnInit {
               docenteId: profObj.id,
               salonId: grupo.salon?.id,
               numeroGrupo: grupo.numeroGrupo,
-              color: randCol.color,
-              bgLight: randCol.bgLight,
-              numEstudiantes: grupo.capacidadMaxima
+              color: col.color,
+              bgLight: col.bgLight,
+              numEstudiantes: grupo.capacidadMaxima,
+              duracion: duracionGrupo,
+              persistido: true,
             };
 
             this.asignaturasDisponibles.push(asigUI);
 
-            if (grupo.sesiones && grupo.sesiones.length > 0) {
-              grupo.sesiones.forEach(sesion => {
-                this.clasesAsignadas.push({
-                  ...asigUI,
-                  dia: sesion.dia,
-                  hora: `${sesion.horaInicio.substring(0, 5)} - ${sesion.horaFin.substring(0, 5)}`
-                });
+            (grupo.sesiones || []).forEach((sesion) => {
+              const ini = sesion.horaInicio.substring(0, 5);
+              const fin = sesion.horaFin.substring(0, 5);
+              const bloqueInicio = this.horasBloques.find((b) => b.startsWith(ini));
+              if (!bloqueInicio) {
+                console.warn(
+                  `La sesión ${ini}-${fin} no coincide con ningún bloque del calendario.`,
+                );
+                return;
+              }
+              this.clasesAsignadas.push({
+                ...asigUI,
+                dia: sesion.dia,
+                hora: bloqueInicio,
+                duracion: (this.aMin(fin) - this.aMin(ini)) / 60,
               });
-            }
+            });
           });
         }
       },
@@ -249,28 +436,47 @@ export class AsignacionHorarios implements OnInit {
         console.error('Error al consultar horario:', err);
         this.asignaturasDisponibles = [];
         this.clasesAsignadas = [];
-      }
+      },
     });
   }
 
-  cargarDocenteDesdeModal(): void {
-    if (!this.docenteSeleccionadoModal) {
-      alert('⚠️ Por favor seleccione un profesor para cargar su horario.');
-      return;
-    }
-    this.docenteSeleccionFiltro = this.docenteSeleccionadoModal;
-    this.cargarHorarioDocente(this.docenteSeleccionadoModal);
-    this.mostrarModalAsignatura = false;
+  /* ===================== MODAL 1: ELEGIR PROFESOR ===================== */
+
+  abrirModalProfesor(): void {
+    this.docenteSeleccionadoModal = this.docenteActual || '';
+    this.mostrarModalProfesor = true;
   }
 
+  cerrarModalProfesor(): void {
+    this.mostrarModalProfesor = false;
+  }
+
+  /** Continúa con el profesor elegido: carga sus materias y horario de una vez */
+  continuarConDocente(): void {
+    if (!this.docenteSeleccionadoModal) {
+      alert('⚠️ Por favor seleccione un profesor para continuar.');
+      return;
+    }
+    this.cambiarDocente(this.docenteSeleccionadoModal);
+    this.mostrarModalProfesor = false;
+  }
+
+  /* ===================== MODAL 2: VINCULAR MATERIA LIBRE (+) ===================== */
+
   abrirModalCrear(): void {
-    this.docenteSeleccionadoModal = this.docenteSeleccionFiltro || '';
+    // Sin profesor no se puede vincular nada: primero se elige el profesor
+    if (!this.docenteActual) {
+      this.abrirModalProfesor();
+      return;
+    }
     this.materiaSeleccionadaModal = null;
     this.numeroGrupoModal = 1;
     this.bloqueSeleccionadoModal = '';
     this.salonSeleccionadoModal = '';
     this.numEstudiantesModal = 30;
+    this.duracionModal = 2;
     this.salonesDisponibles = [];
+    this.cargarGruposGlobales(); // refresca qué materias siguen libres
     this.mostrarModalAsignatura = true;
   }
 
@@ -288,29 +494,44 @@ export class AsignacionHorarios implements OnInit {
   }
 
   agregarNuevaAsignatura(): void {
-    if (!this.docenteSeleccionadoModal || !this.materiaSeleccionadaModal || !this.bloqueSeleccionadoModal || !this.salonSeleccionadoModal || !this.numeroGrupoModal) {
+    if (
+      !this.docenteActual ||
+      !this.materiaSeleccionadaModal ||
+      !this.bloqueSeleccionadoModal ||
+      !this.salonSeleccionadoModal ||
+      !this.numeroGrupoModal
+    ) {
       alert('⚠️ Advertencia: Por favor complete todos los campos obligatorios.');
+      return;
+    }
+
+    // La materia debe seguir sin profesor
+    if (!this.materiasSinProfesor.some((m) => m.id === this.materiaSeleccionadaModal?.id)) {
+      alert('⚠️ Esta asignatura ya tiene un profesor vinculado.');
+      return;
+    }
+
+    if (!DURACIONES_PERMITIDAS.includes(this.duracionModal)) {
+      alert('⚠️ La duración de la clase debe ser de 2 o 4 horas.');
       return;
     }
 
     const CAPACIDAD_MINIMA_INSTITUCIONAL = 10;
     if (this.numEstudiantesModal < CAPACIDAD_MINIMA_INSTITUCIONAL) {
-      alert(`⚠️ Excepción de Negocio: No se puede abrir un grupo con ${this.numEstudiantesModal} estudiante(s). Mínimo requerido: ${CAPACIDAD_MINIMA_INSTITUCIONAL}.`);
+      alert(
+        `⚠️ Excepción de Negocio: No se puede abrir un grupo con ${this.numEstudiantesModal} estudiante(s). Mínimo requerido: ${CAPACIDAD_MINIMA_INSTITUCIONAL}.`,
+      );
       return;
     }
 
-    const grupoDuplicado = this.asignaturasDisponibles.find(
-      a => a.id === this.materiaSeleccionadaModal?.id && a.numeroGrupo === this.numeroGrupoModal
+    const profObj = this.listaProfesoresObj.find(
+      (p) => `${p.nombre} ${p.apellido}` === this.docenteActual,
     );
-    if (grupoDuplicado) {
-      alert(`⚠️ Excepción de Duplicidad: Ya se encuentra registrada la asignatura con el Grupo ${this.numeroGrupoModal} para este docente.`);
-      return;
-    }
-
-    const profObj = this.listaProfesoresObj.find(p => `${p.nombre} ${p.apellido}` === this.docenteSeleccionadoModal);
     const bloqueLetra = this.salonSeleccionadoModal.charAt(0) as any;
     const numSalonVal = parseInt(this.salonSeleccionadoModal.slice(1));
-    const salonObj = this.listaSalonesObj.find(s => s.bloque === bloqueLetra && s.numeroSalon === numSalonVal);
+    const salonObj = this.listaSalonesObj.find(
+      (s) => s.bloque === bloqueLetra && s.numeroSalon === numSalonVal,
+    );
 
     if (!salonObj || !this.materiaSeleccionadaModal) {
       alert('⚠️ Error: No se pudo identificar el salón o la asignatura.');
@@ -318,17 +539,23 @@ export class AsignacionHorarios implements OnInit {
     }
 
     if (this.materiaSeleccionadaModal.requiereComputadores && !salonObj.tieneComputadores) {
-      alert(`⚠️ Excepción de Infraestructura: La asignatura requiere equipos de cómputo y el salón no cuenta con ellos.`);
+      alert(
+        `⚠️ Excepción de Infraestructura: La asignatura requiere equipos de cómputo y el salón no cuenta con ellos.`,
+      );
       return;
     }
 
     if (this.materiaSeleccionadaModal.requiereSillasMoviles && !salonObj.tieneSillasMoviles) {
-      alert(`⚠️ Excepción de Infraestructura: La asignatura requiere sillas móviles y el salón no las posee.`);
+      alert(
+        `⚠️ Excepción de Infraestructura: La asignatura requiere sillas móviles y el salón no las posee.`,
+      );
       return;
     }
 
     if (this.numEstudiantesModal > salonObj.capacidad) {
-      alert(`⚠️ Excepción de Capacidad: Supera la capacidad máxima del salón (${salonObj.capacidad}).`);
+      alert(
+        `⚠️ Excepción de Capacidad: Supera la capacidad máxima del salón (${salonObj.capacidad}).`,
+      );
       return;
     }
 
@@ -336,31 +563,30 @@ export class AsignacionHorarios implements OnInit {
       { color: '#16a34a', bgLight: '#dcfce7' },
       { color: '#2563eb', bgLight: '#dbeafe' },
       { color: '#9333ea', bgLight: '#f3e8ff' },
-      { color: '#ea580c', bgLight: '#ffedd5' }
+      { color: '#ea580c', bgLight: '#ffedd5' },
     ];
-    const colorRandom = coloresPill[Math.floor(Math.random() * coloresPill.length)];
+    const col = coloresPill[this.asignaturasDisponibles.length % coloresPill.length];
 
-    const nueva: AsignaturaUI = {
+    this.asignaturasDisponibles.push({
       id: this.materiaSeleccionadaModal.id,
       nombre: `${this.materiaSeleccionadaModal.nombre} (G${this.numeroGrupoModal})`,
-      docente: this.docenteSeleccionadoModal,
+      docente: this.docenteActual,
       docenteId: profObj ? profObj.id : undefined,
       salonId: salonObj.id,
       numeroGrupo: this.numeroGrupoModal,
       bloque: `Bloque ${this.bloqueSeleccionadoModal}`,
       aula: this.salonSeleccionadoModal,
-      color: colorRandom.color,
-      bgLight: colorRandom.bgLight,
-      numEstudiantes: this.numEstudiantesModal
-    };
+      color: col.color,
+      bgLight: col.bgLight,
+      numEstudiantes: this.numEstudiantesModal,
+      duracion: this.duracionModal,
+      persistido: false,
+    });
 
-    if (this.docenteSeleccionadoModal !== this.docenteSeleccionFiltro) {
-      this.docenteSeleccionFiltro = this.docenteSeleccionadoModal;
-    }
-
-    this.asignaturasDisponibles.push(nueva);
     this.mostrarModalAsignatura = false;
   }
+
+  /* ===================== DRAG & DROP ===================== */
 
   onDragStartAsignatura(event: DragEvent, asig: AsignaturaUI): void {
     event.dataTransfer?.setData('text/plain', JSON.stringify(asig));
@@ -391,89 +617,150 @@ export class AsignacionHorarios implements OnInit {
 
     const asignatura: AsignaturaUI = JSON.parse(data);
 
-    const cruceDocente = this.clasesAsignadas.find(
-      c => c.dia === dia && c.hora === hora && c.docente === asignatura.docente
-    );
-    if (cruceDocente) {
-      alert(`⚠️ Excepción de cruce: El docente ya tiene clase en este horario.`);
+    if (asignatura.persistido) {
+      alert('⚠️ Este grupo ya está guardado en el sistema y no se puede modificar desde aquí.');
       return;
     }
 
-    const cruceSalon = this.clasesAsignadas.find(
-      c => c.dia === dia && c.hora === hora && c.aula === asignatura.aula
-    );
-    if (cruceSalon) {
-      alert(`⚠️ Excepción de cruce: El salón ya se encuentra ocupado en este horario.`);
+    const n = this.bloquesDe(asignatura.duracion);
+    const idx = this.horasBloques.indexOf(hora);
+
+    // 1) Almuerzo / bloques consecutivos
+    const errorBloques = this.validarBloques(idx, n);
+    if (errorBloques) {
+      alert(`⚠️ ${errorBloques}`);
       return;
     }
 
-    if (asignatura.dia && asignatura.hora) {
-      this.quitarClase(asignatura.dia, asignatura.hora);
+    // 2) Cruces (ignorando la clase que se está moviendo)
+    const origen =
+      asignatura.dia && asignatura.hora ? { dia: asignatura.dia, hora: asignatura.hora } : null;
+    const cruce = this.buscarCruce(dia, idx, n, origen);
+    if (cruce) {
+      alert(`⚠️ Excepción de cruce: el docente ya tiene "${cruce.nombre}" en ese horario.`);
+      return;
     }
 
-    this.quitarClase(dia, hora);
+    // 3) Si venía del calendario, se quita de su posición anterior
+    if (origen) {
+      this.quitarClase(origen.dia, origen.hora);
+    }
 
-    this.clasesAsignadas.push({
-      ...asignatura,
-      dia: dia,
-      hora: hora
+    this.clasesAsignadas.push({ ...asignatura, dia, hora });
+  }
+
+  /** Clase que INICIA en esta celda */
+  getClase(dia: string, hora: string): AsignaturaUI | null {
+    return this.clasesAsignadas.find((c) => c.dia === dia && c.hora === hora) || null;
+  }
+
+  /** true si la celda está cubierta por una clase de 4 h que empezó en el bloque anterior */
+  esContinuacion(dia: string, hora: string): boolean {
+    const idx = this.horasBloques.indexOf(hora);
+    return this.clasesAsignadas.some((c) => {
+      if (c.dia !== dia || !c.hora) return false;
+      const ci = this.horasBloques.indexOf(c.hora);
+      return idx > ci && idx < ci + this.bloquesDe(c.duracion);
     });
   }
 
-  getClase(dia: string, hora: string): AsignaturaUI | null {
-    return this.clasesAsignadas.find(c => c.dia === dia && c.hora === hora) || null;
+  /** Filas que ocupa la celda (2 para clases de 4 h) */
+  getRowspan(dia: string, hora: string): number {
+    const c = this.getClase(dia, hora);
+    return c ? this.bloquesDe(c.duracion) : 1;
   }
 
   quitarClase(dia: string, hora: string): void {
-    this.clasesAsignadas = this.clasesAsignadas.filter(c => !(c.dia === dia && c.hora === hora));
+    this.clasesAsignadas = this.clasesAsignadas.filter((c) => !(c.dia === dia && c.hora === hora));
   }
 
+  /** Botón × del calendario */
+  quitarClaseDesdeCalendario(dia: string, hora: string): void {
+    const c = this.getClase(dia, hora);
+    if (c?.persistido) {
+      alert('⚠️ Este grupo ya está guardado en el sistema y no se puede quitar desde aquí.');
+      return;
+    }
+    this.quitarClase(dia, hora);
+  }
+
+  /* ===================== GUARDAR ===================== */
+
   guardarCambios(): void {
-    if (this.clasesAsignadas.length === 0) {
-      alert('⚠️ Advertencia: No hay clases asignadas en el calendario para guardar.');
+    const nuevas = this.clasesAsignadas.filter((c) => !c.persistido);
+    const gruposSinUbicar = this.asignaturasDisponibles.filter(
+      (a) => !a.persistido && !nuevas.some((c) => c.id === a.id && c.numeroGrupo === a.numeroGrupo),
+    );
+
+    if (nuevas.length === 0) {
+      alert('⚠️ Advertencia: No hay clases nuevas en el calendario para guardar.');
       return;
     }
 
-    let guardadosExitosos = 0;
+    // Un grupo = un registro, con todas sus sesiones (antes se creaba un grupo por cada celda)
+    const porGrupo = new Map<string, AsignaturaUI[]>();
+    nuevas.forEach((c) => {
+      const key = `${c.id}|${c.numeroGrupo}`;
+      if (!porGrupo.has(key)) porGrupo.set(key, []);
+      porGrupo.get(key)!.push(c);
+    });
 
-    this.clasesAsignadas.forEach(clase => {
-      const horasPartidas = clase.hora ? clase.hora.split(' - ') : ['07:00', '09:00'];
-      const horaInicioStr = horasPartidas[0].length === 5 ? horasPartidas[0] + ':00' : horasPartidas[0];
-      const horaFinStr = horasPartidas[1].length === 5 ? horasPartidas[1] + ':00' : horasPartidas[1];
+    let pendientes = porGrupo.size;
+    let errores = 0;
+
+    const finalizar = () => {
+      if (pendientes > 0) return;
+      if (errores === 0) {
+        let msg = `¡Grupos y horarios guardados con éxito para el periodo ${this.periodoSeleccionado}!`;
+        if (gruposSinUbicar.length > 0) {
+          msg += `\n\nNota: ${gruposSinUbicar.length} grupo(s) no se guardaron porque no tienen clase en el calendario.`;
+        }
+        alert(msg);
+      }
+      this.cargarGruposGlobales();
+      if (this.docenteActual) this.cargarHorarioDocente(this.docenteActual);
+    };
+
+    porGrupo.forEach((clases) => {
+      const base = clases[0];
 
       const grupoPayload = {
-        numeroGrupo: clase.numeroGrupo || 1,
+        numeroGrupo: base.numeroGrupo || 1,
         capacidadMinima: 10,
-        capacidadMaxima: clase.numEstudiantes || 30,
+        capacidadMaxima: base.numEstudiantes || 30,
         estado: 'ACTIVO',
-        periodo: this.periodoSeleccionado, // Envía el periodo académico o intersemestral seleccionado
+        periodo: this.periodoSeleccionado,
         inscritos: 0,
-        asignatura: { id: clase.id },
-        profesor: { id: clase.docenteId },
-        salon: { id: clase.salonId },
-        sesiones: [
-          {
-            dia: clase.dia,
-            horaInicio: horaInicioStr,
-            horaFin: horaFinStr
-          }
-        ]
+        asignatura: { id: base.id },
+        profesor: { id: base.docenteId },
+        salon: { id: base.salonId },
+        sesiones: clases.map((c) => {
+          const inicioMin = this.rango(c.hora!)[0];
+          return {
+            dia: c.dia,
+            horaInicio: this.aTexto(inicioMin),
+            horaFin: this.aTexto(inicioMin + (c.duracion || HORAS_POR_BLOQUE) * 60),
+          };
+        }),
       };
 
       this.grupoService.crearGrupo(grupoPayload as any).subscribe({
-        next: (res) => {
-          guardadosExitosos++;
-          if (guardadosExitosos === this.clasesAsignadas.length) {
-            alert(`¡Grupos y horarios guardados con éxito para el periodo ${this.periodoSeleccionado}!`);
-          }
+        next: () => {
+          pendientes--;
+          finalizar();
         },
         error: (err) => {
           console.error('Error al guardar grupo:', err);
-          alert(`⚠️ Excepción del Servidor:\n${err.error || err.message}`);
-        }
+          errores++;
+          pendientes--;
+          alert(`⚠️ Excepción del Servidor (${base.nombre}):\n${err.error || err.message}`);
+          finalizar();
+        },
       });
     });
   }
+
+  /* ===================== NAVEGACIÓN / SESIÓN ===================== */
 
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
