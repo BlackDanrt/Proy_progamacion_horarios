@@ -18,6 +18,7 @@ export class ProfesorService {
   private readonly http: HttpClient = inject(HttpClient);
   private readonly urlBase: string = `${environment.apiUrl}/profesor`;
 
+  /** Busca un profesor por correo electrónico. */
   buscarPorCorreo(correo: string): Observable<HttpResponse<ProfesorModel>> {
     return this.http.get<ProfesorModel>(`${this.urlBase}/buscarporcorreo`, {
       params: new HttpParams().set('correo', correo),
@@ -25,6 +26,7 @@ export class ProfesorService {
     });
   }
 
+  /** Busca un profesor por número de documento. */
   buscarPorDocumento(documento: number): Observable<HttpResponse<ProfesorModel>> {
     return this.http.get<ProfesorModel>(`${this.urlBase}/buscarpordocumento`, {
       params: new HttpParams().set('documento', documento),
@@ -61,6 +63,7 @@ export class ProfesorService {
     });
   }
 
+  /** Obtiene todos los profesores registrados. */
   mostrarTodo(): Observable<HttpResponse<ProfesorModel[]>> {
     return this.http.get<ProfesorModel[]>(`${this.urlBase}/mostrartodo`, {
       observe: 'response',
@@ -107,6 +110,7 @@ export class ProfesorService {
     });
   }
 
+  /** Elimina un profesor usando su identificador. */
   eliminarProfesor(id: number): Observable<string> {
     return this.http.delete(`${this.urlBase}/eliminar`, {
       params: new HttpParams().set('id', id),

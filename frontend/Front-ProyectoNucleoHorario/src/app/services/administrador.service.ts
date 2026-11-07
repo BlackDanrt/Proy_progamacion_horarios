@@ -14,6 +14,7 @@ export class AdministradorService {
   private readonly http: HttpClient = inject(HttpClient);
   private readonly urlBase: string = `${environment.apiUrl}/administrador`;
 
+  /** Busca administradores por su código institucional. */
   buscarPorCodigoAdministrador(codigoAdministrador: string): Observable<HttpResponse<AdministradorModel[]>> {
     return this.http.get<AdministradorModel[]>(`${this.urlBase}/buscarporcodigo`, {
       params: new HttpParams().set('codigoAdministrador', codigoAdministrador),
@@ -21,6 +22,7 @@ export class AdministradorService {
     });
   }
 
+  /** Busca administradores por correo electrónico. */
   buscarPorCorreo(correo: string): Observable<HttpResponse<AdministradorModel[]>> {
     return this.http.get<AdministradorModel[]>(`${this.urlBase}/buscarporcorreo`, {
       params: new HttpParams().set('correo', correo),
@@ -28,6 +30,7 @@ export class AdministradorService {
     });
   }
 
+  /** Busca administradores por número de documento. */
   buscarPorDocumento(documento: number): Observable<HttpResponse<AdministradorModel[]>> {
     return this.http.get<AdministradorModel[]>(`${this.urlBase}/buscarpordocumento`, {
       params: new HttpParams().set('documento', documento),
@@ -35,6 +38,7 @@ export class AdministradorService {
     });
   }
 
+  /** Obtiene todos los administradores registrados. */
   mostrarTodo(): Observable<HttpResponse<AdministradorModel[]>> {
     return this.http.get<AdministradorModel[]>(`${this.urlBase}/mostrartodo`, {
       observe: 'response',
@@ -44,6 +48,7 @@ export class AdministradorService {
   /**
    * Crea un administrador enviando los datos mediante @RequestParam.
    */
+  /** Registra un administrador enviando sus campos como parámetros HTTP. */
   crearAdministrador(administrador: AdministradorModel): Observable<string> {
     const params = new HttpParams()
       .set('nombre', administrador.nombre)
@@ -60,12 +65,14 @@ export class AdministradorService {
     });
   }
 
+  /** Actualiza los datos de un administrador existente. */
   actualizarAdministrador(administrador: AdministradorModel): Observable<string> {
     return this.http.put(`${this.urlBase}/actualizar`, administrador, {
       responseType: 'text',
     });
   }
 
+  /** Elimina un administrador usando su identificador. */
   eliminarAdministrador(id: number): Observable<string> {
     return this.http.delete(`${this.urlBase}/eliminar`, {
       params: new HttpParams().set('id', id),

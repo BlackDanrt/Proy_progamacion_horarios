@@ -15,6 +15,7 @@ export class GrupoService {
   private readonly http: HttpClient = inject(HttpClient);
   private readonly urlBase: string = `${environment.apiUrl}/grupo`;
 
+  /** Busca grupos asociados a una asignatura. */
   buscarPorAsignatura(idAsignatura: number): Observable<HttpResponse<GrupoModel[]>> {
     return this.http.get<GrupoModel[]>(`${this.urlBase}/buscarporasignatura`, {
       params: new HttpParams().set('idAsignatura', idAsignatura),
@@ -22,6 +23,7 @@ export class GrupoService {
     });
   }
 
+  /** Busca grupos por su estado. */
   buscarPorEstado(estadoGrupo: EstadoGrupo): Observable<HttpResponse<GrupoModel[]>> {
     return this.http.get<GrupoModel[]>(`${this.urlBase}/buscarporestado`, {
       params: new HttpParams().set('estadoGrupo', estadoGrupo),
@@ -29,6 +31,7 @@ export class GrupoService {
     });
   }
 
+  /** Busca grupos por número de grupo. */
   buscarPorNumeroGrupo(numeroGrupo: number): Observable<HttpResponse<GrupoModel[]>> {
     return this.http.get<GrupoModel[]>(`${this.urlBase}/buscarpornumero`, {
       params: new HttpParams().set('numeroGrupo', numeroGrupo),
@@ -36,6 +39,7 @@ export class GrupoService {
     });
   }
 
+  /** Busca grupos asignados a un profesor. */
   buscarPorProfesor(idProfesor: number): Observable<HttpResponse<GrupoModel[]>> {
     return this.http.get<GrupoModel[]>(`${this.urlBase}/buscarporprofesor`, {
       params: new HttpParams().set('idProfesor', idProfesor),
@@ -43,14 +47,17 @@ export class GrupoService {
     });
   }
 
+  /** Registra un nuevo grupo. */
   crearGrupo(grupo: GrupoModel): Observable<string> {
     return this.http.post(`${this.urlBase}/crear`, grupo, { responseType: 'text' });
   }
 
+  /** Actualiza los datos de un grupo existente. */
   actualizarGrupo(grupo: GrupoModel): Observable<string> {
     return this.http.put(`${this.urlBase}/actualizar`, grupo, { responseType: 'text' });
   }
 
+  /** Elimina un grupo usando su identificador. */
   eliminarGrupoPorId(grupoId: number): Observable<string> {
     return this.http.delete(`${this.urlBase}/eliminarporid`, {
       params: new HttpParams().set('grupoId', grupoId),
@@ -58,6 +65,7 @@ export class GrupoService {
     });
   }
 
+  /** Elimina grupos identificados por su número. */
   eliminarGrupoPorNumero(numeroGrupo: number): Observable<string> {
     return this.http.delete(`${this.urlBase}/eliminarpornumero`, {
       params: new HttpParams().set('numeroGrupo', numeroGrupo),
@@ -65,6 +73,7 @@ export class GrupoService {
     });
   }
 
+  /** Obtiene todos los grupos registrados. */
   mostrarTodo(): Observable<HttpResponse<GrupoModel[]>> {
     return this.http.get<GrupoModel[]>(`${this.urlBase}/mostrartodo`, {
       observe: 'response',

@@ -6,12 +6,19 @@ import { catchError, map } from 'rxjs/operators';
 import { ProfesorService } from '../services/profesor.service';             // ajusta la ruta
 import { AdministradorService } from '../services/administrador.service';   // ajusta la ruta
 
+/** Registro unificado de un docente o administrador mostrado en la tabla. */
 export interface RegistroBaseDatos {
+  /** Clave compuesta por rol e identificador para distinguir registros. */
   clave: string;                       // identificador único: rol + id
+  /** Identificador asignado por el sistema. */
   id: number;
+  /** Nombre completo de la persona. */
   nombre: string;
+  /** Rol de la persona en el sistema. */
   rol: 'Docente' | 'Administrador';
+  /** Especialidades del docente o valor indicativo para administradores. */
   especialidad: string;
+  /** Resumen de la carga semanal asignada. */
   cargaAsignada: string;
 }
 
@@ -28,26 +35,41 @@ export class GestionBasesDatos implements OnInit {
   private router = inject(Router);
 
   // Objetos originales del back (para no perder campos al actualizar)
+  /** Copias de las entidades originales, usadas al actualizar registros. */
   private originales = new Map<string, any>();
 
   // Estado como signals
+  /** Registros combinados de docentes y administradores. */
   registros = signal<RegistroBaseDatos[]>([]);
+  /** Indica si se están cargando registros desde el backend. */
   cargando = signal<boolean>(false);
+  /** Mensaje de carga o gestión que se debe mostrar en pantalla. */
   error = signal<string>('');
+  /** Texto utilizado para filtrar los registros. */
   filtroBusqueda = signal<string>('');
+  /** Cantidad de filas mostradas por página. */
   registrosPorPagina = signal<number>(10);
+  /** Página visible actualmente. */
   paginaActual = signal<number>(1);
+  /** Controla la visibilidad del modal para crear registros. */
   mostrarModalRegistro = signal<boolean>(false);
+  /** Controla la apertura del menú de usuario. */
   mostrarMenuUsuario = signal<boolean>(false);
 
   // Estado del modal de edición
+  /** Registro administrativo seleccionado para editar. */
   registroEditando = signal<RegistroBaseDatos | null>(null);
+  /** Nombre editado en el modal. */
   editNombre = signal<string>('');
+  /** Apellido editado en el modal. */
   editApellido = signal<string>('');
+  /** Carga semanal editada para el docente. */
   editHoras = signal<string>('');
+  /** Indica si se están guardando los cambios de edición. */
   guardando = signal<boolean>(false);
 
   // Derivados con computed
+  /** Registros que coinciden con el texto de búsqueda. */
   registrosFiltrados = computed(() => {
     const todos = this.registros();
     const termino = this.filtroBusqueda().trim().toLowerCase();
@@ -59,23 +81,28 @@ export class GestionBasesDatos implements OnInit {
     );
   });
 
+  /** Cantidad de páginas necesarias para mostrar los registros filtrados. */
   totalPaginas = computed(() =>
     Math.max(1, Math.ceil(this.registrosFiltrados().length / this.registrosPorPagina()))
   );
 
+  /** Números de página disponibles. */
   paginas = computed(() =>
     Array.from({ length: this.totalPaginas() }, (_, i) => i + 1)
   );
 
+  /** Registros filtrados que corresponden a la página visible. */
   registrosPaginados = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.registrosPorPagina();
     return this.registrosFiltrados().slice(inicio, inicio + this.registrosPorPagina());
   });
 
+  /** Carga los datos iniciales de docentes y administradores. */
   ngOnInit(): void {
     this.cargarRegistros();
   }
 
+  /** Consulta y combina los docentes y administradores del backend. */
   cargarRegistros(): void {
     this.cargando.set(true);
     this.error.set('');
@@ -140,6 +167,7 @@ export class GestionBasesDatos implements OnInit {
     });
   }
 
+  /** Convierte la lista de especialidades a texto para mostrarla. */
   private textoEspecialidades(lista: any[] | null | undefined): string {
     if (!lista || lista.length === 0) return '—';
     return lista
@@ -148,6 +176,7 @@ export class GestionBasesDatos implements OnInit {
       .join(', ') || '—';
   }
 
+  /** Presenta un valor de enum separado por guiones bajos como texto legible. */
   private formatearEnum(valor: string): string {
     return valor
       .toLowerCase()
@@ -157,44 +186,53 @@ export class GestionBasesDatos implements OnInit {
   }
 
   /** Evita que la página actual quede fuera de rango (tras filtrar, eliminar o recargar). */
+  /** Ajusta la página actual para mantenerla dentro del rango disponible. */
   private ajustarPagina(): void {
     if (this.paginaActual() > this.totalPaginas()) {
       this.paginaActual.set(this.totalPaginas());
     }
   }
 
+  /** Indica si el registro corresponde a un docente. */
   esDocente(reg: RegistroBaseDatos): boolean {
     return reg.rol === 'Docente';
   }
 
+  /** Actualiza el filtro y vuelve a la primera página. */
   onFiltroChange(valor: string): void {
     this.filtroBusqueda.set(valor);
     this.paginaActual.set(1);
   }
 
+  /** Cambia cuántos registros se muestran por página. */
   onRegistrosPorPaginaChange(valor: number): void {
     this.registrosPorPagina.set(Number(valor));
     this.paginaActual.set(1);
   }
 
+  /** Navega a una página válida. */
   cambiarPagina(p: number): void {
     if (p >= 1 && p <= this.totalPaginas()) {
       this.paginaActual.set(p);
     }
   }
 
+  /** Navega a la ruta indicada. */
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
   }
 
+  /** Abre el modal para seleccionar el tipo de nuevo registro. */
   crearNuevoRegistro(): void {
     this.mostrarModalRegistro.set(true);
   }
 
+  /** Cierra el modal de creación. */
   cerrarModalRegistro(): void {
     this.mostrarModalRegistro.set(false);
   }
 
+  /** Abre el horario del docente seleccionado. */
   visualizarHorario(reg: RegistroBaseDatos): void {
     if (!this.esDocente(reg)) return;
     this.router.navigate(['/consulta-horario'], { queryParams: { id: reg.id } });
@@ -202,6 +240,7 @@ export class GestionBasesDatos implements OnInit {
 
   // ───────────────────────── EDITAR ─────────────────────────
 
+  /** Inicia la edición del registro seleccionado según su rol. */
   actualizarRegistro(reg: RegistroBaseDatos): void {
     // Docente: se edita en la pantalla de registro (datos + malla horaria)
     if (reg.rol === 'Docente') {
@@ -222,10 +261,12 @@ export class GestionBasesDatos implements OnInit {
     this.registroEditando.set(reg);
   }
 
+  /** Descarta los cambios y cierra el modo de edición. */
   cancelarEdicion(): void {
     this.registroEditando.set(null);
   }
 
+  /** Valida y guarda los cambios del docente o administrador seleccionado. */
   guardarEdicion(): void {
     const reg = this.registroEditando();
     if (!reg) return;
@@ -273,6 +314,7 @@ export class GestionBasesDatos implements OnInit {
 
   // ───────────────────────── ELIMINAR ─────────────────────────
 
+  /** Elimina el registro seleccionado después de confirmar la acción. */
   eliminarRegistro(reg: RegistroBaseDatos): void {
     if (!confirm(`¿Seguro que deseas eliminar a ${reg.nombre}?`)) return;
 
@@ -293,17 +335,20 @@ export class GestionBasesDatos implements OnInit {
     peticion$.subscribe({ next: onSuccess, error: onError });
   }
 
+  /** Alterna el menú de usuario y evita propagar el clic. */
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario.update(v => !v);
   }
 
+  /** Cierra el menú y navega a la pantalla de inicio de sesión. */
   cerrarSesion(): void {
     this.mostrarMenuUsuario.set(false);
     this.router.navigate(['/loginn']);
   }
 
   @HostListener('document:click')
+  /** Cierra el menú de usuario cuando se hace clic fuera de él. */
   cerrarMenuAlHacerClicFuera(): void {
     if (this.mostrarMenuUsuario()) {
       this.mostrarMenuUsuario.set(false);

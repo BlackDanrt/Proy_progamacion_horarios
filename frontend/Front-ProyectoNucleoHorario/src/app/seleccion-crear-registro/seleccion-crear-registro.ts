@@ -7,11 +7,15 @@ import {Router} from '@angular/router';
   templateUrl: './seleccion-crear-registro.html',
   styleUrl: './seleccion-crear-registro.css',
 })
+/** Permite elegir qué tipo de usuario se desea registrar. */
 export class SeleccionCrearRegistro {
+  /** Emite el evento para cerrar el selector de tipo de registro. */
   @Output() cerrar = new EventEmitter<void>();
 
+  /** Inicializa el enrutador para abrir el formulario seleccionado. */
   constructor(private router: Router) {}
 
+  /** Cierra el selector y navega al formulario según el tipo elegido. */
   seleccionarTipo(tipo: 'docente' | 'administrador'): void {
     this.cerrarModal();
     if (tipo === 'docente') {
@@ -21,6 +25,7 @@ export class SeleccionCrearRegistro {
     }
   }
 
+  /** Emite el evento de cierre del selector. */
   cerrarModal(): void {
     this.cerrar.emit();
   }
