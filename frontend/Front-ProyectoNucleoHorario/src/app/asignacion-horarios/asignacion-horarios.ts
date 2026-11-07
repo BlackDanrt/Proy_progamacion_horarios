@@ -1,14 +1,22 @@
-import {Component, HostListener, inject, OnInit} from '@angular/core';
-import { SesionService } from '../services/sesion.service';
+import { Component, HostListener, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { SesionService } from '../services/sesion.service';
+import { AsignaturaService } from '../services/asignatura.service';
+import { SalonService } from '../services/salon.service';
+import { ProfesorService } from '../services/profesor.service';
+import { GrupoService } from '../services/grupo.service';
+import { AsignaturaModel } from '../models/asignatura.model';
+import { ProfesorModel } from '../models/profesor.model';
+import { SalonModel } from '../models/salon.model';
 
-// Interfaces
-export interface Asignatura {
+export interface AsignaturaUI {
   id?: number;
   nombre: string;
   aula: string;
   bloque: string;
   docente: string;
+  docenteId?: number;
+  salonId?: number;
   color?: string;
   bgLight?: string;
   numEstudiantes?: number;
@@ -30,44 +38,28 @@ export interface BloqueCalendario {
 })
 export class AsignacionHorarios implements OnInit {
 
-  // Control de visibilidad de la modal
+  private asignaturaService = inject(AsignaturaService);
+  private salonService = inject(SalonService);
+  private profesorService = inject(ProfesorService);
+  private grupoService = inject(GrupoService);
+  private router = inject(Router);
+  private sesion = inject(SesionService);
+
   mostrarModalAsignatura: boolean = false;
+  mostrarMenuUsuario: boolean = false;
 
-  // Listas desplegables para los selectores
-  listaMaterias: string[] = ['Desarrollo de sistemas de información 1', 'Principios de sistemas de información', 'Desarrollo de sistemas de información 2', 'Desarrollo de sistemas de información 3', 'Estructura de datos',
-    'Estructuras de sistemas', 'Bases de datos 1','Infraestructura TI 1', 'Modelizacion informacional'
-    ,'Proyecto núcleo 1', 'Ingenieria de software 1','Bases de datos 2',
-    'Infraestructura TI 2',
-    'Ingeniería de software',
-    'Complejidad algorítmica',
-    'Infraestructura TI 3',
-    'Modelos y simulación de sistemas de información',
-    'Proyecto núcleo 2',
-    'Ingeniería de software 3',
-    'Lenguajes de dominio específico',
-    'Seguridad de la información',
-    'Labor social',
-    'Electiva de profundización en ingeniería de sistemas 1',
-    'Política, sociedad y ciudadanía',
-    'Preparación para la vida laboral',
-    'Gestión de tecnología e innovación',
-    'Diseño de proyectos de ingeniería',
-    'Sistemas inteligentes',
-    'Electiva de profundización en ingeniería de sistemas 2',
-    'Electiva de profundización en ingeniería de sistemas 3'];
+  // Listas dinámicas obtenidas directamente de la BD (sin hardcode)
+  listaMaterias: string[] = [];
+  listaProfesoresObj: ProfesorModel[] = [];
+  listaSalonesObj: SalonModel[] = [];
+  listaAsignaturasObj: AsignaturaModel[] = [];
 
-  listaBloques: string[] = ['A', 'B', 'F'];
+  listaProfesores: string[] = [];
+  listaBloques: string[] = [];
   salonesDisponibles: string[] = [];
+  mapaSalones: { [key: string]: string[] } = {};
 
-  // Mapeo dinámico de salones por bloque
-  mapaSalones: { [key: string]: string[] } = {
-    'A': ['A402', 'A403', 'A405'],
-    'B': ['B210', 'B211', 'B212', 'B213', 'B313'],
-    'F': ['F201', 'F202']
-  };
-
-  // Modelo temporal vinculado al formulario modal
-  nuevaAsignatura: Asignatura = {
+  nuevaAsignatura: AsignaturaUI = {
     nombre: '',
     docente: '',
     bloque: '',
@@ -75,13 +67,9 @@ export class AsignacionHorarios implements OnInit {
     numEstudiantes: undefined
   };
 
-  asignaturasDisponibles: Asignatura[] = [
-    { nombre: 'Desarrollo de sistemas de información 1', aula: 'B313', bloque: 'Bloque B', docente: 'Ana López', color: '#16a34a', bgLight: '#dcfce7' },
-    { nombre: 'Estructuras de datos', aula: 'B210', bloque: 'Bloque B', docente: 'Carlos Pérez', color: '#2563eb', bgLight: '#dbeafe' },
-    { nombre: 'Modelización Informacional', aula: 'A402', bloque: 'Bloque A', docente: 'María Gómez', color: '#9333ea', bgLight: '#f3e8ff' },
-    { nombre: 'Bases de Datos 1', aula: 'A403', bloque: 'Bloque A', docente: 'Javier Ruiz', color: '#ea580c', bgLight: '#ffedd5' },
-    { nombre: 'Proyecto núcleo 1', aula: 'A402', bloque: 'Bloque A', docente: 'Laura Torres', color: '#eab308', bgLight: '#fef9c3' }
-  ];
+  asignaturasDisponibles: AsignaturaUI[] = [];
+  clasesAsignadas: AsignaturaUI[] = [];
+  celdaActiva: string | null = null;
 
   dias: BloqueCalendario[] = [
     { nombre: 'LUNES', fecha: '12/05', clave: 'LUNES' },
@@ -102,23 +90,81 @@ export class AsignacionHorarios implements OnInit {
     '20:00 - 22:00'
   ];
 
-  celdaActiva: string | null = null;
+  ngOnInit(): void {
+    this.cargarDatosBackend();
+  }
 
-  // Arreglo que almacena las clases ya ubicadas en la grilla del calendario
-  clasesAsignadas: Asignatura[] = [];
+  cargarDatosBackend(): void {
+    // 1. Cargar Asignaturas reales desde el Backend
+    this.asignaturaService.mostrarTodo().subscribe({
+      next: (response) => {
+        if (response.body) {
+          this.listaAsignaturasObj = response.body;
+          this.listaMaterias = response.body.map((a) => a.nombre);
 
-  constructor(private router: Router) {}
+          const coloresPill = [
+            { color: '#16a34a', bgLight: '#dcfce7' },
+            { color: '#2563eb', bgLight: '#dbeafe' },
+            { color: '#9333ea', bgLight: '#f3e8ff' },
+            { color: '#ea580c', bgLight: '#ffedd5' },
+            { color: '#eab308', bgLight: '#fef9c3' }
+          ];
 
-  ngOnInit(): void {}
+          this.asignaturasDisponibles = response.body.map((asig, index) => {
+            const randCol = coloresPill[index % coloresPill.length];
+            return {
+              id: asig.id,
+              nombre: asig.nombre,
+              aula: 'Por asignar',
+              bloque: 'Sin bloque',
+              docente: 'Por asignar',
+              color: randCol.color,
+              bgLight: randCol.bgLight,
+              numEstudiantes: 30
+            };
+          });
+        }
+      },
+      error: (err) => console.error('Error al cargar asignaturas:', err)
+    });
 
-  // --- LÓGICA DEL MODAL ---
+    // 2. Cargar Salones reales desde el Backend (Dinámico por Bloque)
+    this.salonService.mostrarTodo().subscribe({
+      next: (response) => {
+        if (response.body) {
+          this.listaSalonesObj = response.body;
+          this.mapaSalones = {};
+          const bloquesSet = new Set<string>();
+
+          response.body.forEach((salon) => {
+            const bloqueKey = salon.bloque; // Ej: 'A', 'B', 'F'
+            bloquesSet.add(bloqueKey);
+            const numeroStr = `${salon.bloque}${salon.numeroSalon}`;
+            if (!this.mapaSalones[bloqueKey]) {
+              this.mapaSalones[bloqueKey] = [];
+            }
+            this.mapaSalones[bloqueKey].push(numeroStr);
+          });
+          this.listaBloques = Array.from(bloquesSet);
+        }
+      },
+      error: (err) => console.error('Error al cargar salones:', err)
+    });
+
+    // 3. Cargar Profesores reales desde el Backend
+    this.profesorService.mostrarTodo().subscribe({
+      next: (response) => {
+        if (response.body) {
+          this.listaProfesoresObj = response.body;
+          this.listaProfesores = response.body.map((p) => `${p.nombre} ${p.apellido}`);
+        }
+      },
+      error: (err) => console.error('Error al cargar profesores:', err)
+    });
+  }
+
   abrirModalCrear(): void {
-    this.nuevaAsignatura = {
-      nombre: '',
-      docente: '',
-      bloque: '',
-      aula: ''
-    };
+    this.nuevaAsignatura = { nombre: '', docente: '', bloque: '', aula: '', numEstudiantes: undefined };
     this.salonesDisponibles = [];
     this.mostrarModalAsignatura = true;
   }
@@ -128,7 +174,7 @@ export class AsignacionHorarios implements OnInit {
   }
 
   onBloqueChange(): void {
-    const bloqueSeleccionado: string = this.nuevaAsignatura.bloque;
+    const bloqueSeleccionado = this.nuevaAsignatura.bloque;
     if (bloqueSeleccionado && this.mapaSalones[bloqueSeleccionado]) {
       this.salonesDisponibles = this.mapaSalones[bloqueSeleccionado];
     } else {
@@ -138,15 +184,17 @@ export class AsignacionHorarios implements OnInit {
   }
 
   agregarNuevaAsignatura(): void {
-    if (
-      !this.nuevaAsignatura.docente ||
-      !this.nuevaAsignatura.nombre ||
-      !this.nuevaAsignatura.bloque ||
-      !this.nuevaAsignatura.aula
-    ) {
+    if (!this.nuevaAsignatura.docente || !this.nuevaAsignatura.nombre || !this.nuevaAsignatura.bloque || !this.nuevaAsignatura.aula) {
       alert('Por favor complete todos los campos.');
       return;
     }
+
+    const asigObj = this.listaAsignaturasObj.find(a => a.nombre === this.nuevaAsignatura.nombre);
+    const profObj = this.listaProfesoresObj.find(p => `${p.nombre} ${p.apellido}` === this.nuevaAsignatura.docente);
+
+    const bloqueLetra = this.nuevaAsignatura.aula.charAt(0) as any;
+    const numSalonVal = parseInt(this.nuevaAsignatura.aula.slice(1));
+    const salonObj = this.listaSalonesObj.find(s => s.bloque === bloqueLetra && s.numeroSalon === numSalonVal);
 
     const coloresPill = [
       { color: '#16a34a', bgLight: '#dcfce7' },
@@ -156,30 +204,26 @@ export class AsignacionHorarios implements OnInit {
     ];
     const colorRandom = coloresPill[Math.floor(Math.random() * coloresPill.length)];
 
-    const nueva: Asignatura = {
+    const nueva: AsignaturaUI = {
+      id: asigObj ? asigObj.id : undefined,
       nombre: this.nuevaAsignatura.nombre,
       docente: this.nuevaAsignatura.docente,
+      docenteId: profObj ? profObj.id : undefined,
+      salonId: salonObj ? salonObj.id : undefined,
       bloque: `Bloque ${this.nuevaAsignatura.bloque}`,
       aula: this.nuevaAsignatura.aula,
       color: colorRandom.color,
-      bgLight: colorRandom.bgLight
+      bgLight: colorRandom.bgLight,
+      numEstudiantes: this.nuevaAsignatura.numEstudiantes || 30
     };
 
     this.asignaturasDisponibles.push(nueva);
     this.cerrarModalCrear();
   }
 
-  navegarA(ruta: string): void {
-    this.router.navigate([ruta]);
-  }
+  // --- DRAG AND DROP Y VALIDACIÓN DE EXCEPCIONES LOCALES ---
 
-  guardarCambios(): void {
-    console.log('Cambios guardados:', this.clasesAsignadas);
-  }
-
-  // --- MÉTODOS DE ARRASTRAR Y SOLTAR (DRAG & DROP) ---
-
-  onDragStartAsignatura(event: DragEvent, asig: Asignatura): void {
+  onDragStartAsignatura(event: DragEvent, asig: AsignaturaUI): void {
     event.dataTransfer?.setData('text/plain', JSON.stringify(asig));
   }
 
@@ -204,24 +248,42 @@ export class AsignacionHorarios implements OnInit {
     this.celdaActiva = null;
 
     const data = event.dataTransfer?.getData('text/plain');
-    if (data) {
-      const asignatura = JSON.parse(data);
+    if (!data) return;
 
-      if (asignatura.dia && asignatura.hora) {
-        this.quitarClase(asignatura.dia, asignatura.hora);
-      }
+    const asignatura: AsignaturaUI = JSON.parse(data);
 
-      this.quitarClase(dia, hora);
-
-      this.clasesAsignadas.push({
-        ...asignatura,
-        dia: dia,
-        hora: hora
-      });
+    // Validación de Cruce de Docente
+    const cruceDocente = this.clasesAsignadas.find(
+      c => c.dia === dia && c.hora === hora && c.docente === asignatura.docente
+    );
+    if (cruceDocente) {
+      alert(`⚠️ Excepción de cruce: El docente ${asignatura.docente} ya tiene clase asignada en este horario.`);
+      return;
     }
+
+    // Validación de Cruce de Salón
+    const cruceSalon = this.clasesAsignadas.find(
+      c => c.dia === dia && c.hora === hora && c.aula === asignatura.aula
+    );
+    if (cruceSalon) {
+      alert(`⚠️ Excepción de cruce: El salón ${asignatura.aula} ya se encuentra ocupado en este horario.`);
+      return;
+    }
+
+    if (asignatura.dia && asignatura.hora) {
+      this.quitarClase(asignatura.dia, asignatura.hora);
+    }
+
+    this.quitarClase(dia, hora);
+
+    this.clasesAsignadas.push({
+      ...asignatura,
+      dia: dia,
+      hora: hora
+    });
   }
 
-  getClase(dia: string, hora: string): any {
+  getClase(dia: string, hora: string): AsignaturaUI | null {
     return this.clasesAsignadas.find(c => c.dia === dia && c.hora === hora) || null;
   }
 
@@ -229,9 +291,57 @@ export class AsignacionHorarios implements OnInit {
     this.clasesAsignadas = this.clasesAsignadas.filter(c => !(c.dia === dia && c.hora === hora));
   }
 
-  mostrarMenuUsuario: boolean = false;
+  // --- GUARDAR EN EL BACKEND CON VALIDACIÓN DE EXCEPCIONES ---
+  guardarCambios(): void {
+    if (this.clasesAsignadas.length === 0) {
+      alert('No hay clases asignadas en el calendario para guardar.');
+      return;
+    }
 
-  private sesion = inject(SesionService);
+    let guardadosExitosos = 0;
+
+    this.clasesAsignadas.forEach(clase => {
+      const horasPartidas = clase.hora ? clase.hora.split(' - ') : ['07:00', '09:00'];
+      const horaInicioStr = horasPartidas[0].length === 5 ? horasPartidas[0] + ':00' : horasPartidas[0];
+      const horaFinStr = horasPartidas[1].length === 5 ? horasPartidas[1] + ':00' : horasPartidas[1];
+
+      const grupoPayload = {
+        numeroGrupo: 1,
+        capacidadMinima: 10,
+        capacidadMaxima: clase.numEstudiantes || 30,
+        estado: 'ACTIVO',
+        periodo: '2026-1',
+        inscritos: 0,
+        asignatura: { id: clase.id },
+        profesor: { id: clase.docenteId },
+        salon: { id: clase.salonId },
+        sesiones: [
+          {
+            dia: clase.dia,
+            horaInicio: horaInicioStr,
+            horaFin: horaFinStr
+          }
+        ]
+      };
+
+      this.grupoService.crearGrupo(grupoPayload as any).subscribe({
+        next: (res) => {
+          guardadosExitosos++;
+          if (guardadosExitosos === this.clasesAsignadas.length) {
+            alert('¡Grupos y horarios guardados y validados correctamente en el backend!');
+          }
+        },
+        error: (err) => {
+          console.error('Error al guardar grupo en el backend:', err);
+          alert(`⚠️ Excepción del Servidor:\n${err.error || err.message}`);
+        }
+      });
+    });
+  }
+
+  navegarA(ruta: string): void {
+    this.router.navigate([ruta]);
+  }
 
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
@@ -250,5 +360,4 @@ export class AsignacionHorarios implements OnInit {
       this.mostrarMenuUsuario = false;
     }
   }
-
 }

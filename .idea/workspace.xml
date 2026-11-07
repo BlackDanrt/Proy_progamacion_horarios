@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="94cd2c35-f2da-4e8b-aa1e-98a29be8bc19" name="Changes" comment="" />
+    <list default="true" id="94cd2c35-f2da-4e8b-aa1e-98a29be8bc19" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/prettier.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/.project" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/Front-ProyectoNucleoHorario/src/app/asignacion-horarios/asignacion-horarios.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/Front-ProyectoNucleoHorario/src/app/asignacion-horarios/asignacion-horarios.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/Front-ProyectoNucleoHorario/src/app/asignacion-horarios/asignacion-horarios.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/Front-ProyectoNucleoHorario/src/app/asignacion-horarios/asignacion-horarios.ts" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -10,9 +19,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 2
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
   <component name="ProjectId" id="3LguqoRJhkBmnr1kgeqP8aFsng2" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -23,8 +32,10 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "Tatiana",
+    "git-widget-placeholder": "Natalia",
     "last_opened_file_path": "D:/Proyecto nucleo/Proy_progamacion_horarios",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "ts.external.directory.path": "C:\\Users\\diazk\\OneDrive\\Documentos\\proyecto-Nucleo\\Proy_progamacion_horarios\\frontend\\Front-ProyectoNucleoHorario\\node_modules\\typescript\\lib",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
