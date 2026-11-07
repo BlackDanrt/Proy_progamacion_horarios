@@ -184,8 +184,11 @@
                           'has-event': getClase(d.clave, hora),
                           'has-event-cont': getClaseContinuacion(d.clave, hora),
                           'slot-cerrado': esCerrado(d.clave, hora),
+                          'slot-no-disponible': !esCerrado(d.clave, hora) && esNoDisponible(d.clave, hora)
+                                                && !getClase(d.clave, hora) && !getClaseContinuacion(d.clave, hora),
                           'drag-over': celdaActiva === d.clave + '|' + hora
                         }"
+                        [attr.title]="esNoDisponible(d.clave, hora) && !esCerrado(d.clave, hora) ? 'Profesor no disponible' : null"
                         (dragover)="onDragOver($event, d.clave, hora)"
                         (dragleave)="onDragLeave()"
                         (drop)="onDrop($event, d.clave, hora)">
@@ -202,10 +205,11 @@
                                 title="Quitar">×
                         </button>
                       </div>
-                      <div class="event-cont" *ngIf="getClaseContinuacion(d.clave, hora) as k"
+                      <div class="event-pill event-pill-cont" *ngIf="getClaseContinuacion(d.clave, hora) as k"
                            [style.border-left-color]="k.color"
-                           [style.background-color]="k.bgLight">
-                        {{ k.nombre }} <em>(continúa)</em>
+                           title="{{ k.nombre }}">
+                        <strong>{{ k.nombre }}</strong>
+                        <span>{{ k.aula }} - {{ k.docente }}</span>
                       </div>
                     </td>
                   </ng-container>

@@ -40,6 +40,13 @@ export interface AsignaturaUI {
   hora?: string;           // bloque de INICIO, ej. '07:00 - 09:00'
 }
 
+/** Franja de disponibilidad del profesor ya normalizada (minutos desde las 00:00) */
+export interface FranjaDisponible {
+  dia: string;     // LUNES, MARTES, MIERCOLES...
+  inicio: number;
+  fin: number;
+}
+
 export interface BloqueCalendario {
   nombre: string;
   clave: string;
@@ -115,6 +122,9 @@ export class AsignacionHorarios implements OnInit {
   bloqueSeleccionadoModal: string = '';
   salonSeleccionadoModal: string = '';
   numEstudiantesModal: number = 30;
+
+  /** Disponibilidad horaria del profesor cuyo horario está cargado */
+  disponibilidadDocente: FranjaDisponible[] = [];
 
   asignaturasDisponibles: AsignaturaUI[] = [];
   clasesAsignadas: AsignaturaUI[] = [];
@@ -379,7 +389,47 @@ export class AsignacionHorarios implements OnInit {
     if (bloques.some(b => this.esCerrado(dia, b))) {
       return 'El sábado solo se pueden asignar clases hasta la 1:00 PM.';
     }
+    if (bloques.some(b => this.esNoDisponible(dia, b))) {
+      return `${this.docenteActual} no tiene disponibilidad horaria para una clase de ${HORAS_POR_CLASE} horas en ese horario.`;
+    }
     return null;
+  }
+
+  /* ===================== DISPONIBILIDAD DEL PROFESOR ===================== */
+
+  /** Quita tildes y pasa a mayúsculas: 'Miércoles' -> 'MIERCOLES' */
+  private normalizarDia(d: any): string {
+    return String(d ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+  }
+
+  /** Convierte la hora que llega del backend a minutos. Acepta '07:00:00' o [7, 0] (LocalTime serializado como arreglo) */
+  private horaAMinutos(h: any): number {
+    if (Array.isArray(h)) return (Number(h[0]) || 0) * 60 + (Number(h[1]) || 0);
+    return this.aMin(String(h));
+  }
+
+  /** Carga en memoria las franjas en las que el profesor dijo que puede dar clase */
+  private cargarDisponibilidad(prof: ProfesorModel | undefined): void {
+    const franjas: any[] = (prof as any)?.disponibilidadHoraria || [];
+    this.disponibilidadDocente = franjas
+      .filter(f => f && f.dia && f.horaInicio != null && f.horaFin != null)
+      .map(f => ({
+        dia: this.normalizarDia(f.dia),
+        inicio: this.horaAMinutos(f.horaInicio),
+        fin: this.horaAMinutos(f.horaFin)
+      }));
+  }
+
+  /** true si el bloque de 1 h cabe completo dentro de alguna franja de disponibilidad del profesor */
+  private estaDisponible(dia: string, bloque: string): boolean {
+    const [ini, fin] = this.rango(bloque);
+    return this.disponibilidadDocente.some(f => f.dia === dia && f.inicio <= ini && fin <= f.fin);
+  }
+
+  /** true si hay un profesor cargado y NO está disponible en esa celda (se pinta bloqueada) */
+  esNoDisponible(dia: string, hora: string): boolean {
+    if (!this.docenteActual) return false;
+    return !this.estaDisponible(dia, hora);
   }
 
   /** Busca una clase que se solape con la nueva (ignorando la que se está moviendo) */
@@ -486,6 +536,7 @@ export class AsignacionHorarios implements OnInit {
   private cambiarDocente(nombre: string): void {
     if (!nombre) {
       this.docenteActual = '';
+      this.disponibilidadDocente = [];
       this.asignaturasDisponibles = [];
       this.clasesAsignadas = [];
       return;
@@ -517,6 +568,12 @@ export class AsignacionHorarios implements OnInit {
   cargarHorarioDocente(nombreDocente: string): void {
     const profObj = this.listaProfesoresObj.find(p => `${p.nombre} ${p.apellido}` === nombreDocente);
     if (!profObj || !profObj.id) return;
+
+    // Disponibilidad: lo que no esté dentro de sus franjas queda bloqueado en el calendario
+    this.cargarDisponibilidad(profObj);
+    if (this.disponibilidadDocente.length === 0) {
+      this.mostrarToast('advertencia', `${nombreDocente} no tiene disponibilidad horaria registrada, por lo que todo el calendario está bloqueado.`);
+    }
 
     this.grupoService.buscarPorProfesor(profObj.id).subscribe({
       next: (response) => {
@@ -716,8 +773,8 @@ export class AsignacionHorarios implements OnInit {
   }
 
   onDragOver(event: DragEvent, dia: string, hora: string): void {
-    event.preventDefault();
-    this.celdaActiva = `${dia}|${hora}`;
+    event.preventDefault();   // se permite el drop para que onDrop explique por qué no se puede
+    this.celdaActiva = (this.esNoDisponible(dia, hora) || this.esCerrado(dia, hora)) ? null : `${dia}|${hora}`;
   }
 
   onDragLeave(): void {
