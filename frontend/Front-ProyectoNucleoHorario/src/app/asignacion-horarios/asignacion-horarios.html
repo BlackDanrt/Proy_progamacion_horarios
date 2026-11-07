@@ -4,7 +4,6 @@
   <aside class="sidebar">
     <div class="sidebar-top">
       <div class="user-menu-container">
-        <!-- Botón Avatar del Administrador -->
         <div
           class="user-avatar-btn"
           title="Perfil Administrador"
@@ -15,7 +14,6 @@
           </svg>
         </div>
 
-        <!-- Menú emergente de cierre de sesión -->
         <div class="user-dropdown" *ngIf="mostrarMenuUsuario" (click)="$event.stopPropagation()">
           <button type="button" class="dropdown-item logout-btn" (click)="cerrarSesion()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -29,7 +27,6 @@
       </div>
     </div>
 
-    <!-- Menú de navegación de la barra lateral -->
     <nav class="sidebar-menu">
       <button type="button" class="sidebar-btn" (click)="navegarA('/inicio-administrador')" title="Panel de control">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -77,22 +74,39 @@
   <main class="main-content">
     <div class="horarios-container">
 
-      <!-- CABECERA -->
+      <!-- CABECERA CON FILTRO DE PERIODO Y DOCENTE -->
       <header class="horarios-header">
-        <div class="header-title-box">
+        <div class="header-title-box" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
           <h1>Asignación de horarios</h1>
+
+          <!-- SELECTOR DE PERIODO ACADÉMICO / INTERSEMESTRAL -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 13px; font-weight: 600; color: #334155;">Periodo:</label>
+            <select [(ngModel)]="periodoSeleccionado" (change)="onPeriodoChange()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff;">
+              <option *ngFor="let per of listaPeriodos" [value]="per">{{ per }}</option>
+            </select>
+          </div>
+
+          <!-- FILTRAR DOCENTE -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 13px; font-weight: 600; color: #334155;">Docente:</label>
+            <select [(ngModel)]="docenteSeleccionFiltro" (change)="onDocenteFiltroChange()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff;">
+              <option value="" disabled selected>Seleccione un profesor</option>
+              <option *ngFor="let prof of listaProfesores" [value]="prof">{{ prof }}</option>
+            </select>
+          </div>
         </div>
+
         <div class="header-controls">
           <div class="week-navigator">
-            <button class="nav-arrow-btn" title="Semana anterior">
+            <button class="nav-arrow-btn" title="Semana anterior" (click)="semanaAnterior()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
             <div class="week-display">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-              <span>12–16 de mayo, 2026</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              <span>{{ textoRangoSemana }}</span>
             </div>
-            <button class="nav-arrow-btn" title="Semana siguiente">
+            <button class="nav-arrow-btn" title="Semana siguiente" (click)="semanaSiguiente()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </button>
           </div>
@@ -106,11 +120,11 @@
 
       <div class="workspace-grid">
 
-        <!-- PANEL IZQUIERDO: ASIGNATURAS ARRASTRABLES (DINÁMICAS) -->
+        <!-- PANEL IZQUIERDO -->
         <div class="asignaturas-sidebar-panel">
           <div class="panel-header-asig">
-            <h3>Asignaturas</h3>
-            <button type="button" class="btn-add-asig" (click)="abrirModalCrear()" title="Agregar Asignatura">+</button>
+            <h3>Asignaturas / Grupos</h3>
+            <button type="button" class="btn-add-asig" (click)="abrirModalCrear()" title="Agregar Grupo o Materia">+</button>
           </div>
           <div class="asignaturas-list">
             <div class="asignatura-card"
@@ -170,7 +184,6 @@
             </table>
           </div>
 
-          <!-- LEYENDA -->
           <div class="calendar-legend">
             <div class="legend-item" *ngFor="let asig of asignaturasDisponibles">
               <span class="legend-dot" [style.background-color]="asig.color"></span>
@@ -183,46 +196,62 @@
     </div>
   </main>
 
-  <!-- VENTANA EMERGENTE PARA ASIGNAR / CREAR CLASE -->
-  <div class="modal-overlay" *ngIf="mostrarModalAsignatura" (click)="cerrarModalCrear()">
+  <!-- VENTANA EMERGENTE -->
+  <div class="modal-overlay" *ngIf="mostrarModalAsignatura">
     <div class="modal-card-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>Asignar Materia a Docente y Aula</h3>
+        <h3>Gestionar Horario de Docente</h3>
         <button type="button" class="btn-close-modal" (click)="cerrarModalCrear()">×</button>
       </div>
 
       <form class="modal-form" (submit)="$event.preventDefault()">
-        <!-- Docentes reales desde BD -->
-        <div class="form-group">
-          <label>Docente</label>
-          <select [(ngModel)]="nuevaAsignatura.docente" name="docente">
-            <option value="" disabled selected>Seleccione un profesor</option>
-            <option *ngFor="let prof of listaProfesores" [value]="prof">{{ prof }}</option>
-          </select>
+        <div class="form-group" style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+          <label style="font-weight: 600; color: #0f172a;">1. ¿Consultar / Editar profesor existente?</label>
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <select [(ngModel)]="docenteSeleccionadoModal" name="docenteFiltroModal" style="flex: 1;">
+              <option value="" disabled selected>Seleccione un profesor</option>
+              <option *ngFor="let prof of listaProfesores" [value]="prof">{{ prof }}</option>
+            </select>
+            <button type="button" (click)="cargarDocenteDesdeModal()" style="background: #16a34a; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;">
+              Cargar Horario
+            </button>
+          </div>
         </div>
 
-        <!-- Asignaturas reales desde BD -->
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+
+        <label style="font-weight: 600; color: #0f172a; margin-bottom: 8px; display: block;">2. O registrar un nuevo grupo:</label>
+
         <div class="form-group">
           <label>Asignatura</label>
-          <select [(ngModel)]="nuevaAsignatura.nombre" name="materia">
-            <option value="" disabled selected>Seleccione una materia</option>
-            <option *ngFor="let mat of listaMaterias" [value]="mat">{{ mat }}</option>
+          <select [(ngModel)]="materiaSeleccionadaModal" name="materia">
+            <option [ngValue]="null" disabled selected>Seleccione una materia</option>
+            <option *ngFor="let mat of listaMaterias" [ngValue]="mat">{{ mat.nombre }}</option>
           </select>
         </div>
 
-        <!-- Bloques reales desde BD -->
+        <div class="form-group">
+          <label>Número de Grupo</label>
+          <input
+            type="number"
+            [(ngModel)]="numeroGrupoModal"
+            name="numeroGrupo"
+            placeholder="Ej. 1, 2, 3..."
+            min="1"
+            max="10">
+        </div>
+
         <div class="form-group">
           <label>Bloque</label>
-          <select [(ngModel)]="nuevaAsignatura.bloque" name="bloque" (change)="onBloqueChange()">
+          <select [(ngModel)]="bloqueSeleccionadoModal" name="bloque" (change)="onBloqueChange()">
             <option value="" disabled selected>Seleccione un bloque</option>
             <option *ngFor="let b of listaBloques" [value]="b">{{ b }}</option>
           </select>
         </div>
 
-        <!-- Salón dependiente del bloque seleccionado -->
-        <div class="form-group" *ngIf="nuevaAsignatura.bloque">
+        <div class="form-group" *ngIf="bloqueSeleccionadoModal">
           <label>Salón</label>
-          <select [(ngModel)]="nuevaAsignatura.aula" name="salon">
+          <select [(ngModel)]="salonSeleccionadoModal" name="salon">
             <option value="" disabled selected>Seleccione un salón</option>
             <option *ngFor="let s of salonesDisponibles" [value]="s">{{ s }}</option>
           </select>
@@ -232,7 +261,7 @@
           <label>Número de estudiantes</label>
           <input
             type="number"
-            [(ngModel)]="nuevaAsignatura.numEstudiantes"
+            [(ngModel)]="numEstudiantesModal"
             name="numEstudiantes"
             placeholder="Ingrese el número de estudiantes"
             min="1"
@@ -241,7 +270,7 @@
 
         <div class="modal-actions">
           <button type="button" class="btn-cancelar" (click)="cerrarModalCrear()">Cancelar</button>
-          <button type="button" class="btn-agregar" (click)="agregarNuevaAsignatura()">Agregar</button>
+          <button type="button" class="btn-agregar" (click)="agregarNuevaAsignatura()" style="background-color: #16a34a !important;">Crear Grupo</button>
         </div>
       </form>
     </div>
