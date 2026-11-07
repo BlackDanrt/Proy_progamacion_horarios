@@ -89,6 +89,8 @@
                     style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff;">
               <option *ngFor="let per of listaPeriodos" [value]="per">{{ per }}</option>
             </select>
+            <button type="button" class="btn-add-periodo" (click)="abrirModalPeriodo()" title="Crear nuevo periodo">+
+            </button>
           </div>
 
           <!-- FILTRAR DOCENTE -->
@@ -103,28 +105,6 @@
         </div>
 
         <div class="header-controls">
-          <div class="week-navigator">
-            <button class="nav-arrow-btn" title="Semana anterior" (click)="semanaAnterior()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-            <div class="week-display">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              <span>{{ textoRangoSemana }}</span>
-            </div>
-            <button class="nav-arrow-btn" title="Semana siguiente" (click)="semanaSiguiente()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-          </div>
-
           <button type="button" class="btn-guardar-cambios" (click)="guardarCambios()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -171,8 +151,7 @@
                    [style.background-color]="asig.bgLight">{{ asig.aula }}
               </div>
               <div class="docente-info">Docente: {{ asig.docente }}</div>
-              <div class="docente-info">Duración: {{ asig.duracion }} h <span *ngIf="asig.persistido">· guardado</span>
-              </div>
+              <div class="docente-info" *ngIf="asig.persistido">Guardado</div>
             </div>
           </div>
         </div>
@@ -185,7 +164,7 @@
               <tr>
                 <th class="time-col-header"></th>
                 <th class="day-header" *ngFor="let d of dias">
-                  {{ d.nombre }}<span class="date-sub">{{ d.fecha }}</span>
+                  {{ d.nombre }}
                 </th>
               </tr>
               </thead>
@@ -201,10 +180,9 @@
                 <ng-template #filaNormal>
                   <ng-container *ngFor="let d of dias">
                     <td class="slot-cell"
-                        *ngIf="!esContinuacion(d.clave, hora)"
-                        [attr.rowspan]="getRowspan(d.clave, hora)"
                         [ngClass]="{
                           'has-event': getClase(d.clave, hora),
+                          'slot-cerrado': esCerrado(d.clave, hora),
                           'drag-over': celdaActiva === d.clave + '|' + hora
                         }"
                         (dragover)="onDragOver($event, d.clave, hora)"
@@ -213,14 +191,12 @@
 
                       <div class="event-pill"
                            *ngIf="getClase(d.clave, hora) as c"
-                           [class.pill-4h]="c.duracion === 4"
                            [style.border-left-color]="c.color"
                            title="{{ c.nombre }}"
                            [attr.draggable]="!c.persistido"
                            (dragstart)="onDragStartClase($event, d.clave, hora)">
                         <strong>{{ c.nombre }}</strong>
                         <span>{{ c.aula }} - {{ c.docente }}</span>
-                        <span class="duracion-tag">{{ c.duracion }} h</span>
                         <button type="button" class="btn-quitar" (click)="quitarClaseDesdeCalendario(d.clave, hora)"
                                 title="Quitar">×
                         </button>
@@ -300,13 +276,6 @@
         </div>
 
         <div class="form-group">
-          <label>Duración de la clase</label>
-          <select [(ngModel)]="duracionModal" name="duracion">
-            <option *ngFor="let d of duracionesPermitidas" [ngValue]="d">{{ d }} horas</option>
-          </select>
-        </div>
-
-        <div class="form-group">
           <label>Bloque</label>
           <select [(ngModel)]="bloqueSeleccionadoModal" name="bloque" (change)="onBloqueChange()">
             <option value="" disabled selected>Seleccione un bloque</option>
@@ -333,6 +302,84 @@
           <button type="button" class="btn-agregar" (click)="agregarNuevaAsignatura()">Vincular grupo</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR PERIODO -->
+  <div class="modal-overlay" *ngIf="mostrarModalPeriodo">
+    <div class="modal-card-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Crear nuevo periodo</h3>
+        <button type="button" class="btn-close-modal" (click)="cerrarModalPeriodo()">×</button>
+      </div>
+
+      <form class="modal-form" (submit)="$event.preventDefault()">
+        <div class="form-group">
+          <label>Tipo de periodo</label>
+          <select [(ngModel)]="tipoPeriodoModal" name="tipoPeriodo">
+            <option value="SEMESTRAL">Semestral</option>
+            <option value="INTERSEMESTRAL">Intersemestral</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Año</label>
+          <select [(ngModel)]="anioPeriodoModal" name="anioPeriodo">
+            <option *ngFor="let a of aniosPermitidos" [ngValue]="a">{{ a }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Semestre</label>
+          <select [(ngModel)]="semestrePeriodoModal" name="semestrePeriodo">
+            <option [ngValue]="1">1</option>
+            <option [ngValue]="2">2</option>
+          </select>
+        </div>
+
+        <div class="periodo-preview" [class.periodo-existe]="existePeriodo(nombrePeriodoModal)">
+          Se creará: <strong>{{ nombrePeriodoModal }}</strong>
+          <span *ngIf="existePeriodo(nombrePeriodoModal)"> · ya existe</span>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancelar" (click)="cerrarModalPeriodo()">Cancelar</button>
+          <button type="button" class="btn-agregar" (click)="crearPeriodo()"
+                  [disabled]="existePeriodo(nombrePeriodoModal)">Crear periodo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONFIRMACIÓN VISUAL -->
+  <div class="modal-overlay confirm-overlay" *ngIf="confirmacion">
+    <div class="modal-card-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ confirmacion.titulo }}</h3>
+      </div>
+      <p class="confirm-texto">{{ confirmacion.mensaje }}</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancelar" (click)="cancelarConfirmacion()">Cancelar</button>
+        <button type="button" class="btn-agregar" (click)="aceptarConfirmacion()">{{ confirmacion.textoAceptar }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICACIONES (TOASTS) -->
+  <div class="toast-container">
+    <div class="toast" *ngFor="let t of toasts" [ngClass]="'toast-' + t.tipo">
+      <span class="toast-icono">
+        <ng-container [ngSwitch]="t.tipo">
+          <span *ngSwitchCase="'exito'">✓</span>
+          <span *ngSwitchCase="'error'">✕</span>
+          <span *ngSwitchCase="'advertencia'">!</span>
+          <span *ngSwitchDefault>i</span>
+        </ng-container>
+      </span>
+      <span class="toast-mensaje">{{ t.mensaje }}</span>
+      <button type="button" class="toast-cerrar" (click)="cerrarToast(t.id)" title="Cerrar">×</button>
     </div>
   </div>
 

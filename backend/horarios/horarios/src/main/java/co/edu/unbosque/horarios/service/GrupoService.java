@@ -1,9 +1,12 @@
 package co.edu.unbosque.horarios.service;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +32,6 @@ import co.edu.unbosque.horarios.repository.GrupoRepository;
 import co.edu.unbosque.horarios.repository.ProfesorRepository;
 import co.edu.unbosque.horarios.repository.SalonRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
-import co.edu.unbosque.horarios.util.enums.Bloque;
 import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
 
 /**
@@ -96,8 +98,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		DatosGrupo datos = validar(data, 0);
 
 		// 2. Validamos duplicidad pero ahora DEPENDIENDO DE LA ASIGNATURA
-		LanzadorDeException.verificarNumeroGrupoDuplicado(
-				grupoRep.existsByNumeroGrupoAndAsignatura(data.getNumeroGrupo(), datos.asignatura));
+		LanzadorDeException.verificarNumeroGrupoDuplicado(grupoRep.existsByNumeroGrupoAndAsignaturaAndPeriodo(
+				data.getNumeroGrupo(), datos.asignatura, data.getPeriodo()));
 
 		Grupo entity = new Grupo(datos.asignatura, data.getNumeroGrupo(), data.getCapacidadMinima(),
 				data.getCapacidadMaxima(), datos.profesor, datos.salon, guardarSesiones(datos.sesiones),
@@ -109,11 +111,10 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 
 		return 0;
 	}
-	
+
 	@Transactional
-	public int create(long profesorId, long asignaturaId, int numeroGrupo, int capacidadMinima,
-			int capacidadMaxima, long salonId, EstadoGrupo estado, String periodo, int inscritos,
-			List<Long> franjaIds) {
+	public int create(long profesorId, long asignaturaId, int numeroGrupo, int capacidadMinima, int capacidadMaxima,
+			long salonId, EstadoGrupo estado, String periodo, int inscritos, List<Long> franjaIds) {
 
 		LanzadorDeException.verificarId(profesorId);
 		LanzadorDeException.verificarId(asignaturaId);
@@ -212,10 +213,10 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		 * Se verifica duplicidad solo si el número del grupo cambia O si cambiaron la
 		 * asignatura a la que pertenece.
 		 */
-		if (temp.getNumeroGrupo() != data.getNumeroGrupo()
-				|| temp.getAsignatura().getId() != datos.asignatura.getId()) {
-			LanzadorDeException.verificarNumeroGrupoDuplicado(
-					grupoRep.existsByNumeroGrupoAndAsignatura(data.getNumeroGrupo(), datos.asignatura));
+		if (temp.getNumeroGrupo() != data.getNumeroGrupo() || temp.getAsignatura().getId() != datos.asignatura.getId()
+				|| !Objects.equals(temp.getPeriodo(), data.getPeriodo())) {
+			LanzadorDeException.verificarNumeroGrupoDuplicado(grupoRep.existsByNumeroGrupoAndAsignaturaAndPeriodo(
+					data.getNumeroGrupo(), datos.asignatura, data.getPeriodo()));
 		}
 
 		temp.setAsignatura(datos.asignatura);
@@ -299,6 +300,7 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		Asignatura asignatura = datos.asignatura;
 		List<FranjaHoraria> sesiones = datos.sesiones;
 
+		LanzadorDeException.verificarPeriodo(data.getPeriodo());
 		LanzadorDeException.verificarCapacidadMinima(data.getCapacidadMinima());
 		LanzadorDeException.verificarCapacidadMaxima(data.getCapacidadMaxima());
 		LanzadorDeException.verificarCapacidades(data.getCapacidadMinima(), data.getCapacidadMaxima());
@@ -319,17 +321,34 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 				profesor.getEspecialidades());
 		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(profesor.getDisponibilidadHoraria(), sesiones);
 
-		List<Grupo> gruposProfesor = grupoRep.findByProfesor(profesor);
+		// Solo cuentan los grupos del MISMO periodo: un grupo de 2026-1 no choca con
+		// uno de 2027-1
+		List<Grupo> gruposProfesor = grupoRep.findByProfesor(profesor).stream()
+				.filter(g -> Objects.equals(g.getPeriodo(), data.getPeriodo())).collect(Collectors.toList());
+		List<Grupo> gruposSalon = grupoRep.findBySalon(salon).stream()
+				.filter(g -> Objects.equals(g.getPeriodo(), data.getPeriodo())).collect(Collectors.toList());
 
 		LanzadorDeException.verificarSinConflictoHorarioProfesor(gruposProfesor, sesiones, idActual);
-		LanzadorDeException.verificarSinConflictoHorarioSalon(grupoRep.findBySalon(salon), sesiones, idActual);
+		LanzadorDeException.verificarSinConflictoHorarioSalon(gruposSalon, sesiones, idActual);
 
+		// Horas reales según la duración de cada sesión (2 o 4 h), no un valor fijo
 		int horasYaAsignadas = gruposProfesor.stream().filter(g -> g.getId() != idActual)
-				.mapToInt(g -> g.getSesiones().size() * 2).sum();
+				.mapToInt(g -> horasDe(g.getSesiones())).sum();
 		LanzadorDeException.verificarCargaHorariaProfesor(profesor.getHorasMaximasSemanales(), horasYaAsignadas,
-				sesiones.size() * 2);
+				horasDe(sesiones));
 
 		return datos;
+	}
+
+	/**
+	 * Suma las horas reales de una lista de sesiones.
+	 */
+	private int horasDe(List<FranjaHoraria> sesiones) {
+		long minutos = 0;
+		for (FranjaHoraria s : sesiones) {
+			minutos += Duration.between(s.getHoraInicio(), s.getHoraFin()).toMinutes();
+		}
+		return (int) (minutos / 60);
 	}
 
 	private List<FranjaHoraria> guardarSesiones(List<FranjaHoraria> sesiones) {
