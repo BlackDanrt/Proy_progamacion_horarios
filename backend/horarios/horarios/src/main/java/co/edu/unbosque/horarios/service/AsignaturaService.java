@@ -243,7 +243,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	@Transactional
 	public int deleteByNombre(String nombre) {
 
-		LanzadorDeException.verificarNombre(nombre);
+		LanzadorDeException.verificarNombreAsignatura(nombre);
 
 		if (asignaturaRep.existsByNombre(nombre)) {
 
