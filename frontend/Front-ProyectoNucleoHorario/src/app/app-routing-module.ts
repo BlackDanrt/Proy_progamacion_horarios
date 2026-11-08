@@ -6,6 +6,8 @@ import { InicioAdministrador } from './inicio-administrador/inicio-administrador
 import { GestionBasesDatos } from './gestion-bases-datos/gestion-bases-datos';
 import { CrearAdministrador } from './crear-administrador/crear-administrador';
 import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
+import { Auditoria } from './auditoria/auditoria';
+import { ParametrosSistema } from './parametros-sistema/parametros-sistema';
 import { ConsultaHorario } from './consulta-horario/consulta-horario';
 import {adminGuard, disponibilidadGuard, profesorGuard, sesionGuard} from './services/auth.guards';
 import {GestionAsignatura} from './gestion-asignatura/gestion-asignatura';
@@ -31,6 +33,9 @@ const routes: Routes = [
   { path: 'horarios',             component: AsignacionHorarios,  canActivate: [adminGuard] },
   /** Consulta administrativa del horario de un docente. */
   { path: 'consulta-horario',     component: ConsultaHorario,     canActivate: [adminGuard] },
+  { path: 'auditoria', component: Auditoria, canActivate: [adminGuard] },
+  { path: 'parametros-sistema', component: ParametrosSistema, canActivate: [adminGuard] },
+  { path: 'mi-horario',           component: ConsultaHorario,     canActivate: [profesorGuard], data: { modo: 'docente' } },
   /** Consulta del horario propio de un docente. */
   { path: 'mi-horario',           component: ConsultaHorario,     canActivate: [profesorGuard,disponibilidadGuard], data: { modo: 'docente' } },
   /** Gestión del catálogo de asignaturas. */

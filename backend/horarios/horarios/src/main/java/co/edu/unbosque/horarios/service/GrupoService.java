@@ -14,8 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
+import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
 import co.edu.unbosque.horarios.dto.GrupoDTO;
+import co.edu.unbosque.horarios.dto.ParametrosSistemaDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
 import co.edu.unbosque.horarios.dto.SalonDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
@@ -33,6 +35,8 @@ import co.edu.unbosque.horarios.repository.ProfesorRepository;
 import co.edu.unbosque.horarios.repository.SalonRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
+import co.edu.unbosque.horarios.util.enums.Servicio;
+import co.edu.unbosque.horarios.util.enums.TipoAccion;
 
 /**
  * Servicio encargado de la gestión de grupos del sistema de horarios.
@@ -62,7 +66,13 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	private FranjaHorariaRepository franjaRep;
 
 	@Autowired
+	private AuditoriaService auditoriaService;
+	
+	@Autowired
 	private ModelMapper mapper;
+	
+	@Autowired
+	private ParametrosSistemaService parametrosSistemaService;
 
 	public GrupoService() {
 	}
@@ -106,9 +116,10 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 				data.getEstado());
 		entity.setPeriodo(data.getPeriodo());
 		entity.setInscritos(data.getInscritos());
-
+		
 		grupoRep.save(entity);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.CREATE, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -120,8 +131,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		LanzadorDeException.verificarId(asignaturaId);
 		LanzadorDeException.verificarId(salonId);
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
-		LanzadorDeException.verificarCapacidadMinima(capacidadMinima);
-		LanzadorDeException.verificarCapacidadMaxima(capacidadMaxima);
+		LanzadorDeException.verificarCapacidadMinima(capacidadMinima, parametrosSistemaService.get());
+		LanzadorDeException.verificarCapacidadMaxima(capacidadMaxima, parametrosSistemaService.get());
 		LanzadorDeException.verificarEstadoGrupo(estado);
 		LanzadorDeException.verificarPeriodo(periodo);
 		LanzadorDeException.verificarInscritos(inscritos);
@@ -179,6 +190,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		Iterable<Grupo> entityList = grupoRep.findAll();
 		List<GrupoDTO> dtoList = new ArrayList<>();
 		entityList.forEach(entity -> dtoList.add(mapper.map(entity, GrupoDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -187,6 +200,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		LanzadorDeException.verificarId(id);
 		if (grupoRep.existsById(id)) {
 			grupoRep.deleteById(id);
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.GRUPO);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 		return 1;
@@ -231,27 +246,39 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		temp.setInscritos(data.getInscritos());
 
 		grupoRep.save(temp);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
 	public List<GrupoDTO> findByNumeroGrupo(int numeroGrupo) {
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
 
-		// Ahora devuelve una lista, porque puede haber un "Grupo 1" en varias materias
-		List<Grupo> encontrados = grupoRep.findByNumeroGrupo(numeroGrupo);
+		List<Grupo> encontrado = grupoRep.findByNumeroGrupo(numeroGrupo);
+
 		List<GrupoDTO> dtoList = new ArrayList<>();
 
-		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
-
+		encontrado.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
+	/**
+	 * Busca grupos por asignatura.
+	 *
+	 * @param asignaturaDTO asignatura asociada (se usa su id).
+	 * @return lista de grupos encontrados.
+	 */
 	public List<GrupoDTO> findByAsignatura(AsignaturaDTO asignaturaDTO) {
+
 		Asignatura asignatura = mapper.map(asignaturaDTO, Asignatura.class);
 		List<Grupo> encontrados = grupoRep.findByAsignatura(asignatura);
 		List<GrupoDTO> dtoList = new ArrayList<>();
+
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -262,6 +289,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		List<Grupo> encontrados = grupoRep.findByProfesor(profesor);
 		List<GrupoDTO> dtoList = new ArrayList<>();
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -271,6 +300,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		List<Grupo> encontrados = grupoRep.findByEstado(estado);
 		List<GrupoDTO> dtoList = new ArrayList<>();
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -283,12 +314,17 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
 		if (grupoRep.existsByNumeroGrupo(numeroGrupo)) {
 			grupoRep.deleteByNumeroGrupo(numeroGrupo);
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.GRUPO);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 		return 1;
 	}
 
 	private DatosGrupo validar(GrupoDTO data, long idActual) {
+
+		ParametrosSistemaDTO parametros = parametrosSistemaService.get();
+		
 		DatosGrupo datos = new DatosGrupo();
 		datos.profesor = cargarProfesor(data.getProfesor());
 		datos.salon = cargarSalon(data.getSalon());
@@ -301,22 +337,22 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		List<FranjaHoraria> sesiones = datos.sesiones;
 
 		LanzadorDeException.verificarPeriodo(data.getPeriodo());
-		LanzadorDeException.verificarCapacidadMinima(data.getCapacidadMinima());
-		LanzadorDeException.verificarCapacidadMaxima(data.getCapacidadMaxima());
+		LanzadorDeException.verificarCapacidadMinima(data.getCapacidadMinima(), parametros);
+		LanzadorDeException.verificarCapacidadMaxima(data.getCapacidadMaxima(), parametros);
 		LanzadorDeException.verificarCapacidades(data.getCapacidadMinima(), data.getCapacidadMaxima());
 		LanzadorDeException.verificarProfesor(profesor);
 		LanzadorDeException.verificarEstadoGrupo(data.getEstado());
 		LanzadorDeException.verificarAsignatura(data.getAsignatura());
 		LanzadorDeException.verificarSalon(data.getSalon());
-		LanzadorDeException.verificarSesiones(sesiones.size());
-		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima());
+		LanzadorDeException.verificarSesiones(sesiones.size(), parametros);
+		LanzadorDeException.verificarCapacidadMaximaInstitucional(data.getCapacidadMaxima(), parametros);
 		LanzadorDeException.verificarCuposInscritos(data.getInscritos(), data.getCapacidadMaxima());
 		LanzadorDeException.verificarCapacidadSalon(salon.getCapacidad(), data.getCapacidadMaxima());
 		LanzadorDeException.verificarRequisitosSalon(asignatura.isRequiereComputadores(), salon.isTieneComputadores(),
 				asignatura.isRequiereSillasMoviles(), salon.isTieneSillasMoviles());
 		LanzadorDeException.verificarSesionesFrecuencia(sesiones.size(), asignatura.getFrecuenciaSemanal());
-		LanzadorDeException.verificarSesionesGrupo(sesiones);
-		LanzadorDeException.verificarDiasSesiones(sesiones);
+		LanzadorDeException.verificarSesionesGrupo(sesiones, parametros);
+		LanzadorDeException.verificarDiasSesiones(sesiones, parametros);
 		LanzadorDeException.verificarProfesorCalificado(asignatura.getEspecialidadRequerida(),
 				profesor.getEspecialidades());
 		LanzadorDeException.verificarDisponibilidadProfesorParaSesiones(profesor.getDisponibilidadHoraria(), sesiones);

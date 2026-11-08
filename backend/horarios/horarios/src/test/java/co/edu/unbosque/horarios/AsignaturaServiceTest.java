@@ -21,6 +21,7 @@ import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.repository.AsignaturaRepository;
 import co.edu.unbosque.horarios.service.AsignaturaService;
+import co.edu.unbosque.horarios.service.AuditoriaService;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +33,9 @@ class AsignaturaServiceTest {
     @Mock
     private ModelMapper mapper;
 
+    @Mock
+    private AuditoriaService auditoriaService;
+    
     @InjectMocks
     private AsignaturaService asignaturaService;
 

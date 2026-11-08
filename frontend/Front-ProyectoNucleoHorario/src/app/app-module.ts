@@ -15,6 +15,8 @@ import { CrearAdministrador } from './crear-administrador/crear-administrador';
 import { AsignacionHorarios } from './asignacion-horarios/asignacion-horarios';
 import { ConsultaHorario } from './consulta-horario/consulta-horario';
 import { authInterceptor } from './services/auth.interceptor';
+import { Auditoria } from './auditoria/auditoria';
+import { ParametrosSistema } from './parametros-sistema/parametros-sistema';
 import { GestionAsignatura } from './gestion-asignatura/gestion-asignatura';
 import { GestionAulas } from './gestion-aulas/gestion-aulas';
 import { InicioDocente } from './inicio-docente/inicio-docente';
@@ -31,6 +33,8 @@ import { InicioDocente } from './inicio-docente/inicio-docente';
     CrearAdministrador,
     AsignacionHorarios,
     ConsultaHorario,
+    Auditoria,
+    ParametrosSistema,
     GestionAsignatura,
     GestionAulas,
     InicioDocente,

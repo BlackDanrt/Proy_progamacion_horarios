@@ -20,6 +20,7 @@ import org.modelmapper.ModelMapper;
 import co.edu.unbosque.horarios.dto.SalonDTO;
 import co.edu.unbosque.horarios.entity.Salon;
 import co.edu.unbosque.horarios.repository.SalonRepository;
+import co.edu.unbosque.horarios.service.AuditoriaService;
 import co.edu.unbosque.horarios.service.SalonService;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.Bloque;
@@ -33,6 +34,9 @@ class SalonServiceTest {
     @Mock
     private ModelMapper mapper;
 
+    @Mock
+    private AuditoriaService auditoriaService;
+    
     @InjectMocks
     private SalonService salonService;
 

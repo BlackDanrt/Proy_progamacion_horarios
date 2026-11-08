@@ -21,7 +21,9 @@ import org.modelmapper.ModelMapper;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.repository.FranjaHorariaRepository;
+import co.edu.unbosque.horarios.service.AuditoriaService;
 import co.edu.unbosque.horarios.service.FranjaHorariaService;
+import co.edu.unbosque.horarios.service.ParametrosSistemaService;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.Dia;
 
@@ -34,6 +36,12 @@ class FranjaHorariaServiceTest {
     @Mock
     private ModelMapper mapper;
 
+    @Mock
+    private AuditoriaService auditoriaService;
+    
+    @Mock
+    private ParametrosSistemaService parametrosSistemaService;
+    
     @InjectMocks
     private FranjaHorariaService franjaHorariaService;
 

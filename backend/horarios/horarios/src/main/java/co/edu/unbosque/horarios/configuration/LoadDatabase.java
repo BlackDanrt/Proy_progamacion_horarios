@@ -9,7 +9,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import co.edu.unbosque.horarios.entity.Administrador;
+import co.edu.unbosque.horarios.entity.ParametrosSistema;
 import co.edu.unbosque.horarios.repository.AdministradorRepository;
+import co.edu.unbosque.horarios.repository.ParametrosSistemaRepository;
 
 /**
  * Clase de configuración encargada de inicializar datos predeterminados en la
@@ -80,6 +82,30 @@ public class LoadDatabase {
 			 * correctamente.
 			 */
 			log.info("ADMINISTRADOR listo.");
+		};
+	}
+	/**
+	 * Inicializa la base de datos con el registro único de parámetros del
+	 * sistema.
+	 * <p>
+	 * Si ya existe el registro con id = 1, no se modifica (se respetan los
+	 * valores que el administrador haya configurado). Si no existe, se crea
+	 * uno nuevo con los valores por defecto definidos en la entidad.
+	 *
+	 * @param parametrosSistemaRepository repositorio de parámetros del sistema.
+	 * @return CommandLineRunner que ejecuta la inicialización.
+	 */
+	@Bean
+	CommandLineRunner initParametrosSistema(ParametrosSistemaRepository parametrosSistemaRepository) {
+		return args -> {
+
+			if (!parametrosSistemaRepository.existsById(1L)) {
+				ParametrosSistema parametros = new ParametrosSistema();
+				parametrosSistemaRepository.save(parametros);
+				log.info("PARAMETROS_SISTEMA creado con valores por defecto.");
+			} else {
+				log.info("PARAMETROS_SISTEMA ya existe.");
+			}
 		};
 	}
 }
