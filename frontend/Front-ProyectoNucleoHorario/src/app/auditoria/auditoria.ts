@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { AuditoriaService } from '../services/auditoria.service';
 
+/** Representa una acción registrada por el sistema y mostrada en la tabla de auditoría. */
 export interface RegistroAuditoria {
   id: number;
   idUsuario: number;
@@ -23,9 +24,11 @@ export interface RegistroAuditoria {
 })
 export class Auditoria implements OnInit {
 
+  /** Servicios usados para consultar la auditoría y navegar entre vistas. */
   private auditoriaService = inject(AuditoriaService);
   private router = inject(Router);
 
+  /** Estado de carga, mensajes y controles de la vista. */
   registros = signal<RegistroAuditoria[]>([]);
   cargando = signal<boolean>(false);
   error = signal<string>('');
@@ -34,6 +37,7 @@ export class Auditoria implements OnInit {
   paginaActual = signal<number>(1);
   mostrarMenuUsuario = signal<boolean>(false);
 
+  /** Registros que coinciden con el término buscado en usuario, acción, servicio o rol. */
   registrosFiltrados = computed(() => {
     const todos = this.registros();
     const termino = this.filtroBusqueda().trim().toLowerCase();
@@ -46,23 +50,28 @@ export class Auditoria implements OnInit {
     );
   });
 
+  /** Cantidad de páginas necesarias para mostrar los resultados filtrados. */
   totalPaginas = computed(() =>
     Math.max(1, Math.ceil(this.registrosFiltrados().length / this.registrosPorPagina()))
   );
 
+  /** Números de página disponibles para el control de paginación. */
   paginas = computed(() =>
     Array.from({ length: this.totalPaginas() }, (_, i) => i + 1)
   );
 
+  /** Segmento de resultados correspondiente a la página actual. */
   registrosPaginados = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.registrosPorPagina();
     return this.registrosFiltrados().slice(inicio, inicio + this.registrosPorPagina());
   });
 
+  /** Carga los registros al iniciar la vista. */
   ngOnInit(): void {
     this.cargarRegistros();
   }
 
+  /** Consulta la auditoría, adapta la respuesta del servicio y actualiza la tabla. */
   cargarRegistros(): void {
     this.cargando.set(true);
     this.error.set('');
@@ -98,6 +107,7 @@ export class Auditoria implements OnInit {
     });
   }
 
+  /** Convierte valores enumerados como `INICIO_SESION` en texto legible. */
   private formatearEnum(valor: string | null | undefined): string {
     if (!valor) return '—';
     return valor
@@ -107,6 +117,7 @@ export class Auditoria implements OnInit {
       .join(' ');
   }
 
+  /** Formatea una fecha para mostrarla en la configuración regional de Colombia. */
   private formatearFecha(valor: string | null | undefined): string {
     if (!valor) return '—';
     const fecha = new Date(valor);
@@ -124,36 +135,43 @@ export class Auditoria implements OnInit {
     }
   }
 
+  /** Actualiza la búsqueda y vuelve a la primera página para mostrar los resultados. */
   onFiltroChange(valor: string): void {
     this.filtroBusqueda.set(valor);
     this.paginaActual.set(1);
   }
 
+  /** Cambia el tamaño de página y reinicia la paginación. */
   onRegistrosPorPaginaChange(valor: number): void {
     this.registrosPorPagina.set(Number(valor));
     this.paginaActual.set(1);
   }
 
+  /** Cambia de página solo si el número solicitado está dentro del rango disponible. */
   cambiarPagina(p: number): void {
     if (p >= 1 && p <= this.totalPaginas()) {
       this.paginaActual.set(p);
     }
   }
 
+  /** Navega a la ruta indicada por los controles de la vista. */
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
   }
 
+  /** Alterna el menú de usuario sin propagar el clic al documento. */
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario.update(v => !v);
   }
 
+  /** Oculta el menú de usuario y redirige al formulario de acceso. */
   cerrarSesion(): void {
     this.mostrarMenuUsuario.set(false);
     this.router.navigate(['/loginn']);
   }
 
+  /** Cierra el menú de usuario cuando se hace clic fuera de él. */
   @HostListener('document:click')
   cerrarMenuAlHacerClicFuera(): void {
     if (this.mostrarMenuUsuario()) {

@@ -5,6 +5,7 @@ import { ParametrosSistemaService } from '../services/parametrossistema.service'
 import { SesionService } from '../services/sesion.service';
 import { ParametrosSistemaModel } from '../models/parametrossistema.model';
 
+/** Mensaje temporal que se presenta después de una operación del formulario. */
 interface Mensaje {
   tipo: 'exito' | 'error';
   texto: string;
@@ -18,11 +19,13 @@ interface Mensaje {
 })
 export class ParametrosSistema implements OnInit {
 
+  /** Dependencias para navegación, actualización de vista, API y sesión actual. */
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly parametrosService = inject(ParametrosSistemaService);
   private readonly sesion = inject(SesionService);
 
+  /** Valores de configuración del horario y de las reglas para generar grupos. */
   id: number = 1;
   horaInicioEntreSemana: string = '07:00';
   horaFinEntreSemana: string = '22:00';
@@ -37,11 +40,13 @@ export class ParametrosSistema implements OnInit {
   minEstudiantesParaAbrir: number = 10;
   exigirDiasNoConsecutivos: boolean = true;
 
+  /** Estado de las operaciones y controles de la vista. */
   cargando: boolean = true;
   guardando: boolean = false;
   mensaje: Mensaje | null = null;
   mostrarMenuUsuario: boolean = false;
 
+  /** Verifica permisos de administrador y carga la configuración vigente. */
   ngOnInit(): void {
     if (!this.sesion.esAdministrador()) {
       this.router.navigate(['/inicio-administrador']);
@@ -50,6 +55,7 @@ export class ParametrosSistema implements OnInit {
     this.cargarParametros();
   }
 
+  /** Obtiene los parámetros del servidor y actualiza la vista con la respuesta. */
   private cargarParametros(): void {
     this.cargando = true;
     this.parametrosService.obtenerParametros().subscribe({
@@ -68,6 +74,7 @@ export class ParametrosSistema implements OnInit {
     });
   }
 
+  /** Copia el modelo recibido a los campos del formulario; las horas se limitan a HH:mm. */
   private aplicarParametros(p: ParametrosSistemaModel): void {
     this.id = p.id;
     this.horaInicioEntreSemana = p.horaInicioEntreSemana?.slice(0, 5) ?? this.horaInicioEntreSemana;
@@ -84,6 +91,7 @@ export class ParametrosSistema implements OnInit {
     this.exigirDiasNoConsecutivos = p.exigirDiasNoConsecutivos;
   }
 
+  /** Valida el formulario y envía la configuración al servidor para guardarla. */
   guardar(): void {
     if (this.guardando) {
       return;
@@ -149,6 +157,7 @@ export class ParametrosSistema implements OnInit {
   }
 
 
+  /** Actualiza el mensaje visible y fuerza la detección de cambios de Angular. */
   private mostrarMensaje(tipo: 'exito' | 'error', texto: string): void {
     this.mensaje = { tipo, texto };
     this.cdr.detectChanges();
@@ -168,21 +177,25 @@ export class ParametrosSistema implements OnInit {
   }
 
 
+  /** Navega a la ruta indicada por los controles de la vista. */
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
   }
 
+  /** Alterna el menú de usuario sin propagar el clic al documento. */
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
   }
 
+  /** Cierra la sesión activa y redirige al formulario de acceso. */
   cerrarSesion(): void {
     this.mostrarMenuUsuario = false;
     this.sesion.cerrarSesion();
     this.router.navigate(['/loginn']);
   }
 
+  /** Cierra el menú de usuario cuando se hace clic fuera de él. */
   @HostListener('document:click')
   cerrarMenuAlHacerClicFuera(): void {
     if (this.mostrarMenuUsuario) {
