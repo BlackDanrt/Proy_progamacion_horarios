@@ -345,3 +345,97 @@
     transform: translateX(0);
   }
 }
+
+/* VENTANA EMERGENTE (MODAL) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 550px;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #ef4444;
+}
+
+.options-container {
+  display: flex;
+  gap: 20px;
+}
+
+.option-card {
+  flex: 1;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.option-card:hover {
+  border-color: #f25100;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(242, 81, 0, 0.1);
+}
+
+.icon-wrapper {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+}
+
+.icon-asignatura {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.icon-salon {
+  background-color: #ffedd5;
+  color: #ea580c;
+}
+
+.option-card h3 {
+  font-size: 18px;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.option-card p {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.4;
+}

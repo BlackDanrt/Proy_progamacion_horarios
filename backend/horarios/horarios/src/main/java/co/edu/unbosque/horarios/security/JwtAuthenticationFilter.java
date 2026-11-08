@@ -22,86 +22,89 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    /** Utilidad para operaciones con tokens JWT. */
-    private final JwtUtil jwtUtil;
+	/** Utilidad para operaciones con tokens JWT. */
+	private final JwtUtil jwtUtil;
 
-    /** Servicio para cargar los detalles del usuario. */
-    private final UserDetailsService userDetailsService;
-    
-    private static String TOKEN_JWT;
+	/** Servicio para cargar los detalles del usuario. */
+	private final UserDetailsService userDetailsService;
 
-    /**
-     * Constructor que inicializa las dependencias necesarias para el filtro.
-     *
-     * @param jwtUtil            Utilidad para operaciones con tokens JWT
-     * @param userDetailsService Servicio para cargar los detalles del usuario
-     */
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
-        this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
-    }
-    
-    public String getTokenJWT() {
-    	return TOKEN_JWT;
-      }
+	/**
+	 * Constructor que inicializa las dependencias necesarias para el filtro.
+	 *
+	 * @param jwtUtil            Utilidad para operaciones con tokens JWT
+	 * @param userDetailsService Servicio para cargar los detalles del usuario
+	 */
+	public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+		this.jwtUtil = jwtUtil;
+		this.userDetailsService = userDetailsService;
+	}
 
-    /**
-     * Método principal del filtro que se ejecuta para cada solicitud HTTP.
-     * Extrae y valida el token JWT del encabezado de autorización.
-     * Si el token es válido, establece la autenticación en el contexto de seguridad.
-     *
-     * @param request     Solicitud HTTP entrante
-     * @param response    Respuesta HTTP saliente
-     * @param filterChain Cadena de filtros para continuar el procesamiento
-     * @throws ServletException Si ocurre un error durante el procesamiento del servlet
-     * @throws IOException      Si ocurre un error de entrada/salida
-     */
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+	/**
+	 * Método principal del filtro que se ejecuta para cada solicitud HTTP. Extrae y
+	 * valida el token JWT del encabezado de autorización. Si el token es válido,
+	 * establece la autenticación en el contexto de seguridad.
+	 *
+	 * @param request     Solicitud HTTP entrante
+	 * @param response    Respuesta HTTP saliente
+	 * @param filterChain Cadena de filtros para continuar el procesamiento
+	 * @throws ServletException Si ocurre un error durante el procesamiento del
+	 *                          servlet
+	 * @throws IOException      Si ocurre un error de entrada/salida
+	 */
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+			throws ServletException, IOException {
 
-        final String authorizationHeader = request.getHeader("Authorization");
+		final String authorizationHeader = request.getHeader("Authorization");
 
-        String correo = null;
-        String jwt = null;
+		String correo = null;
+		String jwt = null;
 
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            jwt = authorizationHeader.substring(7);
-            try {
-                correo = jwtUtil.extractUsername(jwt); 
-            } catch (Exception e) {
-                logger.error("Error al extraer el correo del token JWT", e);
-                filterChain.doFilter(request, response);
-                return;
-            }
-        }
+		if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+			jwt = authorizationHeader.substring(7);
+			try {
+				correo = jwtUtil.extractUsername(jwt);
+			} catch (io.jsonwebtoken.ExpiredJwtException e) {
+				logger.warn("El token JWT ha expirado: " + e.getMessage());
+				// IMPORTANTE: interceptar la expiración y lanzar un 401 Unauthorized explícito
+				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				response.getWriter().write("Token expirado");
+				return; // Cortamos la cadena de filtros para que no devuelva 403
+			} catch (Exception e) {
+				logger.error("Error al extraer el correo del token JWT", e);
+				// Si el token está mal formado o hay otro error, también lanzamos 401
+				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				response.getWriter().write("Token inválido");
+				return;
+			}
+		}
 
-        if (correo != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+		if (correo != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            UserDetails userDetails;
-            try {
-                userDetails = this.userDetailsService.loadUserByUsername(correo); // busca por correo
-            } catch (UsernameNotFoundException e) {
-                logger.warn("Usuario del token no encontrado en la base de datos: " + correo);
-                filterChain.doFilter(request, response);
-                return;
-            } catch (Exception e) {
-                logger.error("Error al cargar el usuario: " + correo, e);
-                filterChain.doFilter(request, response);
-                return;
-            }
+			UserDetails userDetails;
+			try {
+				userDetails = this.userDetailsService.loadUserByUsername(correo); // busca por correo
+			} catch (UsernameNotFoundException e) {
+				logger.warn("Usuario del token no encontrado en la base de datos: " + correo);
+				filterChain.doFilter(request, response);
+				return;
+			} catch (Exception e) {
+				logger.error("Error al cargar el usuario: " + correo, e);
+				filterChain.doFilter(request, response);
+				return;
+			}
 
-            if (jwtUtil.validateToken(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                logger.info("Usuario autenticado: " + correo + " | Roles: " + userDetails.getAuthorities());
-            } else {
-                logger.warn("Token JWT inválido para el usuario: " + correo);
-            }
-        }
+			if (jwtUtil.validateToken(jwt, userDetails)) {
+				UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+						userDetails, null, userDetails.getAuthorities());
+				authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+				SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+				logger.info("Usuario autenticado: " + correo + " | Roles: " + userDetails.getAuthorities());
+			} else {
+				logger.warn("Token JWT inválido para el usuario: " + correo);
+			}
+		}
 
-        filterChain.doFilter(request, response);
-    }
+		filterChain.doFilter(request, response);
+	}
 }

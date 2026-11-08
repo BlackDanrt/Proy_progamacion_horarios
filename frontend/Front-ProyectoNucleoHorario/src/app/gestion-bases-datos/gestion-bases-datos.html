@@ -1,4 +1,3 @@
-
 <div class="layout-wrapper">
 
   <aside class="sidebar">
@@ -64,6 +63,16 @@
           <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
           <rect x="9" y="3" width="6" height="4" rx="1" ry="1"></rect>
           <polyline points="9 14 11 16 15 12"></polyline>
+      <button type="button" class="sidebar-btn " (click)="navegarA('/gestion-asignatura')" title="Gestión de aignaturas">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      </button>
+      <button type="button" class="sidebar-btn "  (click)="navegarA('/gestion-aulas')" title="Gestión de Salones">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 21h18"></path>
+          <path d="M5 21V7l8-4 8 4v14"></path>
         </svg>
       </button>
     </nav>
@@ -240,6 +249,31 @@
     </footer>
 
   </main>
+
+  <!-- Modal de edición -->
+  <div class="modal-overlay" *ngIf="registroEditando()" (click)="cancelarEdicion()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h2>Editar {{ registroEditando()!.rol }}</h2>
+
+      <label>Nombre</label>
+      <input type="text" [value]="editNombre()" (input)="editNombre.set($any($event.target).value)">
+
+      <label>Apellido</label>
+      <input type="text" [value]="editApellido()" (input)="editApellido.set($any($event.target).value)">
+
+      <ng-container *ngIf="registroEditando()!.rol === 'Docente'">
+        <label>Horas máximas semanales</label>
+        <input type="number" min="0" [value]="editHoras()" (input)="editHoras.set($any($event.target).value)">
+      </ng-container>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancelar" (click)="cancelarEdicion()">Cancelar</button>
+        <button type="button" class="btn-crear" [disabled]="guardando()" (click)="guardarEdicion()">
+          {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </div>
+  </div>
 
   <app-seleccion-crear-registro
     *ngIf="mostrarModalRegistro()"

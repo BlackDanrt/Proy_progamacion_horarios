@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.dto.AuditoriaDTO;
@@ -70,7 +71,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 
 		LanzadorDeException.verificarAsignatura(data);
 
-		LanzadorDeException.verificarNombre(data.getNombre());
+		LanzadorDeException.verificarNombreAsignatura(data.getNombre());
 		LanzadorDeException.verificarNumCreditos(data.getNumCreditos());
 		LanzadorDeException.verificarFrecuenciaSemanal(data.getFrecuenciaSemanal());
 
@@ -113,6 +114,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @return 0 si se elimina, 1 si no existe.
 	 */
 	@Override
+	
 	public int deleteById(Long id) {
 
 		LanzadorDeException.verificarId(id);
@@ -140,7 +142,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		LanzadorDeException.verificarId(id);
 		LanzadorDeException.verificarAsignatura(data);
 
-		LanzadorDeException.verificarNombre(data.getNombre());
+		LanzadorDeException.verificarNombreAsignatura(data.getNombre());
 		LanzadorDeException.verificarNumCreditos(data.getNumCreditos());
 		LanzadorDeException.verificarFrecuenciaSemanal(data.getFrecuenciaSemanal());
 
@@ -252,9 +254,10 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @param nombre nombre de la asignatura.
 	 * @return 0 si se elimina, 1 si no existe.
 	 */
+	@Transactional
 	public int deleteByNombre(String nombre) {
 
-		LanzadorDeException.verificarNombre(nombre);
+		LanzadorDeException.verificarNombreAsignatura(nombre);
 
 		if (asignaturaRep.existsByNombre(nombre)) {
 

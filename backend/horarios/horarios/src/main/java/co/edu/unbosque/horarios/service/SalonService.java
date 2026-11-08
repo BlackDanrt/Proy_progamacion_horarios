@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.SalonDTO;
@@ -305,6 +306,7 @@ public class SalonService implements CRUDOperation<SalonDTO> {
 	 * @param numeroSalon número del salón.
 	 * @return 0 si se elimina, 1 si no existe.
 	 */
+	@Transactional
 	public int deleteByBloqueAndNumeroSalon(Bloque bloque, int numeroSalon) {
 
 		LanzadorDeException.verificarBloque(bloque);

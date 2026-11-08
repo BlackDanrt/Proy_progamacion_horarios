@@ -1,6 +1,8 @@
 import { ChangeDetectorRef, Component, HostListener, OnInit, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { ProfesorService } from '../services/profesor.service';
 import { SesionService } from '../services/sesion.service';
 import { Dia } from '../enums/dia.enum';
@@ -9,17 +11,26 @@ import { Especialidad } from '../enums/especialidad.enum';
 import { TipoVinculacion } from '../enums/tipoViculacion.enum';
 import { FranjahorariaModel } from '../models/franjahoraria.model';
 import { ProfesorModel } from '../models/profesor.model';
+import { reglaDe } from '../utils/reglas-contrato';
 
-/** Fila de la grilla de disponibilidad (una hora). */
+/** Ventana principal del administrador, a donde se vuelve tras crear un profesor. */
+const RUTA_PRINCIPAL = '/inicio-administrador';
+
+/** Intervalo de una hora mostrado en la grilla de disponibilidad. */
 interface FilaHora {
+  /** Hora de inicio de la fila. */
   inicio: string;
+  /** Hora de fin de la fila. */
   fin: string;
+  /** Indica si la fila corresponde al almuerzo. */
   esAlmuerzo: boolean;
 }
 
-/** Mensaje que se muestra al usuario. */
+/** Mensaje de estado presentado en el formulario. */
 interface Mensaje {
+  /** Tipo visual del mensaje. */
   tipo: 'exito' | 'error';
+  /** Texto del mensaje. */
   texto: string;
 }
 
@@ -29,9 +40,10 @@ interface Mensaje {
   templateUrl: './registro-profesor.html',
   styleUrl: './registro-profesor.css',
 })
+/** Permite registrar profesores y gestionar la disponibilidad horaria docente. */
 export class RegistroProfesor implements OnInit {
-
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly profesorService = inject(ProfesorService);
   private readonly sesion = inject(SesionService);
@@ -40,33 +52,46 @@ export class RegistroProfesor implements OnInit {
   esAdministrador: boolean = false;
 
   // ---- Datos del profesor (modo administrador) ----
+  /** Nombre del profesor. */
   nombre: string = '';
+  /** Apellido del profesor. */
   apellido: string = '';
+  /** Documento del profesor, conservado como texto durante la edición. */
   documento: string = '';
+  /** Correo institucional del profesor. */
   correo: string = '';
+  /** Contraseña para crear o actualizar la cuenta. */
   contrasenia: string = '';
+  /** Tipo de vinculación laboral seleccionado. */
   tipoVinculacion: TipoVinculacion = TipoVinculacion.TIEMPO_COMPLETO;
+  /** Nivel de escalafón seleccionado. */
   escalafon: Escalafon = Escalafon.INSTRUCTOR_ASISTENTE;
-  horasMaximasSemanales: number = 16;
+  /** Horas máximas semanales derivadas del contrato. */
+  horasMaximasSemanales: number = 40;
+  /** Especialidades seleccionadas para el profesor. */
   especialidadesSeleccionadas: Especialidad[] = [];
 
+  // ---- Modo edición (el administrador edita un profesor existente) ----
+  /** true cuando se llega con ?id=<idProfesor> (desde Gestión de bases de datos). */
+  modoEdicion: boolean = false;
+  private idEdicion: number | null = null;
+  /** Objeto original del back: se usa como base para no perder campos al guardar. */
+  private profesorOriginal: ProfesorModel | null = null;
+
   // ---- Profesor con sesión (modo profesor) ----
+  /** Perfil del profesor autenticado en modo docente. */
   profesor: ProfesorModel | null = null;
 
   // ---- Listas de opciones ----
+  /** Tipos de vinculación disponibles en el formulario. */
   tiposVinculacion: TipoVinculacion[] = Object.values(TipoVinculacion);
+  /** Niveles de escalafón disponibles. */
   escalafones: Escalafon[] = Object.values(Escalafon);
+  /** Especialidades disponibles para seleccionar. */
   especialidades: Especialidad[] = Object.values(Especialidad);
 
-  /** Tope de horas semanales según la dedicación (Estatuto Docente, art. 8). */
-  private readonly horasPorVinculacion: Record<TipoVinculacion, number> = {
-    [TipoVinculacion.TIEMPO_COMPLETO]: 40,
-    [TipoVinculacion.TRES_CUARTOS_DE_TIEMPO]: 30,
-    [TipoVinculacion.MEDIO_TIEMPO]: 20,
-    [TipoVinculacion.CUARTO_DE_TIEMPO]: 10,
-  };
-
   // ---- Grilla de disponibilidad ----
+  /** Días que aparecen en la grilla de disponibilidad. */
   dias: { clave: Dia; nombre: string }[] = [
     { clave: Dia.LUNES, nombre: 'Lunes' },
     { clave: Dia.MARTES, nombre: 'Martes' },
@@ -79,18 +104,40 @@ export class RegistroProfesor implements OnInit {
   /** Filas de 1 hora de 7:00 a 22:00; la de 12:00 a 13:00 es el almuerzo. */
   filas: FilaHora[] = this.construirFilas();
 
+  /** Filas seleccionadas, identificadas por día y hora. */
   private seleccion: Set<string> = new Set<string>();
 
+  /** Duración de una clase en horas. */
+  private readonly HORAS_POR_CLASE = 2;
+
   // ---- Estado de pantalla ----
+  /** Mensaje de resultado del formulario. */
   mensaje: Mensaje | null = null;
+  /** Aviso que se muestra junto a la grilla cuando un clic no es válido. */
+  avisoGrilla: string | null = null;
+  /** Indica si se está enviando información al backend. */
   guardando: boolean = false;
+  /** Mensaje de éxito que se muestra en una ventana centrada tras crear un profesor. */
+  exitoCreacion: string | null = null;
+  private temporizadorExito?: ReturnType<typeof setTimeout>;
+  /** Controla la visibilidad del menú de usuario. */
   mostrarMenuUsuario: boolean = false;
 
+  /** Determina el rol activo y carga los datos necesarios para la pantalla. */
   ngOnInit(): void {
     this.esAdministrador = this.sesion.esAdministrador();
 
     if (!this.esAdministrador) {
       this.cargarProfesorConSesion();
+      return;
+    }
+
+    // Administrador: si viene ?id=..., se edita ese profesor
+    const idParam = this.route.snapshot.queryParamMap.get('id');
+    if (idParam !== null && !isNaN(Number(idParam))) {
+      this.modoEdicion = true;
+      this.idEdicion = Number(idParam);
+      this.cargarProfesorParaEdicion(this.idEdicion);
     }
   }
 
@@ -104,20 +151,47 @@ export class RegistroProfesor implements OnInit {
     return texto.charAt(0).toUpperCase() + texto.slice(1);
   }
 
+  /** Devuelve el nombre legible de la vinculación y su rango de horas. */
   etiquetaVinculacion(tipo: TipoVinculacion): string {
-    return `${this.etiqueta(tipo)} (hasta ${this.horasPorVinculacion[tipo]} h)`;
+    const r = reglaDe(tipo);
+    return `${this.etiqueta(tipo)} (${r.minHoras} a ${r.maxHoras} h)`;
   }
 
+  /** Las horas de clase salen del contrato: el administrador no las digita. */
+  /** Mínimo de horas semanales establecido por el tipo de vinculación. */
+  get minimoHoras(): number {
+    return reglaDe(this.esAdministrador ? this.tipoVinculacion : this.profesor?.tipoVinculacion)
+      .minHoras;
+  }
+
+  /** Máximo de horas semanales establecido por el tipo de vinculación. */
   get maximoHoras(): number {
-    return this.horasPorVinculacion[this.tipoVinculacion];
+    return reglaDe(this.esAdministrador ? this.tipoVinculacion : this.profesor?.tipoVinculacion)
+      .maxHoras;
   }
 
+  /** Actualiza el límite semanal y avisa si la selección lo supera. */
   alCambiarVinculacion(): void {
-    if (this.horasMaximasSemanales > this.maximoHoras) {
-      this.horasMaximasSemanales = this.maximoHoras;
+    this.horasMaximasSemanales = this.maximoHoras;
+    // Si ya había marcado más horas de las que permite el nuevo contrato, se avisa
+    if (this.horasSeleccionadas > this.maximoHoras) {
+      this.avisoGrilla = `Con este tipo de vinculación el máximo es ${this.maximoHoras} h y tienes ${this.horasSeleccionadas} h marcadas. Quita algunos bloques.`;
     }
   }
 
+  /** Valida las horas marcadas contra el contrato. `exigirMinimo` = false permite dejar la malla vacía (el docente la llena en su primer ingreso). */
+  private validarHorasContrato(exigirMinimo: boolean): string | null {
+    const h = this.horasSeleccionadas;
+    if (h > this.maximoHoras) {
+      return `Marcaste ${h} h y el máximo para este contrato es ${this.maximoHoras} h.`;
+    }
+    if (h < this.minimoHoras && (exigirMinimo || h > 0)) {
+      return `Marcaste ${h} h y el mínimo para este contrato es ${this.minimoHoras} h.`;
+    }
+    return null;
+  }
+
+  /** Añade o quita una especialidad de la selección actual. */
   toggleEspecialidad(especialidad: Especialidad): void {
     const indice: number = this.especialidadesSeleccionadas.indexOf(especialidad);
     if (indice >= 0) {
@@ -131,6 +205,7 @@ export class RegistroProfesor implements OnInit {
   // Grilla de disponibilidad
   // ------------------------------------------------------------------
 
+  /** Genera las filas horarias de la grilla diaria. */
   private construirFilas(): FilaHora[] {
     const filas: FilaHora[] = [];
     for (let hora = 7; hora <= 21; hora++) {
@@ -143,10 +218,12 @@ export class RegistroProfesor implements OnInit {
     return filas;
   }
 
+  /** Formatea una hora entera como HH:00. */
   private formatoHora(hora: number): string {
     return `${hora.toString().padStart(2, '0')}:00`;
   }
 
+  /** Construye la clave única de una celda de disponibilidad. */
   private clave(dia: Dia, fila: FilaHora): string {
     return `${dia}|${fila.inicio}`;
   }
@@ -156,19 +233,89 @@ export class RegistroProfesor implements OnInit {
     return fila.esAlmuerzo || (dia === Dia.SABADO && fila.inicio >= '13:00');
   }
 
+  /** Indica si la celda de día y hora está seleccionada. */
   estaSeleccionada(dia: Dia, fila: FilaHora): boolean {
     return this.seleccion.has(this.clave(dia, fila));
   }
 
+  /** Tope de horas semanales: el del formulario (admin) o el del profesor con sesión. */
+  /** Límite semanal de horas según el contrato activo. */
+  get limiteHoras(): number {
+    return this.maximoHoras;
+  }
+
+  /** Cantidad de horas actualmente seleccionadas en la grilla. */
+  get horasSeleccionadas(): number {
+    return this.seleccion.size;
+  }
+
+  /** Selecciona o deselecciona un bloque, validando las reglas horarias. */
   toggleCelda(dia: Dia, fila: FilaHora): void {
     if (this.estaDeshabilitada(dia, fila)) {
       return;
     }
-    const clave: string = this.clave(dia, fila);
-    if (this.seleccion.has(clave)) {
-      this.seleccion.delete(clave);
-    } else {
-      this.seleccion.add(clave);
+    this.avisoGrilla = null;
+
+    // Clic sobre un bloque ya marcado: se desmarca completo.
+    if (this.estaSeleccionada(dia, fila)) {
+      this.quitarBloque(dia, fila);
+      return;
+    }
+
+    const problema: string | null = this.validarNuevoBloque(dia, fila);
+    if (problema) {
+      this.avisoGrilla = problema;
+      return;
+    }
+
+    const i: number = this.filas.indexOf(fila);
+    this.seleccion.add(this.clave(dia, this.filas[i]));
+    this.seleccion.add(this.clave(dia, this.filas[i + 1]));
+  }
+
+  /** Devuelve el motivo por el que no se puede marcar el bloque, o null si es válido. */
+  private validarNuevoBloque(dia: Dia, fila: FilaHora): string | null {
+    if (!this.esAdministrador && !this.profesor) {
+      return 'Espera a que cargue tu información.';
+    }
+
+    const i: number = this.filas.indexOf(fila);
+    const siguiente: FilaHora | undefined = this.filas[i + 1];
+
+    if (!siguiente) {
+      return 'Las clases duran 2 horas y no alcanzan a terminar antes de las 10:00 p. m.';
+    }
+    if (this.estaDeshabilitada(dia, siguiente)) {
+      return 'Una clase de 2 horas desde esta hora chocaría con el almuerzo o con el cierre del sábado.';
+    }
+
+    const marcada = (idx: number): boolean =>
+      idx >= 0 && idx < this.filas.length && this.seleccion.has(this.clave(dia, this.filas[idx]));
+
+    // Bloque nuevo = filas i e i+1. No puede tocar otro bloque (ni antes ni después).
+    if (marcada(i - 1) || marcada(i + 1) || marcada(i + 2)) {
+      return 'No puedes tener clases seguidas: deja al menos 1 hora libre entre bloques.';
+    }
+
+    if (this.horasSeleccionadas + this.HORAS_POR_CLASE > this.limiteHoras) {
+      return `No puedes superar tus horas máximas por semana (${this.limiteHoras} h).`;
+    }
+    return null;
+  }
+
+  /** Quita de la grilla el bloque (horas seguidas) al que pertenece la celda. */
+  private quitarBloque(dia: Dia, fila: FilaHora): void {
+    const marcada = (idx: number): boolean =>
+      idx >= 0 && idx < this.filas.length && this.seleccion.has(this.clave(dia, this.filas[idx]));
+
+    const i: number = this.filas.indexOf(fila);
+    let desde: number = i;
+    let hasta: number = i;
+    while (marcada(desde - 1)) desde--;
+    while (marcada(hasta + 1)) hasta++;
+
+    for (let k = desde; k <= hasta; k++) {
+      this.seleccion.delete(this.clave(dia, this.filas[k]));
     }
   }
 
@@ -177,7 +324,7 @@ export class RegistroProfesor implements OnInit {
     const franjas: FranjahorariaModel[] = [];
 
     for (const dia of this.dias) {
-      const horas: FilaHora[] = this.filas.filter(f => this.estaSeleccionada(dia.clave, f));
+      const horas: FilaHora[] = this.filas.filter((f) => this.estaSeleccionada(dia.clave, f));
       let inicio: string | null = null;
       let fin: string | null = null;
 
@@ -217,15 +364,43 @@ export class RegistroProfesor implements OnInit {
   // Carga del profesor con sesión
   // ------------------------------------------------------------------
 
+  /** Carga el perfil y disponibilidad del profesor autenticado. */
   private cargarProfesorConSesion(): void {
     const id: number | null = this.sesion.getProfesorId();
 
     this.profesorService.mostrarTodo().subscribe({
       next: (respuesta) => {
-        this.profesor = (respuesta.body ?? []).find(p => p.id === id) ?? null;
+        this.profesor = (respuesta.body ?? []).find((p) => p.id === id) ?? null;
         if (this.profesor) {
           this.cargarSeleccion(this.profesor.disponibilidadHoraria ?? []);
         }
+        this.cdr.detectChanges();
+      },
+      error: (error: HttpErrorResponse) => this.mostrarError(error),
+    });
+  }
+
+  /** Carga los datos ya registrados del profesor en el formulario y su malla en la grilla. */
+  private cargarProfesorParaEdicion(id: number): void {
+    this.profesorService.mostrarTodo().subscribe({
+      next: (respuesta) => {
+        const encontrado = (respuesta.body ?? []).find((p) => p.id === id) ?? null;
+        if (!encontrado) {
+          this.mostrarMensaje('error', 'No se encontró el profesor que intentas editar.');
+          return;
+        }
+
+        this.profesorOriginal = encontrado;
+        this.nombre = encontrado.nombre ?? '';
+        this.apellido = encontrado.apellido ?? '';
+        this.documento = encontrado.documento != null ? String(encontrado.documento) : '';
+        this.correo = encontrado.correo ?? '';
+        this.contrasenia = ''; // vacía = no se cambia
+        this.tipoVinculacion = encontrado.tipoVinculacion;
+        this.escalafon = encontrado.escalafon;
+        this.horasMaximasSemanales = this.maximoHoras;
+        this.especialidadesSeleccionadas = [...(encontrado.especialidades ?? [])];
+        this.cargarSeleccion(encontrado.disponibilidadHoraria ?? []);
         this.cdr.detectChanges();
       },
       error: (error: HttpErrorResponse) => this.mostrarError(error),
@@ -236,22 +411,31 @@ export class RegistroProfesor implements OnInit {
   // Guardar
   // ------------------------------------------------------------------
 
+  /** Guarda el perfil o disponibilidad según el rol y modo actual. */
   guardar(): void {
     if (this.guardando) {
       return;
     }
     this.mensaje = null;
 
-    if (this.esAdministrador) {
+    if (this.esAdministrador && this.modoEdicion) {
+      this.actualizarProfesorExistente();
+    } else if (this.esAdministrador) {
       this.crearProfesor();
     } else {
       this.guardarDisponibilidadPropia();
     }
   }
 
+  /** Valida y envía al backend el nuevo perfil docente. */
   private crearProfesor(): void {
-    if (!this.nombre.trim() || !this.apellido.trim() || !this.documento || !this.correo.trim()
-      || !this.contrasenia) {
+    if (
+      !this.nombre.trim() ||
+      !this.apellido.trim() ||
+      !this.documento ||
+      !this.correo.trim() ||
+      !this.contrasenia
+    ) {
       this.mostrarMensaje('error', 'Completa nombre, apellido, documento, correo y contraseña.');
       return;
     }
@@ -259,8 +443,9 @@ export class RegistroProfesor implements OnInit {
       this.mostrarMensaje('error', 'Selecciona al menos una especialidad.');
       return;
     }
-    if (this.horasMaximasSemanales < 1 || this.horasMaximasSemanales > this.maximoHoras) {
-      this.mostrarMensaje('error', `Las horas máximas deben estar entre 1 y ${this.maximoHoras}.`);
+    const errorHoras = this.validarHorasContrato(false);
+    if (errorHoras) {
+      this.mostrarMensaje('error', errorHoras);
       return;
     }
 
@@ -273,7 +458,7 @@ export class RegistroProfesor implements OnInit {
       tipoVinculacion: this.tipoVinculacion,
       escalafon: this.escalafon,
       especialidades: this.especialidadesSeleccionadas,
-      horasMaximasSemanales: Number(this.horasMaximasSemanales),
+      horasMaximasSemanales: this.maximoHoras,
       disponibilidadHoraria: this.construirFranjas(),
     };
 
@@ -281,8 +466,8 @@ export class RegistroProfesor implements OnInit {
     this.profesorService.crearProfesor(profesor).subscribe({
       next: (texto: string) => {
         this.guardando = false;
-        this.mostrarMensaje('exito', texto);
         this.limpiarFormulario();
+        this.mostrarExitoCreacion(texto);
       },
       error: (error: HttpErrorResponse) => {
         this.guardando = false;
@@ -291,6 +476,73 @@ export class RegistroProfesor implements OnInit {
     });
   }
 
+  /** Edición por el administrador: actualiza los datos y luego reemplaza la malla horaria. */
+  private actualizarProfesorExistente(): void {
+    if (this.idEdicion === null || !this.profesorOriginal) {
+      this.mostrarMensaje('error', 'Aún no se han cargado los datos del profesor.');
+      return;
+    }
+    if (!this.nombre.trim() || !this.apellido.trim() || !this.documento || !this.correo.trim()) {
+      this.mostrarMensaje('error', 'Completa nombre, apellido, documento y correo.');
+      return;
+    }
+    if (this.especialidadesSeleccionadas.length === 0) {
+      this.mostrarMensaje('error', 'Selecciona al menos una especialidad.');
+      return;
+    }
+    const errorHoras = this.validarHorasContrato(false);
+    if (errorHoras) {
+      this.mostrarMensaje('error', errorHoras);
+      return;
+    }
+
+    const idProfesor: number = this.idEdicion;
+    const franjas: FranjahorariaModel[] = this.construirFranjas();
+    const teniaMalla: boolean = (this.profesorOriginal.disponibilidadHoraria ?? []).length > 0;
+
+    const profesor = {
+      ...this.profesorOriginal,
+      nombre: this.nombre.trim(),
+      apellido: this.apellido.trim(),
+      documento: Number(this.documento),
+      correo: this.correo.trim(),
+      tipoVinculacion: this.tipoVinculacion,
+      escalafon: this.escalafon,
+      especialidades: this.especialidadesSeleccionadas,
+      horasMaximasSemanales: this.maximoHoras,
+      disponibilidadHoraria: franjas,
+    } as ProfesorModel;
+
+    // Contraseña: solo se envía si el administrador escribió una nueva
+    if (this.contrasenia) {
+      profesor.contrasenia = this.contrasenia;
+    } else {
+      delete (profesor as any).contrasenia;
+    }
+
+    this.guardando = true;
+    this.profesorService
+      .actualizarInformacionProfesor(profesor)
+      .pipe(
+        switchMap(() =>
+          franjas.length > 0 || teniaMalla
+            ? this.profesorService.guardarDisponibilidad(idProfesor, franjas)
+            : of(''),
+        ),
+      )
+      .subscribe({
+        next: () => {
+          this.guardando = false;
+          this.router.navigate(['/gestion-bases-datos']);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.guardando = false;
+          this.mostrarError(error);
+        },
+      });
+  }
+
+  /** Valida y guarda la disponibilidad del profesor autenticado. */
   private guardarDisponibilidadPropia(): void {
     const id: number | null = this.sesion.getProfesorId();
     if (id === null) {
@@ -303,12 +555,17 @@ export class RegistroProfesor implements OnInit {
       this.mostrarMensaje('error', 'Marca al menos una hora de disponibilidad.');
       return;
     }
+    const errorHorasPropias = this.validarHorasContrato(true);
+    if (errorHorasPropias) {
+      this.mostrarMensaje('error', errorHorasPropias);
+      return;
+    }
 
     this.guardando = true;
     this.profesorService.guardarDisponibilidad(id, franjas).subscribe({
-      next: (texto: string) => {
+      next: () => {
         this.guardando = false;
-        this.mostrarMensaje('exito', texto);
+        this.router.navigate(['/inicio-docente']);
       },
       error: (error: HttpErrorResponse) => {
         this.guardando = false;
@@ -317,6 +574,7 @@ export class RegistroProfesor implements OnInit {
     });
   }
 
+  /** Restablece los campos y la grilla a sus valores iniciales. */
   private limpiarFormulario(): void {
     this.nombre = '';
     this.apellido = '';
@@ -325,10 +583,28 @@ export class RegistroProfesor implements OnInit {
     this.contrasenia = '';
     this.tipoVinculacion = TipoVinculacion.TIEMPO_COMPLETO;
     this.escalafon = Escalafon.INSTRUCTOR_ASISTENTE;
-    this.horasMaximasSemanales = 16;
+    this.horasMaximasSemanales = this.maximoHoras;
     this.especialidadesSeleccionadas = [];
     this.seleccion.clear();
+    this.avisoGrilla = null;
     this.cdr.detectChanges();
+  }
+
+  // ------------------------------------------------------------------
+  // Éxito al crear: ventana centrada y regreso a la ventana principal
+  // ------------------------------------------------------------------
+
+  private mostrarExitoCreacion(texto: string): void {
+    this.exitoCreacion = texto && texto.trim() ? texto : 'Se ha creado el profesor con éxito.';
+    this.cdr.detectChanges();
+    this.temporizadorExito = setTimeout(() => this.cerrarExitoCreacion(), 2500);
+  }
+
+  /** Cierra el aviso de creación exitosa y vuelve a la pantalla principal. */
+  cerrarExitoCreacion(): void {
+    if (this.temporizadorExito) clearTimeout(this.temporizadorExito);
+    this.exitoCreacion = null;
+    this.router.navigate([RUTA_PRINCIPAL]);
   }
 
   // ------------------------------------------------------------------
@@ -345,11 +621,19 @@ export class RegistroProfesor implements OnInit {
     if (error.status === 0) {
       this.mostrarMensaje('error', 'No se pudo conectar con el servidor.');
     } else if (error.status === 403) {
-      this.mostrarMensaje('error', typeof error.error === 'string' && error.error
-        ? error.error : 'No tienes permiso para realizar esta acción.');
+      this.mostrarMensaje(
+        'error',
+        typeof error.error === 'string' && error.error
+          ? error.error
+          : 'No tienes permiso para realizar esta acción.',
+      );
     } else {
-      this.mostrarMensaje('error', typeof error.error === 'string' && error.error
-        ? error.error : `Ocurrió un error (código ${error.status}).`);
+      this.mostrarMensaje(
+        'error',
+        typeof error.error === 'string' && error.error
+          ? error.error
+          : `Ocurrió un error (código ${error.status}).`,
+      );
     }
   }
 
@@ -357,15 +641,18 @@ export class RegistroProfesor implements OnInit {
   // Navegación y sesión
   // ------------------------------------------------------------------
 
+  /** Navega a la ruta indicada. */
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
   }
 
+  /** Alterna el menú de usuario y evita propagar el clic. */
   toggleMenuUsuario(event: Event): void {
     event.stopPropagation();
     this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
   }
 
+  /** Cierra la sesión actual y vuelve a la pantalla de acceso. */
   cerrarSesion(): void {
     this.mostrarMenuUsuario = false;
     this.sesion.cerrarSesion();
@@ -373,6 +660,7 @@ export class RegistroProfesor implements OnInit {
   }
 
   @HostListener('document:click')
+  /** Cierra el menú cuando se hace clic fuera de él. */
   cerrarMenuAlHacerClicFuera(): void {
     if (this.mostrarMenuUsuario) {
       this.mostrarMenuUsuario = false;

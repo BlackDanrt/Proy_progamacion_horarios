@@ -4,7 +4,6 @@
   <aside class="sidebar">
     <div class="sidebar-top">
       <div class="user-menu-container">
-        <!-- Botón Avatar del Administrador -->
         <div
           class="user-avatar-btn"
           title="Perfil Administrador"
@@ -15,7 +14,6 @@
           </svg>
         </div>
 
-        <!-- Menú emergente de cierre de sesión -->
         <div class="user-dropdown" *ngIf="mostrarMenuUsuario" (click)="$event.stopPropagation()">
           <button type="button" class="dropdown-item logout-btn" (click)="cerrarSesion()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -27,9 +25,8 @@
           </button>
         </div>
       </div>
-    </div> <!-- Cierre correcto de sidebar-top -->
+    </div>
 
-    <!-- Menú de navegación de la barra lateral -->
     <nav class="sidebar-menu">
       <button type="button" class="sidebar-btn" (click)="navegarA('/inicio-administrador')" title="Panel de control">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -38,7 +35,8 @@
         </svg>
       </button>
 
-      <button type="button" class="sidebar-btn active" (click)="navegarA('/horarios')" title="Horario General / Asignación">
+      <button type="button" class="sidebar-btn active" (click)="navegarA('/horarios')"
+              title="Horario General / Asignación">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
           <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -47,7 +45,8 @@
         </svg>
       </button>
 
-      <button type="button" class="sidebar-btn" (click)="navegarA('/gestion-bases-datos')" title="Gestión de bases de datos">
+      <button type="button" class="sidebar-btn" (click)="navegarA('/gestion-bases-datos')"
+              title="Gestión de bases de datos">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
@@ -67,39 +66,67 @@
           <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
           <rect x="9" y="3" width="6" height="4" rx="1" ry="1"></rect>
           <polyline points="9 14 11 16 15 12"></polyline>
+      <button type="button" class="sidebar-btn" (click)="navegarA('/gestion-asignatura')"
+              title="Gestión de asignaturas">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      </button>
+
+      <button type="button" class="sidebar-btn" (click)="navegarA('/gestion-aulas')" title="Gestión de Salones">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 21h18"></path>
+          <path d="M5 21V7l8-4 8 4v14"></path>
         </svg>
       </button>
     </nav>
 
     <div class="sidebar-corner-decor"></div>
-  </aside> <!-- Cierre correcto del aside -->
+  </aside>
 
   <!-- CONTENIDO PRINCIPAL -->
   <main class="main-content">
     <div class="horarios-container">
 
-      <!-- CABECERA -->
+      <!-- CABECERA CON FILTRO DE PERIODO Y DOCENTE -->
       <header class="horarios-header">
-        <div class="header-title-box">
+        <div class="header-title-box" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
           <h1>Asignación de horarios</h1>
-        </div>
-        <div class="header-controls">
-          <div class="week-navigator">
-            <button class="nav-arrow-btn" title="Semana anterior">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </button>
-            <div class="week-display">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-              <span>12–16 de mayo, 2026</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </div>
-            <button class="nav-arrow-btn" title="Semana siguiente">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+
+          <!-- SELECTOR DE PERIODO ACADÉMICO / INTERSEMESTRAL -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 13px; font-weight: 600; color: #334155;">Periodo:</label>
+            <select [(ngModel)]="periodoSeleccionado" (change)="onPeriodoChange()"
+                    style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff;">
+              <option *ngFor="let per of listaPeriodos" [value]="per">{{ per }}</option>
+            </select>
+            <button type="button" class="btn-add-periodo" (click)="abrirModalPeriodo()" title="Crear nuevo periodo">+
             </button>
           </div>
 
+          <!-- FILTRAR DOCENTE -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 13px; font-weight: 600; color: #334155;">Docente:</label>
+            <select [(ngModel)]="docenteSeleccionFiltro" (change)="onDocenteFiltroChange()"
+                    style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff;">
+              <option value="" disabled selected>Seleccione un profesor</option>
+              <option *ngFor="let prof of listaProfesores" [value]="prof">{{ prof }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="header-controls">
+          <div class="chip-horas" *ngIf="profesorActual"
+               [class.chip-horas-alerta]="horasAsignadas < minimoHoras || horasAsignadas > maximoHoras">
+            <strong>{{ horasAsignadas }} h</strong> asignadas · contrato {{ minimoHoras }}–{{ maximoHoras }} h
+          </div>
           <button type="button" class="btn-guardar-cambios" (click)="guardarCambios()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
             Guardar cambios
           </button>
         </div>
@@ -107,13 +134,16 @@
 
       <div class="workspace-grid">
 
-        <!-- PANEL IZQUIERDO: ASIGNATURAS ARRASTRABLES -->
+        <!-- PANEL IZQUIERDO -->
         <div class="asignaturas-sidebar-panel">
           <div class="panel-header-asig">
-            <h3>Asignaturas</h3>
-            <button type="button" class="btn-add-asig" (click)="abrirModalCrear()" title="Agregar Asignatura">
-              +
+            <h3>Asignaturas / Grupos</h3>
+            <button type="button" class="btn-add-asig" (click)="abrirModalCrear()" title="Agregar Grupo o Materia">+
             </button>
+          </div>
+          <div class="aviso-vacio" *ngIf="!docenteActual">Seleccione un profesor para ver y asignar sus materias.</div>
+          <div class="aviso-vacio" *ngIf="docenteActual && asignaturasDisponibles.length === 0">
+            {{ docenteActual }} no tiene materias vinculadas. Use el botón + para vincular una.
           </div>
           <div class="asignaturas-list">
             <div class="asignatura-card"
@@ -123,12 +153,22 @@
               <div class="card-top-info">
                 <span class="indicator-dot" [style.background-color]="asig.color"></span>
                 <span class="asig-nombre">{{ asig.nombre }}</span>
-                <svg class="drag-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="9" cy="5" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+                <svg class="drag-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
+                     stroke-width="2">
+                  <circle cx="9" cy="5" r="1"></circle>
+                  <circle cx="15" cy="5" r="1"></circle>
+                  <circle cx="9" cy="12" r="1"></circle>
+                  <circle cx="15" cy="12" r="1"></circle>
+                  <circle cx="9" cy="19" r="1"></circle>
+                  <circle cx="15" cy="19" r="1"></circle>
+                </svg>
               </div>
-              <div class="badge-aula" [style.color]="asig.color" [style.background-color]="asig.bgLight">{{ asig.aula }}</div>
+              <div class="badge-aula" [style.color]="asig.color"
+                   [style.background-color]="asig.bgLight">{{ asig.aula }}
+              </div>
               <div class="docente-info">Docente: {{ asig.docente }}</div>
+              <div class="docente-info" *ngIf="asig.persistido">Guardado</div>
             </div>
-
           </div>
         </div>
 
@@ -140,41 +180,61 @@
               <tr>
                 <th class="time-col-header"></th>
                 <th class="day-header" *ngFor="let d of dias">
-                  {{ d.nombre }}<span class="date-sub">{{ d.fecha }}</span>
+                  {{ d.nombre }}
                 </th>
               </tr>
               </thead>
               <tbody>
               <tr *ngFor="let hora of horasBloques">
-                <td class="time-cell">{{ hora }}</td>
+                <td class="time-cell" [class.time-cell-almuerzo]="esAlmuerzo(hora)">{{ hora }}</td>
 
-                <td class="slot-cell"
-                    *ngFor="let d of dias"
-                    [ngClass]="{
-                        'has-event': getClase(d.clave, hora),
-                        'drag-over': celdaActiva === d.clave + '|' + hora
-                      }"
-                    (dragover)="onDragOver($event, d.clave, hora)"
-                    (dragleave)="onDragLeave()"
-                    (drop)="onDrop($event, d.clave, hora)">
-
-                  <div class="event-pill"
-                       *ngIf="getClase(d.clave, hora) as c"
-                       [style.border-left-color]="c.color"
-                       title="{{ c.nombre }}"
-                       draggable="true"
-                       (dragstart)="onDragStartClase($event, d.clave, hora)">
-                    <strong>{{ c.nombre }}</strong>
-                    <span>{{ c.aula }} - {{ c.bloque }}</span>
-                    <button type="button" class="btn-quitar" (click)="quitarClase(d.clave, hora)" title="Quitar">×</button>
-                  </div>
+                <!-- FILA DE ALMUERZO (12:00 - 13:00): bloqueada -->
+                <td class="slot-almuerzo" *ngIf="esAlmuerzo(hora); else filaNormal" [attr.colspan]="dias.length">
+                  <div class="bloque-almuerzo">{{ textoAlmuerzo }}</div>
                 </td>
+
+                <ng-template #filaNormal>
+                  <ng-container *ngFor="let d of dias">
+                    <td class="slot-cell"
+                        [ngClass]="{
+                          'has-event': getClase(d.clave, hora),
+                          'has-event-cont': getClaseContinuacion(d.clave, hora),
+                          'slot-cerrado': esCerrado(d.clave, hora),
+                          'slot-no-disponible': !esCerrado(d.clave, hora) && esNoDisponible(d.clave, hora)
+                                                && !getClase(d.clave, hora) && !getClaseContinuacion(d.clave, hora),
+                          'drag-over': celdaActiva === d.clave + '|' + hora
+                        }"
+                        [attr.title]="esNoDisponible(d.clave, hora) && !esCerrado(d.clave, hora) ? 'Profesor no disponible' : null"
+                        (dragover)="onDragOver($event, d.clave, hora)"
+                        (dragleave)="onDragLeave()"
+                        (drop)="onDrop($event, d.clave, hora)">
+
+                      <div class="event-pill"
+                           *ngIf="getClase(d.clave, hora) as c"
+                           [style.border-left-color]="c.color"
+                           title="{{ c.nombre }}"
+                           [attr.draggable]="!c.persistido"
+                           (dragstart)="onDragStartClase($event, d.clave, hora)">
+                        <strong>{{ c.nombre }}</strong>
+                        <span>{{ c.aula }} - {{ c.docente }}</span>
+                        <button type="button" class="btn-quitar" (click)="quitarClaseDesdeCalendario(d.clave, hora)"
+                                title="Quitar">×
+                        </button>
+                      </div>
+                      <div class="event-pill event-pill-cont" *ngIf="getClaseContinuacion(d.clave, hora) as k"
+                           [style.border-left-color]="k.color"
+                           title="{{ k.nombre }}">
+                        <strong>{{ k.nombre }}</strong>
+                        <span>{{ k.aula }} - {{ k.docente }}</span>
+                      </div>
+                    </td>
+                  </ng-container>
+                </ng-template>
               </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- LEYENDA -->
           <div class="calendar-legend">
             <div class="legend-item" *ngFor="let asig of asignaturasDisponibles">
               <span class="legend-dot" [style.background-color]="asig.color"></span>
@@ -187,43 +247,88 @@
     </div>
   </main>
 
-  <!-- VENTANA EMERGENTE PARA CREAR ASIGNATURA -->
-  <div class="modal-overlay" *ngIf="mostrarModalAsignatura" (click)="cerrarModalCrear()">
+  <!-- MODAL 1: ELEGIR PROFESOR -->
+  <div class="modal-overlay" *ngIf="mostrarModalProfesor">
     <div class="modal-card-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>Nueva Asignatura</h3>
+        <h3>Seleccione un profesor</h3>
+        <button type="button" class="btn-close-modal" (click)="cerrarModalProfesor()">×</button>
+      </div>
+
+      <form class="modal-form" (submit)="$event.preventDefault()">
+        <div class="form-group">
+          <label>Profesor</label>
+          <select [(ngModel)]="docenteSeleccionadoModal" name="docenteModal">
+            <option value="" disabled selected>Seleccione un profesor</option>
+            <option *ngFor="let prof of listaProfesores" [value]="prof">{{ prof }}</option>
+          </select>
+        </div>
+        <p class="modal-ayuda">Se cargarán sus materias y su horario del periodo {{ periodoSeleccionado }}.</p>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancelar" (click)="cerrarModalProfesor()">Cancelar</button>
+          <button type="button" class="btn-agregar" (click)="continuarConDocente()">Continuar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: VINCULAR UNA MATERIA SIN PROFESOR AL DOCENTE ACTUAL -->
+  <div class="modal-overlay" *ngIf="mostrarModalAsignatura">
+    <div class="modal-card-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Vincular asignatura</h3>
         <button type="button" class="btn-close-modal" (click)="cerrarModalCrear()">×</button>
       </div>
 
       <form class="modal-form" (submit)="$event.preventDefault()">
-        <!-- Campo Docente -->
-        <div class="form-group">
-          <label>Docente</label>
-          <input type="text" [(ngModel)]="nuevaAsignatura.docente" name="docente" placeholder="Nombre del profesor">
-        </div>
+        <div class="docente-chip">Docente: <strong>{{ docenteActual }}</strong></div>
 
-        <!-- Campo Materia -->
         <div class="form-group">
-          <label>Asignatura</label>
-          <select [(ngModel)]="nuevaAsignatura.nombre" name="materia">
-            <option value="" disabled selected>Seleccione una materia</option>
-            <option *ngFor="let mat of listaMaterias" [value]="mat">{{ mat }}</option>
+          <label>Asignatura (solo sin profesor vinculado)</label>
+          <select [(ngModel)]="materiaSeleccionadaModal" name="materia" (change)="onMateriaChange()">
+            <option [ngValue]="null" disabled selected>Seleccione una materia</option>
+            <option *ngFor="let mat of materiasSinProfesor" [ngValue]="mat">{{ mat.nombre }}</option>
           </select>
+          <small class="modal-ayuda" *ngIf="materiasSinProfesor.length === 0">
+            No hay asignaturas disponibles: todas ya tienen un profesor vinculado en {{ periodoSeleccionado }}.
+          </small>
         </div>
 
-        <!-- Campo Bloque -->
+        <div class="form-group" *ngIf="materiaSeleccionadaModal">
+          <label>Grupo (lo asigna el sistema)</label>
+          <div class="docente-chip">Grupo <strong>{{ numeroGrupoModal }}</strong></div>
+        </div>
+
+        <div class="form-group" *ngIf="materiaSeleccionadaModal">
+          <label>¿La materia necesita…?</label>
+          <label class="check-requisito">
+            <input type="checkbox" [(ngModel)]="necesitaComputadoresModal" name="necesitaComputadores"
+                   [disabled]="!!materiaSeleccionadaModal.requiereComputadores" (change)="onRequisitosChange()">
+            Computadores
+          </label>
+          <label class="check-requisito">
+            <input type="checkbox" [(ngModel)]="necesitaSillasModal" name="necesitaSillas"
+                   [disabled]="!!materiaSeleccionadaModal.requiereSillasMoviles" (change)="onRequisitosChange()">
+            Sillas móviles
+          </label>
+          <small class="modal-ayuda">Solo se muestran los salones que coinciden exactamente con esta selección.</small>
+        </div>
+
         <div class="form-group">
           <label>Bloque</label>
-          <select [(ngModel)]="nuevaAsignatura.bloque" name="bloque" (change)="onBloqueChange()">
+          <select [(ngModel)]="bloqueSeleccionadoModal" name="bloque" (change)="onBloqueChange()">
             <option value="" disabled selected>Seleccione un bloque</option>
-            <option *ngFor="let b of listaBloques" [value]="b">{{ b }}</option>
+            <option *ngFor="let b of bloquesFiltrados" [value]="b">{{ b }}</option>
           </select>
+          <small class="modal-ayuda" *ngIf="materiaSeleccionadaModal && bloquesFiltrados.length === 0">
+            No hay salones con esas características.
+          </small>
         </div>
 
-        <!-- Campo Salón (Depende del Bloque seleccionado) -->
-        <div class="form-group" *ngIf="nuevaAsignatura.bloque">
+        <div class="form-group" *ngIf="bloqueSeleccionadoModal">
           <label>Salón</label>
-          <select [(ngModel)]="nuevaAsignatura.aula" name="salon">
+          <select [(ngModel)]="salonSeleccionadoModal" name="salon">
             <option value="" disabled selected>Seleccione un salón</option>
             <option *ngFor="let s of salonesDisponibles" [value]="s">{{ s }}</option>
           </select>
@@ -231,20 +336,108 @@
 
         <div class="form-group">
           <label>Número de estudiantes</label>
-          <input
-            type="number"
-            [(ngModel)]="nuevaAsignatura.numEstudiantes"
-            name="numEstudiantes"
-            placeholder="Ingrese el número de estudiantes"
-            min="1"
-            max="40">
+          <input type="number" [(ngModel)]="numEstudiantesModal" name="numEstudiantes"
+                 placeholder="Ingrese el número de estudiantes" [min]="minEstudiantes" [max]="maxEstudiantes">
+          <small class="modal-ayuda">Mínimo {{ minEstudiantes }} y máximo {{ maxEstudiantes }} (40 + 10 % de
+            tolerancia).</small>
         </div>
 
         <div class="modal-actions">
           <button type="button" class="btn-cancelar" (click)="cerrarModalCrear()">Cancelar</button>
-          <button type="button" class="btn-agregar" (click)="agregarNuevaAsignatura()">Agregar</button>
+          <button type="button" class="btn-agregar" (click)="agregarNuevaAsignatura()">Vincular grupo</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR PERIODO -->
+  <div class="modal-overlay" *ngIf="mostrarModalPeriodo">
+    <div class="modal-card-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Crear nuevo periodo</h3>
+        <button type="button" class="btn-close-modal" (click)="cerrarModalPeriodo()">×</button>
+      </div>
+
+      <form class="modal-form" (submit)="$event.preventDefault()">
+        <div class="form-group">
+          <label>Tipo de periodo</label>
+          <select [(ngModel)]="tipoPeriodoModal" name="tipoPeriodo">
+            <option value="SEMESTRAL">Semestral</option>
+            <option value="INTERSEMESTRAL">Intersemestral</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Año</label>
+          <select [(ngModel)]="anioPeriodoModal" name="anioPeriodo">
+            <option *ngFor="let a of aniosPermitidos" [ngValue]="a">{{ a }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Semestre</label>
+          <select [(ngModel)]="semestrePeriodoModal" name="semestrePeriodo">
+            <option [ngValue]="1">1</option>
+            <option [ngValue]="2">2</option>
+          </select>
+        </div>
+
+        <div class="periodo-preview" [class.periodo-existe]="existePeriodo(nombrePeriodoModal)">
+          Se creará: <strong>{{ nombrePeriodoModal }}</strong>
+          <span *ngIf="existePeriodo(nombrePeriodoModal)"> · ya existe</span>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancelar" (click)="cerrarModalPeriodo()">Cancelar</button>
+          <button type="button" class="btn-agregar" (click)="crearPeriodo()"
+                  [disabled]="existePeriodo(nombrePeriodoModal)">Crear periodo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONFIRMACIÓN VISUAL -->
+  <div class="modal-overlay confirm-overlay" *ngIf="confirmacion">
+    <div class="modal-card-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ confirmacion.titulo }}</h3>
+      </div>
+      <p class="confirm-texto">{{ confirmacion.mensaje }}</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancelar" (click)="cancelarConfirmacion()">Cancelar</button>
+        <button type="button" class="btn-agregar" (click)="aceptarConfirmacion()">{{ confirmacion.textoAceptar }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AVISO DE ÉXITO (VENTANA) -->
+  <div class="modal-overlay confirm-overlay" *ngIf="avisoExito" (click)="cerrarAvisoExito()">
+    <div class="modal-card-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="aviso-exito-titulo"><span class="aviso-exito-icono">✓</span> {{ avisoExito.titulo }}</h3>
+      </div>
+      <p class="confirm-texto">{{ avisoExito.mensaje }}</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-agregar" (click)="cerrarAvisoExito()">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICACIONES (TOASTS) -->
+  <div class="toast-container">
+    <div class="toast" *ngFor="let t of toasts" [ngClass]="'toast-' + t.tipo">
+      <span class="toast-icono">
+        <ng-container [ngSwitch]="t.tipo">
+          <span *ngSwitchCase="'exito'">✓</span>
+          <span *ngSwitchCase="'error'">✕</span>
+          <span *ngSwitchCase="'advertencia'">!</span>
+          <span *ngSwitchDefault>i</span>
+        </ng-container>
+      </span>
+      <span class="toast-mensaje">{{ t.mensaje }}</span>
+      <button type="button" class="toast-cerrar" (click)="cerrarToast(t.id)" title="Cerrar">×</button>
     </div>
   </div>
 

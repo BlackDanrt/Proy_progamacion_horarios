@@ -44,34 +44,38 @@
         </svg>
       </button>
 
-      <button type="button" class="sidebar-btn active" (click)="navegarA('/gestion-bases-datos')" title="Bases de Datos">
+      <button type="button" class="sidebar-btn active" (click)="navegarA('/gestion-bases-datos')"
+              title="Bases de Datos">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
           <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
         </svg>
       </button>
+
+      <button type="button" class="sidebar-btn " (click)="navegarA('/gestion-asignatura')"
+              title="Gestión de aignaturas">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      </button>
+      <button type="button" class="sidebar-btn " (click)="navegarA('/gestion-aulas')" title="Gestión de Salones">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 21h18"></path>
+          <path d="M5 21V7l8-4 8 4v14"></path>
+        </svg>
+      </button>
     </nav>
 
-    <!-- Menú del docente -->
+    <!-- Menú del docente (primer ingreso: solo la pantalla actual) -->
     <nav class="sidebar-menu" *ngIf="!esAdministrador">
-      <!-- Registro de disponibilidad (pantalla actual) -->
       <button type="button" class="sidebar-btn active" title="Registro de disponibilidad">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
           <line x1="16" y1="2" x2="16" y2="6"></line>
           <line x1="8" y1="2" x2="8" y2="6"></line>
           <line x1="3" y1="10" x2="21" y2="10"></line>
-        </svg>
-      </button>
-
-      <!-- Consultar mi horario -->
-      <button type="button" class="sidebar-btn" (click)="navegarA('/mi-horario')" title="Consultar mi horario">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="16" y1="2" x2="16" y2="6"></line>
-          <line x1="8" y1="2" x2="8" y2="6"></line>
-          <polyline points="8 15 11 18 16 12"></polyline>
         </svg>
       </button>
     </nav>
@@ -92,7 +96,7 @@
       <!-- DATOS DEL PROFESOR: formulario (administrador) o resumen (profesor) -->
       <div class="card-panel">
         <h2 class="card-titulo">
-          {{ esAdministrador ? 'Registro de profesor por Administrador' : 'Mi información' }}
+          {{ esAdministrador ? (modoEdicion ? 'Editar profesor' : 'Registro de profesor por Administrador') : 'Mi información' }}
         </h2>
         <div class="decorador-linea"></div>
 
@@ -133,7 +137,8 @@
                 <option *ngFor="let tipo of tiposVinculacion" [value]="tipo">{{ etiquetaVinculacion(tipo) }}</option>
               </select>
               <span class="chevron-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline
+                  points="6 9 12 15 18 9"></polyline></svg>
               </span>
             </div>
           </div>
@@ -145,24 +150,24 @@
                 <option *ngFor="let e of escalafones" [value]="e">{{ etiqueta(e) }}</option>
               </select>
               <span class="chevron-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline
+                  points="6 9 12 15 18 9"></polyline></svg>
               </span>
             </div>
           </div>
 
           <div class="form-field">
-            <label>Horas máximas de clase por semana (máx. {{ maximoHoras }})</label>
-            <div class="input-group sin-icono">
-              <input type="number" [(ngModel)]="horasMaximasSemanales" name="horasMaximasSemanales"
-                     min="1" [max]="maximoHoras">
+            <label>Horas de clase por semana (según el contrato)</label>
+            <div class="dato-contrato">
+              Mínimo <strong>{{ minimoHoras }} h</strong> · Máximo <strong>{{ maximoHoras }} h</strong>
             </div>
           </div>
 
           <div class="form-field">
-            <label>Contraseña para el docente</label>
+            <label>{{ modoEdicion ? 'Nueva contraseña (opcional, déjala vacía para no cambiarla)' : 'Contraseña para el docente' }}</label>
             <div class="input-group sin-icono">
               <input type="password" [(ngModel)]="contrasenia" name="contrasenia"
-                     placeholder="8+ caracteres, una mayúscula y un número">
+                     [placeholder]="modoEdicion ? 'Dejar vacía para conservar la actual' : '8+ caracteres, una mayúscula y un número'">
             </div>
           </div>
 
@@ -185,10 +190,13 @@
           <div class="dato"><span>Correo</span><strong>{{ profesor.correo }}</strong></div>
           <div class="dato"><span>Vinculación</span><strong>{{ etiqueta(profesor.tipoVinculacion) }}</strong></div>
           <div class="dato"><span>Escalafón</span><strong>{{ etiqueta(profesor.escalafon) }}</strong></div>
-          <div class="dato"><span>Horas máximas por semana</span><strong>{{ profesor.horasMaximasSemanales }}</strong></div>
+          <div class="dato"><span>Horas de clase por semana</span><strong>{{ minimoHoras }} a {{ maximoHoras }}</strong>
+          </div>
           <div class="dato"><span>Especialidades</span>
             <strong>
-              <ng-container *ngFor="let e of profesor.especialidades; let ultimo = last">{{ etiqueta(e) }}{{ ultimo ? '' : ', ' }}</ng-container>
+              <ng-container
+                *ngFor="let e of profesor.especialidades; let ultimo = last">{{ etiqueta(e) }}{{ ultimo ? '' : ', ' }}
+              </ng-container>
             </strong>
           </div>
         </div>
@@ -201,16 +209,30 @@
         <h2 class="card-titulo">Disponibilidad horaria semanal</h2>
         <div class="decorador-linea"></div>
 
+        <p class="aviso-primer-ingreso" *ngIf="!esAdministrador">
+          Es tu primer ingreso: debes registrar tu disponibilidad horaria para poder continuar.
+        </p>
+
         <div class="horario-toolbar">
           <p class="texto-ayuda">
-            Marca las horas en las que puedes dictar clase. Las clases duran 2 horas y no hay clases de 12:00 a 13:00.
-            El sábado solo hay clases hasta la 1:00 p. m.
+            Cada clic marca un bloque de 2 horas. No puedes marcar bloques seguidos (deja al menos 1 hora libre entre
+            ellos).
+            Según tu contrato debes marcar entre {{ minimoHoras }} y {{ maximoHoras }} horas por semana. No hay clases
+            de 12:00 a 13:00 y el sábado solo hay clases hasta las 12:00 m.
           </p>
           <div class="convenciones">
             <div class="item-convencion"><span class="box-disponible"></span><span>Libre</span></div>
             <div class="item-convencion"><span class="box-seleccionado"></span><span>Disponible</span></div>
+            <div class="item-convencion contador-horas"
+                 [class.contador-lleno]="horasSeleccionadas >= limiteHoras">
+              <strong>{{ horasSeleccionadas }} / {{ limiteHoras }} h</strong>
+              <span class="contador-min"
+                    [class.contador-min-falta]="horasSeleccionadas < minimoHoras">(mín. {{ minimoHoras }} h)</span>
+            </div>
           </div>
         </div>
+
+        <p class="aviso-grilla" *ngIf="avisoGrilla">{{ avisoGrilla }}</p>
 
         <div class="tabla-container">
           <table class="tabla-horario">
@@ -237,20 +259,35 @@
           </table>
         </div>
 
-        <div class="footer-acciones">
+        <div class="footer-acciones" style="gap: 12px;">
+          <button type="button" class="btn-guardar" *ngIf="modoEdicion"
+                  style="background-color: #f1f5f9; color: #475569;"
+                  (click)="navegarA('/gestion-bases-datos')">
+            <span>Cancelar</span>
+          </button>
           <button type="button" class="btn-guardar" [disabled]="guardando" (click)="guardar()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
               <polyline points="17 21 17 13 7 13 7 21"></polyline>
               <polyline points="7 3 7 8 15 8"></polyline>
             </svg>
-            <span>{{ guardando ? 'Guardando...' : (esAdministrador ? 'Guardar profesor' : 'Guardar disponibilidad') }}</span>
+            <span>{{ guardando ? 'Guardando...' : (modoEdicion ? 'Guardar cambios' : (esAdministrador ? 'Guardar profesor' : 'Guardar disponibilidad')) }}</span>
           </button>
         </div>
       </div>
 
     </div>
   </main>
+
+  <!-- ÉXITO AL CREAR PROFESOR (centrado) -->
+  <div class="modal-exito-overlay" *ngIf="exitoCreacion" (click)="cerrarExitoCreacion()">
+    <div class="modal-exito" (click)="$event.stopPropagation()">
+      <div class="modal-exito-icono">✓</div>
+      <h2>¡Profesor creado!</h2>
+      <p>{{ exitoCreacion }}</p>
+      <button type="button" class="btn-guardar" (click)="cerrarExitoCreacion()">Aceptar</button>
+    </div>
+  </div>
 
   <aside class="right-decor-panel">
     <div class="circle-top-outline"></div>

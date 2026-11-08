@@ -1,8 +1,13 @@
 package co.edu.unbosque.horarios.entity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import co.edu.unbosque.horarios.util.enums.Especialidad;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,6 +15,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -73,6 +79,14 @@ public class Asignatura {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "especialidad_requerida")
 	private Especialidad especialidadRequerida;
+
+	/**
+	 * Grupos que pertenecen a la asignatura. Al eliminar la asignatura se
+	 * eliminan también sus grupos.
+	 */
+	@JsonIgnore
+	@OneToMany(mappedBy = "asignatura", cascade = CascadeType.REMOVE, orphanRemoval = true)
+	private List<Grupo> grupos = new ArrayList<>();
 
 	/**
 	 * Constructor vacío de la clase Asignatura.
@@ -224,6 +238,24 @@ public class Asignatura {
 	 */
 	public void setEspecialidadRequerida(Especialidad especialidadRequerida) {
 		this.especialidadRequerida = especialidadRequerida;
+	}
+
+	/**
+	 * Obtiene los grupos asociados a la asignatura.
+	 *
+	 * @return lista de grupos de la asignatura.
+	 */
+	public List<Grupo> getGrupos() {
+		return grupos;
+	}
+
+	/**
+	 * Modifica los grupos asociados a la asignatura.
+	 *
+	 * @param grupos nueva lista de grupos.
+	 */
+	public void setGrupos(List<Grupo> grupos) {
+		this.grupos = grupos;
 	}
 
 	/**

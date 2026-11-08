@@ -149,13 +149,17 @@ public class AsignaturaController {
 	 */
 	@DeleteMapping("/eliminar")
 	public ResponseEntity<String> eliminarAsignatura(@RequestParam String nombre) {
-		try {
-			int status = asignaturaSer.deleteByNombre(nombre);
-			return (status == 0) ? new ResponseEntity<>("Asignatura eliminado exitosamente", HttpStatus.ACCEPTED)
-					: new ResponseEntity<>("Error al eliminar, asignatura no encontrada", HttpStatus.NOT_FOUND);
-		} catch (Exception e) {
-			return new ResponseEntity<>("Error al eliminar la asignatura: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-		}
+	    try {
+	        int status = asignaturaSer.deleteByNombre(nombre);
+
+	        return (status == 0)
+	                ? new ResponseEntity<>("Asignatura eliminada exitosamente", HttpStatus.ACCEPTED)
+	                : new ResponseEntity<>("Error al eliminar, asignatura no encontrada", HttpStatus.NOT_FOUND);
+
+	    } catch (Exception e) {
+	        return new ResponseEntity<>("Error al eliminar la asignatura: " + e.getMessage(),
+	                HttpStatus.BAD_REQUEST);
+	    }
 	}
 
 	/**

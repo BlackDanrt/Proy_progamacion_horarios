@@ -49,10 +49,12 @@ import co.edu.unbosque.horarios.exception.HoraInicioInvalidaException;
 import co.edu.unbosque.horarios.exception.HorarioInvalidoException;
 import co.edu.unbosque.horarios.exception.HorasMaximasSemanalesInvalidasException;
 import co.edu.unbosque.horarios.exception.IdInvalidoException;
+import co.edu.unbosque.horarios.exception.InscritosInvalidosException;
 import co.edu.unbosque.horarios.exception.NombreInvalidoException;
 import co.edu.unbosque.horarios.exception.NumeroCreditosInvalidoException;
 import co.edu.unbosque.horarios.exception.NumeroGrupoInvalidoException;
 import co.edu.unbosque.horarios.exception.NumeroSalonInvalidoException;
+import co.edu.unbosque.horarios.exception.PeriodoInvalidoException;
 import co.edu.unbosque.horarios.exception.ProfesorInvalidoException;
 import co.edu.unbosque.horarios.exception.ProfesorNoCalificadoException;
 import co.edu.unbosque.horarios.exception.ProfesorNoDisponibleException;
@@ -105,6 +107,39 @@ public class LanzadorDeException {
 		if (palabras.length < 1 || palabras.length > 2) {
 
 			throw new NombreInvalidoException("El nombre debe tener mínimo una palabra y máximo dos");
+		}
+	}
+
+	/**
+	 * Verifica que el nombre de la asignatura cumpla con los criterios
+	 * establecidos. El nombre no puede estar vacío, contener espacios dobles ni
+	 * caracteres especiales. Se permiten letras, números y espacios, con un máximo
+	 * de cinco palabras.
+	 *
+	 * @param nombre nombre de la asignatura que se desea validar.
+	 * @throws NombreInvalidoException si el nombre es nulo, está vacío, contiene
+	 *                                 espacios dobles, caracteres no permitidos o
+	 *                                 supera las cinco palabras.
+	 */
+	public static void verificarNombreAsignatura(String nombre) {
+
+		if (nombre == null || nombre.trim().isEmpty()) {
+			throw new NombreInvalidoException("El nombre de la asignatura no puede estar vacío");
+		}
+
+		if (nombre.contains("  ")) {
+			throw new NombreInvalidoException("El nombre de la asignatura no puede contener espacios dobles");
+		}
+
+		if (!nombre.matches("^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]+$")) {
+			throw new NombreInvalidoException(
+					"El nombre de la asignatura solo debe contener letras, números y espacios");
+		}
+
+		String[] palabras = nombre.trim().split("\\s+");
+
+		if (palabras.length > 10) {
+			throw new NombreInvalidoException("El nombre de la asignatura debe tener máximo diez palabras");
 		}
 	}
 
@@ -433,8 +468,8 @@ public class LanzadorDeException {
 			throw new HoraInicioInvalidaException("La hora de inicio no puede ser antes de las 7:00 a. m.");
 		}
 
-		if (horaInicio.isAfter(LocalTime.of(21, 0))) {
-			throw new HoraInicioInvalidaException("La hora de inicio no puede ser después de las 9:00 p. m.");
+		if (horaInicio.isAfter(LocalTime.of(20, 0))) {
+			throw new HoraInicioInvalidaException("La hora de inicio no puede ser después de las 8:00 p. m.");
 		}
 	}
 
@@ -451,8 +486,8 @@ public class LanzadorDeException {
 			throw new HoraFinInvalidaException("La hora de fin no puede ser nula");
 		}
 
-		if (horaFin.isBefore(LocalTime.of(8, 0))) {
-			throw new HoraFinInvalidaException("La hora de fin no puede ser antes de las 8:00 a. m.");
+		if (horaFin.isBefore(LocalTime.of(9, 0))) {
+			throw new HoraFinInvalidaException("La hora de fin no puede ser antes de las 9:00 a. m.");
 		}
 
 		if (horaFin.isAfter(LocalTime.of(22, 0))) {
@@ -461,22 +496,30 @@ public class LanzadorDeException {
 	}
 
 	/**
-	 * Verifica que las horas de inicio y fin no sean nulas, sean válidas y que la
-	 * de inicio sea anterior a la de fin.
+	 * Verifica que las horas de inicio y fin no sean nulas, sean válidas, no queden
+	 * dentro del horario de almuerzo y que la de inicio sea anterior a la de fin.
 	 *
 	 * @param horaInicio hora de inicio.
 	 * @param horaFin    hora de fin.
-	 * @throws HorarioInvalidoException si las horas son nulas o la de inicio no es
+	 * @throws HorarioInvalidoException si las horas son nulas, están dentro del
+	 *                                  horario de almuerzo o la de inicio no es
 	 *                                  anterior a la de fin.
 	 */
 	public static void verificarHorario(LocalTime horaInicio, LocalTime horaFin) {
 
-		if (horaInicio == null || horaFin == null) {
-			throw new HorarioInvalidoException("Las horas de inicio y fin no pueden ser nulas");
-		}
+	    if (horaInicio == null || horaFin == null) {
+	        throw new HorarioInvalidoException("Las horas de inicio y fin no pueden ser nulas");
+	    }
 
-		verificarHoraInicio(horaInicio);
-		verificarHoraFin(horaFin);
+	    verificarHoraInicio(horaInicio);
+	    verificarHoraFin(horaFin);
+
+		if (horaInicio.isAfter(LocalTime.of(12, 0)) && horaInicio.isBefore(LocalTime.of(13, 0))
+				|| horaFin.isAfter(LocalTime.of(12, 0)) && horaFin.isBefore(LocalTime.of(13, 0))) {
+
+			throw new HorarioInvalidoException(
+					"Las horas de inicio y fin no pueden estar entre las 12:00 p. m. y la 1:00 p. m.");
+		}
 
 		if (!horaInicio.isBefore(horaFin)) {
 			throw new HorarioInvalidoException("La hora de inicio debe ser anterior a la hora de fin");
@@ -498,16 +541,15 @@ public class LanzadorDeException {
 	}
 
 	/**
-	 * Verifica que el número del grupo sea mayor que cero.
-	 *
+	 * Verifica que el número del grupo sea mayor que cero y menor que 800.
+	 * 
 	 * @param numeroGrupo número del grupo a verificar.
-	 * @throws NumeroGrupoInvalidoException si el número no es mayor que cero.
+	 * @throws NumeroGrupoInvalidoException si el número no es mayor que cero o es
+	 *                                      igual o mayor a 800.
 	 */
 	public static void verificarNumeroGrupo(int numeroGrupo) {
-
-		if (numeroGrupo <= 0) {
-
-			throw new NumeroGrupoInvalidoException("El número del grupo debe ser mayor que cero");
+		if (numeroGrupo <= 0 || numeroGrupo >= 800) {
+			throw new NumeroGrupoInvalidoException("El número del grupo debe ser mayor que cero y menor que 800");
 		}
 	}
 
@@ -1123,4 +1165,36 @@ public class LanzadorDeException {
 			}
 		}
 	}
+
+	/**
+	 * Verifica que el periodo academico tenga el formato AAAA-N.
+	 *
+	 * El año debe contener exactamente cuatro digitos y el periodo debe ser 1 o 2.
+	 *
+	 * @param periodo periodo academico que se desea validar.
+	 * @throws PeriodoInvalidoException si el periodo no cumple con el formato
+	 *                                  establecido.
+	 */
+	public static void verificarPeriodo(String periodo) {
+
+		if (periodo == null || !periodo.matches("(Intersemestral )?\\d{4}-[12]")) {
+			throw new PeriodoInvalidoException(
+					"El periodo debe tener el formato AAAA-N o Intersemestral AAAA-N. Ejemplo: 2026-1 o Intersemestral 2026-2.");
+		}
+	}
+
+	/**
+	 * Verifica que la cantidad de inscritos se encuentre entre 0 y 44, ambos
+	 * valores incluidos.
+	 *
+	 * @param inscritos cantidad de inscritos que se desea validar.
+	 * @throws InscritosInvalidosException si el valor es menor a 0 o mayor a 44.
+	 */
+	public static void verificarInscritos(int inscritos) {
+
+		if (inscritos < 0 || inscritos > 44) {
+			throw new InscritosInvalidosException("La cantidad de inscritos debe estar entre 0 y 44.");
+		}
+	}
+
 }
