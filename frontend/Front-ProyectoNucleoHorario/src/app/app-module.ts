@@ -20,8 +20,16 @@ import { ParametrosSistema } from './parametros-sistema/parametros-sistema';
 import { GestionAsignatura } from './gestion-asignatura/gestion-asignatura';
 import { GestionAulas } from './gestion-aulas/gestion-aulas';
 import { InicioDocente } from './inicio-docente/inicio-docente';
+import { EdicionHorarios } from './edicion-horarios/edicion-horarios';
 
-/** Configura el módulo raíz, sus componentes, dependencias y proveedores. */
+/**
+ * @description
+ * Módulo raíz de la aplicación Angular (`AppModule`).
+ *
+ * Se encarga de declarar todos los componentes visuales que conforman la arquitectura
+ * del sistema, importar los módulos de enrutamiento y formularios, y configurar
+ * los proveedores globales de manejo de errores y clientes HTTP con interceptores de seguridad.
+ */
 @NgModule({
   declarations: [
     App,
@@ -38,13 +46,18 @@ import { InicioDocente } from './inicio-docente/inicio-docente';
     GestionAsignatura,
     GestionAulas,
     InicioDocente,
+    EdicionHorarios,
   ],
-  imports: [BrowserModule, AppRoutingModule, RouterModule, FormsModule],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    RouterModule,
+    FormsModule
+  ],
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(withInterceptors([authInterceptor])),
   ],
   bootstrap: [App],
 })
-/** Módulo principal que inicializa la aplicación Angular. */
 export class AppModule {}
