@@ -60,6 +60,13 @@ export class InicioAdministrador implements OnInit {
       badge: 'Semana Actual'
     },
     {
+      titulo: 'Edición de Horarios Guardados',
+      descripcion: 'Modifica, actualiza salones, cupos o elimina grupos ya almacenados en el sistema.',
+      icono: 'edit',
+      ruta: '/edicion-horarios',
+      badge: 'Gestión BD'
+    },
+    {
       titulo: 'Gestión de Aulas',
       descripcion: 'Crea, edita o consulta el catálogo de asignaturas y materias curriculares.',
       icono: 'book',
