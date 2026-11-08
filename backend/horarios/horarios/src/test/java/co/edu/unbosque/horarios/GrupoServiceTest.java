@@ -72,9 +72,6 @@ class GrupoServiceTest {
     @InjectMocks
     private GrupoService grupoService;
 
-    // Parámetros del sistema (según el documento: 40 cupos + 10% tolerancia,
-    // mínimo 10 para abrir, jornada 7am-10pm entre semana / 7am-1pm sábado,
-    // almuerzo 12m-1pm, sesión de 2 horas = 120 min).
     private ParametrosSistemaDTO parametros;
 
     private AsignaturaDTO asignaturaDTO;
@@ -124,7 +121,7 @@ class GrupoServiceTest {
         profesor.setId(1L);
         profesor.setHorasMaximasSemanales(40);
         profesor.setEspecialidades(new ArrayList<>());
-        // disponibilidad amplia: cubre lunes y miércoles de 7:00 a 22:00
+
         profesor.setDisponibilidadHoraria(new ArrayList<>(List.of(
                 new FranjaHoraria(Dia.LUNES, LocalTime.of(7, 0), LocalTime.of(22, 0)),
                 new FranjaHoraria(Dia.MIERCOLES, LocalTime.of(7, 0), LocalTime.of(22, 0)))));
@@ -159,8 +156,6 @@ class GrupoServiceTest {
         grupoDTO.setSesiones(new ArrayList<>(List.of(sesionLunesDTO, sesionMiercolesDTO)));
     }
 
-    // ---------- count / exist ----------
-
     @Test
     void contarGrupos() {
         when(grupoRep.count()).thenReturn(3L);
@@ -185,11 +180,10 @@ class GrupoServiceTest {
         assertFalse(grupoService.exist(99L));
     }
 
-    // ---------- create: camino feliz ----------
+ 
 
     @Test
     void createExitoso() {
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -206,11 +200,10 @@ class GrupoServiceTest {
         verify(auditoriaService).create(any());
     }
 
-    // ---------- create: entidades referenciadas que no existen ----------
+
 
     @Test
     void createProfesorNoExiste() {
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.empty());
 
@@ -219,7 +212,6 @@ class GrupoServiceTest {
 
     @Test
     void createSalonNoExiste() {
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.empty());
@@ -229,7 +221,6 @@ class GrupoServiceTest {
 
     @Test
     void createAsignaturaNoExiste() {
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -240,18 +231,23 @@ class GrupoServiceTest {
 
     @Test
     void createNumeroGrupoDuplicado() {
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(true);
+        when(parametrosSistemaService.get()).thenReturn(parametros);
+        when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
+        when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
+        when(asignaturaRep.findById(1L)).thenReturn(Optional.of(asignatura));
+        when(mapper.map(sesionLunesDTO, FranjaHoraria.class)).thenReturn(sesionLunes);
+        when(mapper.map(sesionMiercolesDTO, FranjaHoraria.class)).thenReturn(sesionMiercoles);
+        when(grupoRep.existsByNumeroGrupoAndAsignaturaAndPeriodo(1, asignatura, "2026-2")).thenReturn(true);
 
         assertThrows(NumeroGrupoInvalidoException.class, () -> grupoService.create(grupoDTO));
     }
 
-    // ---------- create: reglas de negocio (documento del proyecto) ----------
+   
 
     @Test
     void createCapacidadMinimaMenorAlParametro() {
-        grupoDTO.setCapacidadMinima(5); // parámetro exige mínimo 10 para abrir el grupo
+        grupoDTO.setCapacidadMinima(5); 
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -264,10 +260,9 @@ class GrupoServiceTest {
 
     @Test
     void createSesionesNoCoincidenConFrecuenciaAsignatura() {
-        // la asignatura tiene frecuenciaSemanal = 2, pero el grupo trae solo 1 sesión
+   
         grupoDTO.setSesiones(new ArrayList<>(List.of(sesionLunesDTO)));
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -279,9 +274,8 @@ class GrupoServiceTest {
 
     @Test
     void createSalonConCapacidadInsuficiente() {
-        salon.setCapacidad(30); // menor que capacidadMaxima del grupo (40)
+        salon.setCapacidad(30);
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -294,9 +288,8 @@ class GrupoServiceTest {
 
     @Test
     void createSalonSinRequisitosDeLaAsignatura() {
-        asignatura.setRequiereComputadores(true); // el salón no tiene computadores
+        asignatura.setRequiereComputadores(true); 
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -310,9 +303,7 @@ class GrupoServiceTest {
     @Test
     void createProfesorNoCalificadoParaLaAsignatura() {
         asignatura.setEspecialidadRequerida(Especialidad.BASES_DE_DATOS);
-        // profesor.especialidades sigue vacía (no la tiene)
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -325,9 +316,8 @@ class GrupoServiceTest {
 
     @Test
     void createProfesorSinDisponibilidadParaLasSesiones() {
-        profesor.setDisponibilidadHoraria(new ArrayList<>()); // sin disponibilidad
+        profesor.setDisponibilidadHoraria(new ArrayList<>()); 
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -344,8 +334,8 @@ class GrupoServiceTest {
                 new ArrayList<>(List.of(new FranjaHoraria(Dia.LUNES, LocalTime.of(8, 0), LocalTime.of(10, 0)))),
                 EstadoGrupo.ACTIVO);
         grupoExistenteProfesor.setId(2L);
+        grupoExistenteProfesor.setPeriodo("2026-2");
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -363,8 +353,8 @@ class GrupoServiceTest {
                 new ArrayList<>(List.of(new FranjaHoraria(Dia.MIERCOLES, LocalTime.of(8, 0), LocalTime.of(10, 0)))),
                 EstadoGrupo.ACTIVO);
         grupoExistenteSalon.setId(3L);
+        grupoExistenteSalon.setPeriodo("2026-2");
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -378,14 +368,14 @@ class GrupoServiceTest {
 
     @Test
     void createExcedeCargaHorariaDelProfesor() {
-        profesor.setHorasMaximasSemanales(4); // con esto, 1 grupo más ya lo excede
+        profesor.setHorasMaximasSemanales(4); 
 
         Grupo grupoExistenteSinCruce = new Grupo(asignatura, 97, 10, 40, profesor, salon,
                 new ArrayList<>(List.of(new FranjaHoraria(Dia.VIERNES, LocalTime.of(7, 0), LocalTime.of(9, 0)))),
                 EstadoGrupo.ACTIVO);
         grupoExistenteSinCruce.setId(4L);
+        grupoExistenteSinCruce.setPeriodo("2026-2");
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -397,7 +387,6 @@ class GrupoServiceTest {
         assertThrows(CargaHorariaExcedidaException.class, () -> grupoService.create(grupoDTO));
     }
 
-    // ---------- getAll ----------
 
     @Test
     void getAll() {
@@ -423,7 +412,6 @@ class GrupoServiceTest {
         assertTrue(resultado.isEmpty());
     }
 
-    // ---------- deleteById ----------
 
     @Test
     void deleteByIdExistente() {
@@ -488,7 +476,7 @@ class GrupoServiceTest {
         existente.setId(1L);
 
         when(grupoRep.findById(1L)).thenReturn(Optional.of(existente));
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
+        when(grupoRep.existsByNumeroGrupoAndAsignaturaAndPeriodo(1, asignatura, "2026-2")).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -500,17 +488,15 @@ class GrupoServiceTest {
         int resultado = grupoService.updateById(1L, grupoDTO);
 
         assertEquals(0, resultado);
-        verify(grupoRep).existsByNumeroGrupo(1);
+        verify(grupoRep).existsByNumeroGrupoAndAsignaturaAndPeriodo(1, asignatura, "2026-2");
     }
-
-    // ---------- búsquedas ----------
 
     @Test
     void findByNumeroGrupoExistente() {
         Grupo entidad = new Grupo(asignatura, 1, 10, 40, profesor, salon,
                 new ArrayList<>(List.of(sesionLunes, sesionMiercoles)), EstadoGrupo.ACTIVO);
 
-        when(grupoRep.findByNumeroGrupo(1)).thenReturn(Optional.of(entidad));
+        when(grupoRep.findByNumeroGrupo(1)).thenReturn(List.of(entidad));
         when(mapper.map(entidad, GrupoDTO.class)).thenReturn(grupoDTO);
 
         List<GrupoDTO> resultado = grupoService.findByNumeroGrupo(1);
@@ -520,7 +506,7 @@ class GrupoServiceTest {
 
     @Test
     void findByNumeroGrupoNoExistente() {
-        when(grupoRep.findByNumeroGrupo(5)).thenReturn(Optional.empty());
+        when(grupoRep.findByNumeroGrupo(5)).thenReturn(List.of());
 
         List<GrupoDTO> resultado = grupoService.findByNumeroGrupo(5);
 
@@ -600,8 +586,6 @@ class GrupoServiceTest {
         verify(grupoRep, never()).deleteByNumeroGrupo(anyInt());
     }
 
-    // ---------- getters / setters ----------
-
     @Test
     void setGetGrupoRep() {
         GrupoRepository nuevo = mock(GrupoRepository.class);
@@ -652,7 +636,6 @@ class GrupoServiceTest {
         grupoDTO.setSesiones(new ArrayList<>(List.of(sesionLunesDTO, sesionMartesDTO)));
         parametros.setExigirDiasNoConsecutivos(true);
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));
@@ -669,15 +652,13 @@ class GrupoServiceTest {
         FranjaHoraria sesionMartes = new FranjaHoraria(Dia.MARTES, LocalTime.of(7, 0), LocalTime.of(9, 0));
 
         grupoDTO.setSesiones(new ArrayList<>(List.of(sesionLunesDTO, sesionMartesDTO)));
-        parametros.setExigirDiasNoConsecutivos(false); // la universidad decide permitirlo
-
-        // el fixture del profesor solo cubre lunes/miércoles; este caso necesita también el martes
+        parametros.setExigirDiasNoConsecutivos(false); 
+        
         profesor.setDisponibilidadHoraria(new ArrayList<>(List.of(
                 new FranjaHoraria(Dia.LUNES, LocalTime.of(7, 0), LocalTime.of(22, 0)),
                 new FranjaHoraria(Dia.MARTES, LocalTime.of(7, 0), LocalTime.of(22, 0)),
                 new FranjaHoraria(Dia.MIERCOLES, LocalTime.of(7, 0), LocalTime.of(22, 0)))));
 
-        when(grupoRep.existsByNumeroGrupo(1)).thenReturn(false);
         when(parametrosSistemaService.get()).thenReturn(parametros);
         when(profesorRep.findById(1L)).thenReturn(Optional.of(profesor));
         when(salonRep.findById(1L)).thenReturn(Optional.of(salon));

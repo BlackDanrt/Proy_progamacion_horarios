@@ -131,8 +131,8 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 		LanzadorDeException.verificarId(asignaturaId);
 		LanzadorDeException.verificarId(salonId);
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
-		LanzadorDeException.verificarCapacidadMinima(capacidadMinima);
-		LanzadorDeException.verificarCapacidadMaxima(capacidadMaxima);
+		LanzadorDeException.verificarCapacidadMinima(capacidadMinima, parametrosSistemaService.get());
+		LanzadorDeException.verificarCapacidadMaxima(capacidadMaxima, parametrosSistemaService.get());
 		LanzadorDeException.verificarEstadoGrupo(estado);
 		LanzadorDeException.verificarPeriodo(periodo);
 		LanzadorDeException.verificarInscritos(inscritos);
@@ -254,11 +254,11 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	public List<GrupoDTO> findByNumeroGrupo(int numeroGrupo) {
 		LanzadorDeException.verificarNumeroGrupo(numeroGrupo);
 
-		Optional<Grupo> encontrado = grupoRep.findByNumeroGrupo(numeroGrupo);
+		List<Grupo> encontrado = grupoRep.findByNumeroGrupo(numeroGrupo);
 
 		List<GrupoDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
+		encontrado.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
 		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.GRUPO);
     	auditoriaService.create(auditoria);
 		return dtoList;
@@ -273,7 +273,7 @@ public class GrupoService implements CRUDOperation<GrupoDTO> {
 	public List<GrupoDTO> findByAsignatura(AsignaturaDTO asignaturaDTO) {
 
 		Asignatura asignatura = mapper.map(asignaturaDTO, Asignatura.class);
-		List<Grupo> encontrados = grupoRep.findByNumeroGrupo(numeroGrupo);
+		List<Grupo> encontrados = grupoRep.findByAsignatura(asignatura);
 		List<GrupoDTO> dtoList = new ArrayList<>();
 
 		encontrados.forEach(grupo -> dtoList.add(mapper.map(grupo, GrupoDTO.class)));
