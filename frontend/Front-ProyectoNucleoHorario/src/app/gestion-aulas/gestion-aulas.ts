@@ -38,6 +38,13 @@ export class GestionAulas implements OnInit {
 
   /** Controla la visibilidad del modal de registro. */
   mostrarModalRegistro: boolean = false;
+  /** Controla la visibilidad del modal de confirmación de eliminación. */
+  mostrarModalConfirmacion: boolean = false;
+  /** Salón seleccionado para ser eliminado. */
+  salonAEliminar: SalonModel | null = null;
+  /** Mensaje de advertencia específico al intentar eliminar un salón vinculado. */
+  errorEliminacion: string | null = null;
+
   /** Indica si el formulario está editando un salón existente. */
   modoEdicion: boolean = false;
   /** Controla la apertura del menú de usuario. */
@@ -111,20 +118,47 @@ export class GestionAulas implements OnInit {
     this.paginaActual = 1;
   }
 
-  /** Elimina un salón después de pedir confirmación. */
+  /** Prepara y abre el modal de confirmación para eliminar un salón. */
   eliminarRegistro(reg: SalonModel): void {
-    if (confirm(`¿Estás seguro de eliminar el salón ${reg.numeroSalon} del Bloque ${reg.bloque}?`)) {
-      this.salonService.eliminarSalon(reg.bloque, reg.numeroSalon).subscribe({
-        next: () => {
-          alert('Salón eliminado con éxito');
-          this.cargarSalones();
-        },
-        error: (err) => {
-          console.error('Error al eliminar el salón:', err);
-          alert('Error al eliminar el salón: ' + (err.error || err.message));
+    this.salonAEliminar = reg;
+    this.errorEliminacion = null;
+    this.mostrarModalConfirmacion = true;
+    this.cdr.markForCheck();
+  }
+
+  /** Ejecuta la eliminación del salón tras confirmar en el modal personalizado. */
+  aceptarEliminacion(): void {
+    if (!this.salonAEliminar) return;
+
+    const reg = this.salonAEliminar;
+    const bloqueValor = typeof reg.bloque === 'object' ? (reg.bloque as any).toString() : reg.bloque;
+
+    this.salonService.eliminarSalon(bloqueValor, reg.numeroSalon).subscribe({
+      next: () => {
+        this.cerrarModalConfirmacion();
+        this.cargarSalones();
+      },
+      error: (err) => {
+        console.error('Error al eliminar el salón:', err);
+        const mensajeBackend = typeof err.error === 'string' ? err.error : (err.error?.message || '');
+
+        // Verificamos si el error indica que está vinculado a un grupo
+        if (mensajeBackend.toLowerCase().includes('grupo') || err.status === 400 || err.status === 409) {
+          this.errorEliminacion = 'Este salón no se puede eliminar porque está vinculado a un grupo.';
+        } else {
+          this.errorEliminacion = 'No se pudo eliminar el salón. Inténtalo de nuevo.';
         }
-      });
-    }
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** Cierra el modal de confirmación sin eliminar. */
+  cerrarModalConfirmacion(): void {
+    this.mostrarModalConfirmacion = false;
+    this.salonAEliminar = null;
+    this.errorEliminacion = null;
+    this.cdr.markForCheck();
   }
 
   /** Crea o actualiza el salón según el modo del formulario. */
@@ -160,6 +194,7 @@ export class GestionAulas implements OnInit {
     this.nuevoRegistro = this.obtenerModeloVacio();
     this.errorModal = null;
     this.mostrarModalRegistro = true;
+    this.cdr.markForCheck();
   }
 
   /** Abre el formulario con los datos del salón seleccionado. */
@@ -168,11 +203,13 @@ export class GestionAulas implements OnInit {
     this.nuevoRegistro = { ...reg };
     this.errorModal = null;
     this.mostrarModalRegistro = true;
+    this.cdr.markForCheck();
   }
 
   /** Oculta el formulario de creación o edición. */
   cerrarModalRegistro(): void {
     this.mostrarModalRegistro = false;
+    this.cdr.markForCheck();
   }
 
   /** Devuelve el número máximo de salón permitido según el bloque seleccionado. */
