@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { SesionService } from '../services/sesion.service';
 import { GrupoService } from '../services/grupo.service';
@@ -20,6 +20,10 @@ export interface Toast {
  * Componente encargado de la interfaz de Edición y Gestión de Horarios Académicos.
  * Permite filtrar grupos, editarlos validando restricciones físicas de capacidad con tolerancia,
  * verificar disponibilidad de infraestructura y mostrar alertas visuales tanto flotantes como en el modal.
+ *
+ * Optimización: los grupos se descargan una sola vez del servidor y los filtros se aplican en memoria.
+ * Al editar o eliminar, primero se confirma el cambio en el backend y luego se refleja en la lista local,
+ * sin recargar el componente ni volver a pedir todos los datos.
  */
 @Component({
   selector: 'app-edicion-horarios',
@@ -33,11 +37,16 @@ export class EdicionHorarios implements OnInit {
   private salonService = inject(SalonService);
   private router = inject(Router);
   private sesion = inject(SesionService);
+  private cdr = inject(ChangeDetectorRef);
 
   toasts: Toast[] = [];
   private toastSeq = 0;
   mostrarModalEditar: boolean = false;
   mostrarMenuUsuario: boolean = false;
+
+  /** Indicadores de carga / guardado para dar retroalimentación visual. */
+  cargando: boolean = false;
+  guardando: boolean = false;
 
   mensajeErrorCapacidad: string | null = null;
 
@@ -55,6 +64,9 @@ export class EdicionHorarios implements OnInit {
   listaPeriodos: string[] = ['2026-1', '2026-2', 'Intersemestral 2026-1'];
   docenteFiltro: string = '';
 
+  /** Copia completa de los grupos traídos del servidor (sin filtrar). */
+  private todosLosGrupos: any[] = [];
+  /** Grupos que se muestran en la tabla (ya filtrados). */
   gruposGuardados: any[] = [];
 
   grupoEnEdicion: any = null;
@@ -66,6 +78,9 @@ export class EdicionHorarios implements OnInit {
     this.cargarCatalogos();
   }
 
+  /**
+   * Carga profesores, salones y grupos. Las tres peticiones se lanzan en paralelo.
+   */
   cargarCatalogos(): void {
     this.profesorService.mostrarTodo().subscribe({
       next: (res) => {
@@ -73,6 +88,7 @@ export class EdicionHorarios implements OnInit {
           this.listaProfesoresObj = res.body;
           this.listaProfesores = res.body.map(p => `${p.nombre} ${p.apellido}`);
         }
+        this.cdr.markForCheck();
       }
     });
 
@@ -82,6 +98,7 @@ export class EdicionHorarios implements OnInit {
           this.listaSalonesObj = res.body;
           this.construirMapaSalones();
         }
+        this.cdr.markForCheck();
       }
     });
 
@@ -102,26 +119,47 @@ export class EdicionHorarios implements OnInit {
     this.listaBloques = Array.from(bloquesSet);
   }
 
+  /**
+   * Descarga los grupos del servidor. Se usa en la carga inicial.
+   * Los cambios de filtro NO vuelven a llamar al servidor (ver aplicarFiltros).
+   */
   cargarGrupos(): void {
+    this.cargando = true;
     this.grupoService.mostrarTodo().subscribe({
       next: (res: any) => {
-        const todos = res?.body && res.status !== 204 ? res.body : [];
-        this.gruposGuardados = todos.filter((g: any) => {
-          const matchPeriodo = !this.periodoSeleccionado || g.periodo === this.periodoSeleccionado;
-          const nombreProf = g.profesor ? `${g.profesor.nombre} ${g.profesor.apellido}` : '';
-          const matchDocente = !this.docenteFiltro || nombreProf === this.docenteFiltro;
-          return matchPeriodo && matchDocente;
-        });
+        this.todosLosGrupos = res?.body && res.status !== 204 ? res.body : [];
+        this.aplicarFiltros();
+        this.cargando = false;
+        this.cdr.markForCheck();
       },
       error: (err: any) => {
+        this.cargando = false;
+        this.cdr.markForCheck();
         console.error('Error al cargar grupos:', err);
         this.mostrarToast('error', 'No se pudieron cargar los grupos guardados.');
       }
     });
   }
 
+  /**
+   * Filtra en memoria la lista completa según periodo y docente.
+   */
+  aplicarFiltros(): void {
+    this.gruposGuardados = this.todosLosGrupos.filter((g: any) => {
+      const matchPeriodo = !this.periodoSeleccionado || g.periodo === this.periodoSeleccionado;
+      const nombreProf = g.profesor ? `${g.profesor.nombre} ${g.profesor.apellido}` : '';
+      const matchDocente = !this.docenteFiltro || nombreProf === this.docenteFiltro;
+      return matchPeriodo && matchDocente;
+    });
+  }
+
   onFiltroChange(): void {
-    this.cargarGrupos();
+    this.aplicarFiltros();
+  }
+
+  /** Evita que Angular reconstruya todas las filas de la tabla al cambiar la lista. */
+  trackById(_index: number, grupo: any): number {
+    return grupo.id;
   }
 
   abrirModalEditar(grupo: any): void {
@@ -175,10 +213,14 @@ export class EdicionHorarios implements OnInit {
     }
   }
 
+  /**
+   * Valida los datos, guarda en el backend y, solo si el servidor responde OK,
+   * actualiza la lista local para que el cambio se vea de inmediato en la tabla.
+   */
   guardarEdicionGrupo(): void {
     this.mensajeErrorCapacidad = null;
 
-    if (!this.grupoEnEdicion) return;
+    if (!this.grupoEnEdicion || this.guardando) return;
 
     const salonObj = this.listaSalonesObj.find(s => s.id === Number(this.salonSeleccionadoModalId));
 
@@ -213,21 +255,45 @@ export class EdicionHorarios implements OnInit {
       salon: salonObj
     };
 
+    this.guardando = true;
+
     this.grupoService.actualizarGrupo(payload).subscribe({
-      next: () => {
+      next: (respuesta: any) => {
+        this.guardando = false;
+        this.cdr.markForCheck();
+
+        // Si el backend devuelve el grupo actualizado (objeto), se usa lo que devolvió;
+        // si devuelve solo un texto, se usa lo que se envió, que ya fue confirmado.
+        const grupoActualizado =
+          respuesta && typeof respuesta === 'object' && respuesta.id != null
+            ? { ...payload, ...respuesta }
+            : payload;
+
+        this.reemplazarGrupoLocal(grupoActualizado);
+
         this.mostrarToast('exito', 'Grupo actualizado correctamente en la base de datos.');
         this.cerrarModalEditar();
-
-        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-          this.router.navigate(['/edicion-horarios']);
-        });
       },
       error: (err: any) => {
+        this.guardando = false;
+        this.cdr.markForCheck();
         console.error('Error al actualizar en el servidor:', err);
         const mensajeBackend = typeof err?.error === 'string' ? err.error : (err?.error?.message || 'No se pudo actualizar el grupo en el servidor.');
         this.mostrarToast('error', mensajeBackend);
+        // Si falla, no se toca la lista local: la tabla sigue mostrando lo que realmente está guardado.
       }
     });
+  }
+
+  /**
+   * Reemplaza un grupo en la copia local y vuelve a aplicar los filtros.
+   */
+  private reemplazarGrupoLocal(grupo: any): void {
+    const indice = this.todosLosGrupos.findIndex(g => g.id === grupo.id);
+    if (indice !== -1) {
+      this.todosLosGrupos[indice] = grupo;
+    }
+    this.aplicarFiltros();
   }
 
   solicitarEliminarGrupo(idGrupo: number): void {
@@ -239,13 +305,18 @@ export class EdicionHorarios implements OnInit {
     };
   }
 
+  /**
+   * Elimina el grupo en el backend y, si fue exitoso, lo quita de la lista local.
+   */
   aceptarConfirmacion(): void {
     if (this.idGrupoAEliminar !== null) {
       const id = this.idGrupoAEliminar;
       this.grupoService.eliminarGrupo(id).subscribe({
         next: () => {
+          this.todosLosGrupos = this.todosLosGrupos.filter(g => g.id !== id);
+          this.aplicarFiltros();
+          this.cdr.markForCheck();
           this.mostrarToast('exito', 'Grupo eliminado del sistema con éxito.');
-          this.cargarGrupos();
         },
         error: (err: any) => {
           console.error('Error al eliminar:', err);
@@ -264,11 +335,13 @@ export class EdicionHorarios implements OnInit {
   mostrarToast(tipo: TipoToast, mensaje: string): void {
     const id = ++this.toastSeq;
     this.toasts.push({ id, tipo, mensaje });
+    this.cdr.markForCheck();
     setTimeout(() => this.cerrarToast(id), 5000);
   }
 
   cerrarToast(id: number): void {
     this.toasts = this.toasts.filter(t => t.id !== id);
+    this.cdr.markForCheck();
   }
 
   navegarA(ruta: string): void {

@@ -119,11 +119,15 @@
           <h3>Grupos Registrados en la Base de Datos</h3>
         </div>
 
-        <div class="aviso-vacio" *ngIf="gruposGuardados.length === 0">
+        <div class="aviso-vacio" *ngIf="cargando">
+          Cargando grupos...
+        </div>
+
+        <div class="aviso-vacio" *ngIf="!cargando && gruposGuardados.length === 0">
           No se encontraron grupos guardados para los filtros seleccionados.
         </div>
 
-        <div class="table-responsive" *ngIf="gruposGuardados.length > 0">
+        <div class="table-responsive" *ngIf="!cargando && gruposGuardados.length > 0">
           <table class="custom-data-table">
             <thead>
             <tr>
@@ -136,7 +140,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr *ngFor="let g of gruposGuardados">
+            <tr *ngFor="let g of gruposGuardados; trackBy: trackById">
               <td style="font-weight: 600; color: #0f172a;">{{ g.asignatura?.nombre }}</td>
               <td>G{{ g.numeroGrupo }}</td>
               <td>{{ g.profesor?.nombre }} {{ g.profesor?.apellido }}</td>
@@ -204,7 +208,9 @@
 
         <div class="modal-actions">
           <button type="button" class="btn-cancelar" (click)="cerrarModalEditar()">Cancelar</button>
-          <button type="button" class="btn-agregar" (click)="guardarEdicionGrupo()">Guardar Cambios</button>
+          <button type="button" class="btn-agregar" [disabled]="guardando" (click)="guardarEdicionGrupo()">
+            {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
+          </button>
         </div>
       </form>
     </div>
