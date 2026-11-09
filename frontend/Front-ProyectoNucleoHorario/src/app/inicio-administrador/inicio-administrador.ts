@@ -77,7 +77,7 @@ export class InicioAdministrador implements OnInit {
       badge: 'Gestión BD'
     },
     {
-      titulo: 'Gestión de Aulas',
+      titulo: 'Gestión de Asignaturas',
       descripcion: 'Crea, edita o consulta el catálogo de asignaturas y materias curriculares.',
       icono: 'book',
       ruta: '/gestion-asignatura',
