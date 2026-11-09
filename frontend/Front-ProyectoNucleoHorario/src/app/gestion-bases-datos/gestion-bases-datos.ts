@@ -68,6 +68,14 @@ export class GestionBasesDatos implements OnInit {
   /** Indica si se están guardando los cambios de edición. */
   guardando = signal<boolean>(false);
 
+  // Estado del modal de confirmación de eliminación
+  /** Registro pendiente de eliminar; si no es null, se muestra el modal. */
+  registroAEliminar = signal<RegistroBaseDatos | null>(null);
+  /** Indica si se está eliminando el registro. */
+  eliminando = signal<boolean>(false);
+  /** Mensaje de error mostrado dentro del modal de eliminación. */
+  errorEliminar = signal<string>('');
+
   // Derivados con computed
   /** Registros que coinciden con el texto de búsqueda. */
   registrosFiltrados = computed(() => {
@@ -314,18 +322,38 @@ export class GestionBasesDatos implements OnInit {
 
   // ───────────────────────── ELIMINAR ─────────────────────────
 
-  /** Elimina el registro seleccionado después de confirmar la acción. */
+  /** Abre el modal de confirmación para eliminar el registro seleccionado. */
   eliminarRegistro(reg: RegistroBaseDatos): void {
-    if (!confirm(`¿Seguro que deseas eliminar a ${reg.nombre}?`)) return;
+    this.errorEliminar.set('');
+    this.registroAEliminar.set(reg);
+  }
+
+  /** Cierra el modal de confirmación sin eliminar. */
+  cancelarEliminacion(): void {
+    if (this.eliminando()) return;
+    this.registroAEliminar.set(null);
+    this.errorEliminar.set('');
+  }
+
+  /** Elimina el registro seleccionado tras la confirmación. */
+  confirmarEliminacion(): void {
+    const reg = this.registroAEliminar();
+    if (!reg) return;
+
+    this.eliminando.set(true);
+    this.errorEliminar.set('');
 
     const onSuccess = () => {
       this.registros.update(lista => lista.filter(r => r.clave !== reg.clave));
       this.originales.delete(reg.clave);
       this.ajustarPagina();
+      this.eliminando.set(false);
+      this.registroAEliminar.set(null);
     };
     const onError = (err: any) => {
       console.error('Error eliminando registro', err);
-      this.error.set(`No se pudo eliminar a ${reg.nombre}.`);
+      this.errorEliminar.set(`No se pudo eliminar a ${reg.nombre}.`);
+      this.eliminando.set(false);
     };
 
     const peticion$ = reg.rol === 'Docente'

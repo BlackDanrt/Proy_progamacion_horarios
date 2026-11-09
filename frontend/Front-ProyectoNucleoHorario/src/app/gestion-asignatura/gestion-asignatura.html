@@ -1,4 +1,3 @@
-
 <div class="layout-wrapper">
 
 
@@ -304,6 +303,32 @@
         </div>
 
       </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="mostrarModalEliminar" (click)="cancelarEliminacion()">
+    <div class="modal-card modal-confirm" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h2>Eliminar asignatura</h2>
+        <button type="button" class="modal-close" (click)="cancelarEliminacion()" title="Cerrar">&times;</button>
+      </div>
+
+      <p class="confirm-text">
+        ¿Seguro que quieres eliminar la asignatura
+        <strong>"{{ registroAEliminar?.nombre }}"</strong>?
+        Esta acción no se puede deshacer.
+      </p>
+
+      <p class="form-error" *ngIf="errorEliminar">{{ errorEliminar }}</p>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="cancelarEliminacion()" [disabled]="eliminando">Cancelar</button>
+        <button type="button" class="btn-danger" (click)="confirmarEliminacion()" [disabled]="eliminando">
+          {{ eliminando ? 'Eliminando...' : 'Eliminar' }}
+        </button>
+      </div>
+
     </div>
   </div>
 
