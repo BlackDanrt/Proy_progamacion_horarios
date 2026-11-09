@@ -23,15 +23,27 @@ import co.edu.unbosque.horarios.util.LanzadorDeException;
 @Service
 public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 
+	/**
+	 * Repositorio utilizado para acceder a los datos de los administradores.
+	 */
 	@Autowired
 	private AdministradorRepository administradorRep;
 
+	/**
+	 * Mapeador utilizado para convertir entre entidades y DTO.
+	 */
 	@Autowired
 	private ModelMapper mapper;
 
+	/**
+	 * Codificador utilizado para encriptar y comparar contraseñas.
+	 */
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
+	/**
+	 * Constructor vacío de la clase.
+	 */
 	public AdministradorService() {
 	}
 
@@ -72,23 +84,18 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 		LanzadorDeException.verificarDocumento(data.getDocumento());
 		LanzadorDeException.verificarCorreoElectronico(data.getCorreo());
 		LanzadorDeException.verificarContrasena(data.getContrasenia());
-		LanzadorDeException.verificarCodigoAdministrador(
-				data.getCodigoAdministrador());
+		LanzadorDeException.verificarCodigoAdministrador(data.getCodigoAdministrador());
 
-		LanzadorDeException.verificarCorreoDuplicado(
-				administradorRep.existsByCorreo(data.getCorreo()));
+		LanzadorDeException.verificarCorreoDuplicado(administradorRep.existsByCorreo(data.getCorreo()));
 
 		LanzadorDeException.verificarCodigoAdministradorDuplicado(
-				administradorRep.existsByCodigoAdministrador(
-						data.getCodigoAdministrador()));
+				administradorRep.existsByCodigoAdministrador(data.getCodigoAdministrador()));
 
-		LanzadorDeException.verificarDocumentoDuplicado(
-				administradorRep.existsByDocumento(data.getDocumento()));
+		LanzadorDeException.verificarDocumentoDuplicado(administradorRep.existsByDocumento(data.getDocumento()));
 
 		Administrador entity = mapper.map(data, Administrador.class);
 
-		entity.setContrasenia(
-				passwordEncoder.encode(data.getContrasenia()));
+		entity.setContrasenia(passwordEncoder.encode(data.getContrasenia()));
 
 		administradorRep.save(entity);
 
@@ -108,8 +115,7 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 		List<AdministradorDTO> dtoList = new ArrayList<>();
 
 		entityList.forEach(entity -> {
-			AdministradorDTO dto =
-					mapper.map(entity, AdministradorDTO.class);
+			AdministradorDTO dto = mapper.map(entity, AdministradorDTO.class);
 
 			dtoList.add(dto);
 		});
@@ -139,7 +145,7 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 	/**
 	 * Actualiza la información de un administrador.
 	 *
-	 * @param id identificador del administrador.
+	 * @param id   identificador del administrador.
 	 * @param data nuevos datos.
 	 * @return 0 si se actualiza correctamente, 1 si no existe.
 	 */
@@ -153,18 +159,14 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 		LanzadorDeException.verificarApellido(data.getApellido());
 		LanzadorDeException.verificarDocumento(data.getDocumento());
 		LanzadorDeException.verificarCorreoElectronico(data.getCorreo());
-		LanzadorDeException.verificarCodigoAdministrador(
-				data.getCodigoAdministrador());
+		LanzadorDeException.verificarCodigoAdministrador(data.getCodigoAdministrador());
 
-		if (data.getContrasenia() != null
-				&& !data.getContrasenia().isBlank()) {
+		if (data.getContrasenia() != null && !data.getContrasenia().isBlank()) {
 
-			LanzadorDeException.verificarContrasena(
-					data.getContrasenia());
+			LanzadorDeException.verificarContrasena(data.getContrasenia());
 		}
 
-		Optional<Administrador> encontrado =
-				administradorRep.findById(id);
+		Optional<Administrador> encontrado = administradorRep.findById(id);
 
 		if (encontrado.isEmpty()) {
 			return 1;
@@ -173,44 +175,34 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 		Administrador temp = encontrado.get();
 
 		// Verificar código duplicado
-		if (!temp.getCodigoAdministrador()
-				.equals(data.getCodigoAdministrador())) {
+		if (!temp.getCodigoAdministrador().equals(data.getCodigoAdministrador())) {
 
 			LanzadorDeException.verificarCodigoAdministradorDuplicado(
-					administradorRep.existsByCodigoAdministrador(
-							data.getCodigoAdministrador()));
+					administradorRep.existsByCodigoAdministrador(data.getCodigoAdministrador()));
 		}
 
 		// Verificar correo duplicado
 		if (!temp.getCorreo().equals(data.getCorreo())) {
 
-			LanzadorDeException.verificarCorreoDuplicado(
-					administradorRep.existsByCorreo(
-							data.getCorreo()));
+			LanzadorDeException.verificarCorreoDuplicado(administradorRep.existsByCorreo(data.getCorreo()));
 		}
 
 		// Verificar documento duplicado
 		if (temp.getDocumento() != data.getDocumento()) {
 
-			LanzadorDeException.verificarDocumentoDuplicado(
-					administradorRep.existsByDocumento(
-							data.getDocumento()));
+			LanzadorDeException.verificarDocumentoDuplicado(administradorRep.existsByDocumento(data.getDocumento()));
 		}
 
 		temp.setNombre(data.getNombre());
 		temp.setApellido(data.getApellido());
 		temp.setDocumento(data.getDocumento());
 		temp.setCorreo(data.getCorreo());
-		temp.setCodigoAdministrador(
-				data.getCodigoAdministrador());
+		temp.setCodigoAdministrador(data.getCodigoAdministrador());
 		temp.setEstado(data.isEstado());
 
-		if (data.getContrasenia() != null
-				&& !data.getContrasenia().isBlank()) {
+		if (data.getContrasenia() != null && !data.getContrasenia().isBlank()) {
 
-			temp.setContrasenia(
-					passwordEncoder.encode(
-							data.getContrasenia()));
+			temp.setContrasenia(passwordEncoder.encode(data.getContrasenia()));
 		}
 
 		administradorRep.save(temp);
@@ -224,23 +216,15 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 	 * @param codigoAdministrador código del administrador.
 	 * @return lista con el administrador encontrado.
 	 */
-	public List<AdministradorDTO> findByCodigoAdministrador(
-			String codigoAdministrador) {
+	public List<AdministradorDTO> findByCodigoAdministrador(String codigoAdministrador) {
 
-		LanzadorDeException.verificarCodigoAdministrador(
-				codigoAdministrador);
+		LanzadorDeException.verificarCodigoAdministrador(codigoAdministrador);
 
-		Optional<Administrador> encontrado =
-				administradorRep.findByCodigoAdministrador(
-						codigoAdministrador);
+		Optional<Administrador> encontrado = administradorRep.findByCodigoAdministrador(codigoAdministrador);
 
 		List<AdministradorDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(administrador ->
-				dtoList.add(
-						mapper.map(
-								administrador,
-								AdministradorDTO.class)));
+		encontrado.ifPresent(administrador -> dtoList.add(mapper.map(administrador, AdministradorDTO.class)));
 
 		return dtoList;
 	}
@@ -255,16 +239,11 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 
 		LanzadorDeException.verificarCorreoElectronico(correo);
 
-		Optional<Administrador> encontrado =
-				administradorRep.findByCorreo(correo);
+		Optional<Administrador> encontrado = administradorRep.findByCorreo(correo);
 
 		List<AdministradorDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(administrador ->
-				dtoList.add(
-						mapper.map(
-								administrador,
-								AdministradorDTO.class)));
+		encontrado.ifPresent(administrador -> dtoList.add(mapper.map(administrador, AdministradorDTO.class)));
 
 		return dtoList;
 	}
@@ -279,16 +258,11 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 
 		LanzadorDeException.verificarDocumento(documento);
 
-		Optional<Administrador> encontrado =
-				administradorRep.findByDocumento(documento);
+		Optional<Administrador> encontrado = administradorRep.findByDocumento(documento);
 
 		List<AdministradorDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(administrador ->
-				dtoList.add(
-						mapper.map(
-								administrador,
-								AdministradorDTO.class)));
+		encontrado.ifPresent(administrador -> dtoList.add(mapper.map(administrador, AdministradorDTO.class)));
 
 		return dtoList;
 	}
@@ -299,14 +273,11 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 	 * @param codigoAdministrador código a verificar.
 	 * @return true si ya existe.
 	 */
-	public boolean findCodigoAdministradorAlreadyTaken(
-			String codigoAdministrador) {
+	public boolean findCodigoAdministradorAlreadyTaken(String codigoAdministrador) {
 
-		LanzadorDeException.verificarCodigoAdministrador(
-				codigoAdministrador);
+		LanzadorDeException.verificarCodigoAdministrador(codigoAdministrador);
 
-		return administradorRep.existsByCodigoAdministrador(
-				codigoAdministrador);
+		return administradorRep.existsByCodigoAdministrador(codigoAdministrador);
 	}
 
 	/**
@@ -338,18 +309,17 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 	/**
 	 * Autentica un administrador mediante correo y contraseña.
 	 *
-	 * @param correo correo del administrador.
+	 * @param correo      correo del administrador.
 	 * @param contrasenia contraseña.
-	 * @return 0 login correcto, 1 contraseña incorrecta,
-	 *         2 administrador inexistente, 3 administrador inactivo.
+	 * @return 0 login correcto, 1 contraseña incorrecta, 2 administrador
+	 *         inexistente, 3 administrador inactivo.
 	 */
 	public int login(String correo, String contrasenia) {
 
 		LanzadorDeException.verificarCorreoElectronico(correo);
 		LanzadorDeException.verificarContrasena(contrasenia);
 
-		Optional<Administrador> encontrado =
-				administradorRep.findByCorreo(correo);
+		Optional<Administrador> encontrado = administradorRep.findByCorreo(correo);
 
 		if (encontrado.isEmpty()) {
 			return 2;
@@ -361,9 +331,7 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 			return 3;
 		}
 
-		if (passwordEncoder.matches(
-				contrasenia,
-				administrador.getContrasenia())) {
+		if (passwordEncoder.matches(contrasenia, administrador.getContrasenia())) {
 
 			return 0;
 		}
@@ -374,7 +342,7 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 	/**
 	 * Actualiza el estado de un administrador.
 	 *
-	 * @param id identificador del administrador.
+	 * @param id     identificador del administrador.
 	 * @param estado nuevo estado.
 	 * @return 0 si se actualiza, 1 si no existe.
 	 */
@@ -382,8 +350,7 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 
 		LanzadorDeException.verificarId(id);
 
-		Optional<Administrador> encontrado =
-				administradorRep.findById(id);
+		Optional<Administrador> encontrado = administradorRep.findById(id);
 
 		if (encontrado.isEmpty()) {
 			return 1;
@@ -404,17 +371,13 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 	 * @param codigoAdministrador código del administrador.
 	 * @return 0 si se elimina, 1 si no existe.
 	 */
-	public int deleteByCodigoAdministrador(
-			String codigoAdministrador) {
+	public int deleteByCodigoAdministrador(String codigoAdministrador) {
 
-		LanzadorDeException.verificarCodigoAdministrador(
-				codigoAdministrador);
+		LanzadorDeException.verificarCodigoAdministrador(codigoAdministrador);
 
-		if (administradorRep.existsByCodigoAdministrador(
-				codigoAdministrador)) {
+		if (administradorRep.existsByCodigoAdministrador(codigoAdministrador)) {
 
-			administradorRep.deleteByCodigoAdministrador(
-					codigoAdministrador);
+			administradorRep.deleteByCodigoAdministrador(codigoAdministrador);
 
 			return 0;
 		}
@@ -422,30 +385,58 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 		return 1;
 	}
 
+	/**
+	 * Obtiene el repositorio de administradores.
+	 *
+	 * @return repositorio de administradores.
+	 */
 	public AdministradorRepository getAdministradorRep() {
 		return administradorRep;
 	}
 
-	public void setAdministradorRep(
-			AdministradorRepository administradorRep) {
+	/**
+	 * Establece el repositorio de administradores.
+	 *
+	 * @param administradorRep repositorio de administradores.
+	 */
+	public void setAdministradorRep(AdministradorRepository administradorRep) {
 
 		this.administradorRep = administradorRep;
 	}
 
+	/**
+	 * Obtiene el mapeador utilizado para convertir entre entidades y DTO.
+	 *
+	 * @return mapeador de objetos.
+	 */
 	public ModelMapper getMapper() {
 		return mapper;
 	}
 
+	/**
+	 * Establece el mapeador utilizado para convertir entre entidades y DTO.
+	 *
+	 * @param mapper mapeador de objetos.
+	 */
 	public void setMapper(ModelMapper mapper) {
 		this.mapper = mapper;
 	}
 
+	/**
+	 * Obtiene el codificador de contraseñas.
+	 *
+	 * @return codificador de contraseñas.
+	 */
 	public PasswordEncoder getPasswordEncoder() {
 		return passwordEncoder;
 	}
 
-	public void setPasswordEncoder(
-			PasswordEncoder passwordEncoder) {
+	/**
+	 * Establece el codificador de contraseñas.
+	 *
+	 * @param passwordEncoder codificador de contraseñas.
+	 */
+	public void setPasswordEncoder(PasswordEncoder passwordEncoder) {
 
 		this.passwordEncoder = passwordEncoder;
 	}

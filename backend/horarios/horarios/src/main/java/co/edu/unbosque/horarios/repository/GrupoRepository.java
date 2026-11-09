@@ -113,6 +113,15 @@ public interface GrupoRepository extends CrudRepository<Grupo, Long> {
 	 */
 	public void deleteByNumeroGrupoAndAsignatura(int numeroGrupo, Asignatura asignatura);
 	
+	/**
+	 * Verifica si ya existe un grupo con el mismo número, asignatura y periodo
+	 * académico.
+	 *
+	 * @param numeroGrupo El número del grupo a comprobar.
+	 * @param asignatura  La asignatura asociada al grupo.
+	 * @param periodo     El periodo académico del grupo, por ejemplo "2026-2".
+	 * @return true si el grupo ya existe en ese periodo, false en caso contrario.
+	 */
 	public boolean existsByNumeroGrupoAndAsignaturaAndPeriodo(int numeroGrupo, Asignatura asignatura, String periodo);
 
 }

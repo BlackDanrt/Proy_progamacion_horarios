@@ -84,8 +84,7 @@ public class Salon {
 	 * @param tieneComputadores indica si cuenta con computadores.
 	 * @param tieneSillasMoviles indica si cuenta con sillas móviles.
 	 */
-	public Salon(Bloque bloque, int numeroSalon,
-			@Min(value = 1, message = "La capacidad del salón debe ser de al menos 1") @Max(value = 40, message = "la capacidad del salón no puede ser más de 40") int capacidad,
+	public Salon(Bloque bloque, int numeroSalon, int capacidad,
 			boolean tieneComputadores, boolean tieneSillasMoviles) {
 		super();
 		this.bloque = bloque;

@@ -34,18 +34,33 @@ import jakarta.transaction.Transactional;
 @Service
 public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 
+	/**
+	 * Repositorio utilizado para acceder a los datos de los profesores.
+	 */
 	@Autowired
 	private ProfesorRepository profesorRep;
 
+	/**
+	 * Repositorio utilizado para acceder a los datos de las franjas horarias.
+	 */
 	@Autowired
 	private FranjaHorariaRepository franjaRep;
 
+	/**
+	 * Mapeador utilizado para convertir entre entidades y DTO.
+	 */
 	@Autowired
 	private ModelMapper mapper;
 
+	/**
+	 * Codificador utilizado para encriptar las contraseñas.
+	 */
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
+	/**
+	 * Constructor vacío de la clase.
+	 */
 	public ProfesorService() {
 		// Constructor vacío
 	}
@@ -121,26 +136,26 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 	@Override
 	public List<ProfesorDTO> getAll() {
 
-	    List<ProfesorDTO> lista = new ArrayList<>();
+		List<ProfesorDTO> lista = new ArrayList<>();
 
-	    Iterable<Profesor> profesores = profesorRep.findAll();
+		Iterable<Profesor> profesores = profesorRep.findAll();
 
-	    for (Profesor profesor : profesores) {
+		for (Profesor profesor : profesores) {
 
-	        ProfesorDTO dto = mapper.map(profesor, ProfesorDTO.class);
+			ProfesorDTO dto = mapper.map(profesor, ProfesorDTO.class);
 
-	        List<FranjaHorariaDTO> franjasDTO = new ArrayList<>();
+			List<FranjaHorariaDTO> franjasDTO = new ArrayList<>();
 
-	        for (FranjaHoraria franja : profesor.getDisponibilidadHoraria()) {
-	            franjasDTO.add(mapper.map(franja, FranjaHorariaDTO.class));
-	        }
+			for (FranjaHoraria franja : profesor.getDisponibilidadHoraria()) {
+				franjasDTO.add(mapper.map(franja, FranjaHorariaDTO.class));
+			}
 
-	        dto.setDisponibilidadHoraria(franjasDTO);
+			dto.setDisponibilidadHoraria(franjasDTO);
 
-	        lista.add(dto);
-	    }
+			lista.add(dto);
+		}
 
-	    return lista;
+		return lista;
 	}
 
 	/**
@@ -524,26 +539,56 @@ public class ProfesorService implements CRUDOperation<ProfesorDTO> {
 		return true;
 	}
 
+	/**
+	 * Obtiene el repositorio de profesores.
+	 *
+	 * @return repositorio de profesores.
+	 */
 	public ProfesorRepository getProfesorRep() {
 		return profesorRep;
 	}
 
+	/**
+	 * Establece el repositorio de profesores.
+	 *
+	 * @param profesorRep repositorio de profesores.
+	 */
 	public void setProfesorRep(ProfesorRepository profesorRep) {
 		this.profesorRep = profesorRep;
 	}
 
+	/**
+	 * Obtiene el mapeador utilizado para convertir entre entidades y DTO.
+	 *
+	 * @return mapeador de objetos.
+	 */
 	public ModelMapper getMapper() {
 		return mapper;
 	}
 
+	/**
+	 * Establece el mapeador utilizado para convertir entre entidades y DTO.
+	 *
+	 * @param mapper mapeador de objetos.
+	 */
 	public void setMapper(ModelMapper mapper) {
 		this.mapper = mapper;
 	}
 
+	/**
+	 * Obtiene el codificador de contraseñas.
+	 *
+	 * @return codificador de contraseñas.
+	 */
 	public PasswordEncoder getPasswordEncoder() {
 		return passwordEncoder;
 	}
 
+	/**
+	 * Establece el codificador de contraseñas.
+	 *
+	 * @param passwordEncoder codificador de contraseñas.
+	 */
 	public void setPasswordEncoder(PasswordEncoder passwordEncoder) {
 		this.passwordEncoder = passwordEncoder;
 	}

@@ -23,12 +23,21 @@ import co.edu.unbosque.horarios.util.LanzadorDeException;
 @Service
 public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 
+	/**
+	 * Repositorio utilizado para acceder a los datos de las asignaturas.
+	 */
 	@Autowired
 	private AsignaturaRepository asignaturaRep;
 
+	/**
+	 * Mapeador utilizado para convertir entre entidades y DTO.
+	 */
 	@Autowired
 	private ModelMapper mapper;
 
+	/**
+	 * Constructor vacío de la clase.
+	 */
 	public AsignaturaService() {
 	}
 
@@ -106,7 +115,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @return 0 si se elimina, 1 si no existe.
 	 */
 	@Override
-	
+
 	public int deleteById(Long id) {
 
 		LanzadorDeException.verificarId(id);
@@ -255,19 +264,39 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		return 1;
 	}
 
+	/**
+	 * Obtiene el repositorio de asignaturas.
+	 *
+	 * @return repositorio de asignaturas.
+	 */
 	public AsignaturaRepository getAsignaturaRep() {
 		return asignaturaRep;
 	}
 
+	/**
+	 * Establece el repositorio de asignaturas.
+	 *
+	 * @param asignaturaRep repositorio de asignaturas.
+	 */
 	public void setAsignaturaRep(AsignaturaRepository asignaturaRep) {
 
 		this.asignaturaRep = asignaturaRep;
 	}
 
+	/**
+	 * Obtiene el mapeador utilizado para convertir entre entidades y DTO.
+	 *
+	 * @return mapeador de objetos.
+	 */
 	public ModelMapper getMapper() {
 		return mapper;
 	}
 
+	/**
+	 * Establece el mapeador utilizado para convertir entre entidades y DTO.
+	 *
+	 * @param mapper mapeador de objetos.
+	 */
 	public void setMapper(ModelMapper mapper) {
 		this.mapper = mapper;
 	}

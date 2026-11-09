@@ -124,40 +124,41 @@ public class AdministradorController {
 	}
 
 	/**
-	 * Crea un nuevo administrador.
+	 * Crea un nuevo administrador a partir de los datos recibidos como parámetros
+	 * de la petición.
 	 *
-	 * @param administradorDTO datos del administrador (incluye la contraseña).
+	 * @param nombre              nombre del administrador.
+	 * @param apellido            apellido del administrador.
+	 * @param documento           número de documento del administrador.
+	 * @param correo              correo electrónico del administrador.
+	 * @param contrasenia         contraseña del administrador.
+	 * @param codigoAdministrador código único del administrador.
+	 * @param estado              estado del administrador (true si está activo).
 	 * @return mensaje de confirmación con estado 201 o el error con estado 400.
 	 */
 	@PostMapping("/crear")
-	public ResponseEntity<String> crearAdministrador(
-	        @RequestParam String nombre,
-	        @RequestParam String apellido,
-	        @RequestParam long documento,
-	        @RequestParam String correo,
-	        @RequestParam String contrasenia,
-	        @RequestParam String codigoAdministrador,
-	        @RequestParam boolean estado) {
+	public ResponseEntity<String> crearAdministrador(@RequestParam String nombre, @RequestParam String apellido,
+			@RequestParam long documento, @RequestParam String correo, @RequestParam String contrasenia,
+			@RequestParam String codigoAdministrador, @RequestParam boolean estado) {
 
-	    try {
-	        AdministradorDTO administradorDTO = new AdministradorDTO();
+		try {
+			AdministradorDTO administradorDTO = new AdministradorDTO();
 
-	        administradorDTO.setNombre(nombre);
-	        administradorDTO.setApellido(apellido);
-	        administradorDTO.setDocumento(documento);
-	        administradorDTO.setCorreo(correo);
-	        administradorDTO.setContrasenia(contrasenia);
-	        administradorDTO.setCodigoAdministrador(codigoAdministrador);
-	        administradorDTO.setEstado(estado);
+			administradorDTO.setNombre(nombre);
+			administradorDTO.setApellido(apellido);
+			administradorDTO.setDocumento(documento);
+			administradorDTO.setCorreo(correo);
+			administradorDTO.setContrasenia(contrasenia);
+			administradorDTO.setCodigoAdministrador(codigoAdministrador);
+			administradorDTO.setEstado(estado);
 
-	        administradorSer.create(administradorDTO);
+			administradorSer.create(administradorDTO);
 
-	        return new ResponseEntity<>("Administrador creado con éxito", HttpStatus.CREATED);
+			return new ResponseEntity<>("Administrador creado con éxito", HttpStatus.CREATED);
 
-	    } catch (Exception e) {
-	        return new ResponseEntity<>("Error al crear el administrador: " + e.getMessage(),
-	                HttpStatus.BAD_REQUEST);
-	    }
+		} catch (Exception e) {
+			return new ResponseEntity<>("Error al crear el administrador: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+		}
 	}
 
 	/**

@@ -22,7 +22,8 @@ public interface SalonRepository extends CrudRepository<Salon, Long> {
 
 	/**
 	 * Busca un salón mediante su bloque y número de salón.
-	 * * @param bloque El bloque donde se encuentra el salón.
+	 *
+	 * @param bloque      El bloque donde se encuentra el salón.
 	 * @param numeroSalon El número del salón a buscar.
 	 * @return Un Optional con el salón encontrado.
 	 */
@@ -30,35 +31,40 @@ public interface SalonRepository extends CrudRepository<Salon, Long> {
 
 	/**
 	 * Busca los salones pertenecientes a un bloque específico.
-	 * * @param bloque El bloque a buscar.
+	 *
+	 * @param bloque El bloque a buscar.
 	 * @return Una lista con los salones encontrados.
 	 */
 	public List<Salon> findByBloque(Bloque bloque);
 
 	/**
 	 * Busca los salones que tengan una capacidad específica.
-	 * * @param capacidad La capacidad a buscar.
+	 *
+	 * @param capacidad La capacidad a buscar.
 	 * @return Una lista con los salones encontrados.
 	 */
 	public List<Salon> findByCapacidad(int capacidad);
 
 	/**
 	 * Busca los salones que tienen computadores.
-	 * * @param tieneComputadores Indica si el salón tiene computadores.
+	 *
+	 * @param tieneComputadores Indica si el salón tiene computadores.
 	 * @return Una lista con los salones encontrados.
 	 */
 	public List<Salon> findByTieneComputadores(boolean tieneComputadores);
 
 	/**
 	 * Busca los salones que tienen sillas móviles.
-	 * * @param tieneSillasMoviles Indica si el salón tiene sillas móviles.
+	 *
+	 * @param tieneSillasMoviles Indica si el salón tiene sillas móviles.
 	 * @return Una lista con los salones encontrados.
 	 */
 	public List<Salon> findByTieneSillasMoviles(boolean tieneSillasMoviles);
 
 	/**
 	 * Verifica la existencia de un salón mediante su bloque y número.
-	 * * @param bloque El bloque donde se encuentra el salón.
+	 *
+	 * @param bloque      El bloque donde se encuentra el salón.
 	 * @param numeroSalon El número del salón a comprobar.
 	 * @return true si el registro existe, false en caso contrario.
 	 */
@@ -66,7 +72,8 @@ public interface SalonRepository extends CrudRepository<Salon, Long> {
 
 	/**
 	 * Elimina un salón mediante su bloque y número.
-	 * * @param bloque El bloque donde se encuentra el salón.
+	 *
+	 * @param bloque      El bloque donde se encuentra el salón.
 	 * @param numeroSalon El número del salón a eliminar.
 	 */
 	public void deleteByBloqueAndNumeroSalon(Bloque bloque, int numeroSalon);

@@ -20,11 +20,21 @@ import org.springframework.context.annotation.Configuration;
  * Define la documentación interactiva de la API REST del sistema de horarios,
  * incluyendo: autenticación JWT, descripción de módulos y permisos de roles.
  * 
+ * @author Prisma Web
  * @version 1.0
  */
 @Configuration
 public class OpenApiConfig {
 
+	/**
+	 * Construye y expone la configuración de OpenAPI de la aplicación.
+	 * 
+	 * Incluye la información general de la API (título, versión, descripción,
+	 * contacto y licencia), el esquema de seguridad JWT con autenticación Bearer y
+	 * las respuestas de error reutilizables (401, 403, 404 y 409).
+	 *
+	 * @return objeto {@link OpenAPI} con la documentación de la API.
+	 */
 	@Bean
 	public OpenAPI customOpenAPI() {
 
@@ -87,6 +97,15 @@ public class OpenApiConfig {
 								createResponse("Conflicto", "Conflict", "Error en los datos o ya existe")));
 	}
 
+	/**
+	 * Crea una respuesta de error reutilizable para la documentación OpenAPI, con
+	 * un ejemplo de cuerpo JSON que contiene el tipo de error y su mensaje.
+	 *
+	 * @param d descripción de la respuesta.
+	 * @param e nombre o tipo del error mostrado en el ejemplo.
+	 * @param m mensaje del error mostrado en el ejemplo.
+	 * @return respuesta {@link ApiResponse} con el ejemplo en formato JSON.
+	 */
 	private ApiResponse createResponse(String d, String e, String m) {
 
 		return new ApiResponse().description(d).content(new Content().addMediaType("application/json", new MediaType()
