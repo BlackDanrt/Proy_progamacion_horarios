@@ -4,6 +4,11 @@ import { Router } from '@angular/router';
 import { AsignaturaModel } from '../models/asignatura.model';
 import { AsignaturaService } from '../services/asignatura.service';
 
+export interface Toast {
+  mensaje: string;
+  tipo: 'exito' | 'error';
+}
+
 @Component({
   selector: 'app-gestion-asignatura',
   standalone: false,
@@ -54,15 +59,27 @@ export class GestionAsignatura implements OnInit {
   /** Mensaje de error del modal de eliminación. */
   errorEliminar: string | null = null;
 
+  // Sistema de notificaciones emergentes
+  toasts: Toast[] = [];
+
   constructor(
     private router: Router,
     private asignaturaService: AsignaturaService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   /** Carga las asignaturas al inicializar el componente. */
   ngOnInit(): void {
     this.cargarAsignaturas();
+  }
+
+  mostrarToast(mensaje: string, tipo: 'exito' | 'error' = 'exito'): void {
+    this.toasts.push({ mensaje, tipo });
+    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.toasts.shift();
+      this.cdr.markForCheck();
+    }, 4000);
   }
 
   /**
@@ -82,17 +99,14 @@ export class GestionAsignatura implements OnInit {
         this.cdr.markForCheck();
       },
       error: (err) => {
-        console.error('Error al cargar asignaturas:', err);
+        this.mostrarToast('No se pudieron cargar los registros del servidor.', 'error');
         this.error = 'No se pudieron cargar los registros del servidor.';
         this.cargando = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
-  /**
-   * Filtra las asignaturas según el término de búsqueda.
-   */
   /** Filtra las asignaturas según el texto ingresado. */
   onFiltroChange(termino: string): void {
     this.filtroBusqueda = termino;
@@ -105,10 +119,11 @@ export class GestionAsignatura implements OnInit {
       this.registrosFiltrados = this.registros;
     } else {
       const termino = this.filtroBusqueda.toLowerCase();
-      this.registrosFiltrados = this.registros.filter(reg =>
-        reg.nombre.toLowerCase().includes(termino) ||
-        reg.numCreditos.toString().includes(termino) ||
-        reg.frecuenciaSemanal.toString().includes(termino)
+      this.registrosFiltrados = this.registros.filter(
+        (reg) =>
+          reg.nombre.toLowerCase().includes(termino) ||
+          reg.numCreditos.toString().includes(termino) ||
+          reg.frecuenciaSemanal.toString().includes(termino),
       );
     }
     this.paginaActual = 1; // Reiniciar a la primera página al buscar
@@ -138,7 +153,7 @@ export class GestionAsignatura implements OnInit {
 
     this.asignaturaService.eliminarAsignatura(this.registroAEliminar.nombre).subscribe({
       next: (mensaje) => {
-        console.log(mensaje);
+        this.mostrarToast('Asignatura eliminada con éxito', 'exito');
         this.eliminando = false;
         this.mostrarModalEliminar = false;
         this.registroAEliminar = null;
@@ -146,18 +161,14 @@ export class GestionAsignatura implements OnInit {
         this.cargarAsignaturas();
       },
       error: (err) => {
-        console.error('Error al eliminar:', err);
+        this.mostrarToast('Error al eliminar la asignatura', 'error');
         this.errorEliminar = 'No se pudo eliminar la asignatura: ' + this.extraerMensaje(err);
         this.eliminando = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
-  /**
-   * Abre el modal en modo edición con una copia de la asignatura.
-   * El PUT al back se hace al guardar el formulario.
-   */
   /** Abre el formulario con los datos de una asignatura para editarla. */
   actualizarRegistro(reg: AsignaturaModel): void {
     this.nuevoRegistro = { ...reg };
@@ -198,7 +209,7 @@ export class GestionAsignatura implements OnInit {
 
   /** Muestra el punto de entrada para consultar el horario de una asignatura. */
   visualizarHorario(reg: AsignaturaModel): void {
-    console.log('Visualizar horario para:', reg.nombre);
+    this.mostrarToast('Visualizando horario para: ' + reg.nombre, 'exito');
   }
 
   // Control de paginación
@@ -247,9 +258,6 @@ export class GestionAsignatura implements OnInit {
     this.mostrarModalRegistro = false;
   }
 
-  /**
-   * Guarda el formulario: POST al back si es nueva, PUT si se está editando.
-   */
   /** Crea o actualiza la asignatura según el modo del formulario. */
   guardarRegistro(form: NgForm): void {
     if (form.invalid) {
@@ -265,18 +273,21 @@ export class GestionAsignatura implements OnInit {
 
     peticion.subscribe({
       next: (mensaje) => {
-        console.log(mensaje);
+        this.mostrarToast(
+          this.modoEdicion ? 'Asignatura actualizada con éxito' : 'Asignatura creada con éxito',
+          'exito',
+        );
         this.guardando = false;
         this.mostrarModalRegistro = false;
         this.cdr.markForCheck();
         this.cargarAsignaturas(); // Recargar desde el back para reflejar el cambio real
       },
       error: (err) => {
-        console.error('Error al guardar:', err);
+        this.mostrarToast('Error al guardar la asignatura', 'error');
         this.errorModal = 'No se pudo guardar la asignatura: ' + this.extraerMensaje(err);
         this.guardando = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -287,20 +298,17 @@ export class GestionAsignatura implements OnInit {
       numCreditos: 1,
       frecuenciaSemanal: 1,
       requiereComputadores: false,
-      requiereSillasMoviles: false
+      requiereSillasMoviles: false,
     };
   }
 
-  /**
-   * El back responde con un JSON de error; se extrae solo el mensaje legible.
-   */
   /** Extrae un mensaje legible del error devuelto por el backend. */
   private extraerMensaje(err: any): string {
     try {
       const cuerpo = typeof err.error === 'string' ? JSON.parse(err.error) : err.error;
       return cuerpo?.message || err.message;
     } catch {
-      return (typeof err.error === 'string' && err.error) ? err.error : err.message;
+      return typeof err.error === 'string' && err.error ? err.error : err.message;
     }
   }
 }
