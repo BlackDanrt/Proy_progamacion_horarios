@@ -1,7 +1,12 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { AuthAdminService } from '../services/auth-admin';
-
+import { ProfesorService } from '../services/profesor.service';
+import { AdministradorService } from '../services/administrador.service';
+import { AsignaturaService } from '../services/asignatura.service';
+import { SalonService } from '../services/salon.service';
 /** Datos de una tarjeta de acceso rápido del panel administrativo. */
 interface TarjetaAcceso {
   /** Título visible de la tarjeta. */
@@ -27,7 +32,12 @@ export class InicioAdministrador implements OnInit {
 
   constructor(
     private router: Router,
-    private authAdminService: AuthAdminService
+    private authAdminService: AuthAdminService,
+    private profesorService: ProfesorService,
+    private administradorService: AdministradorService,
+    private asignaturaService: AsignaturaService,
+    private salonService: SalonService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   /** Nombre del administrador que se muestra en el panel. */
@@ -37,10 +47,10 @@ export class InicioAdministrador implements OnInit {
 
   /** Indicadores resumidos que se muestran en el panel. */
   metricas = [
-    { titulo: 'Docentes Activos', valor: '48', icono: 'users' },
-    { titulo: 'Asignaturas', valor: '32', icono: 'book' },
-    { titulo: 'Aulas Asignadas', valor: '18', icono: 'building' },
-    { titulo: 'Personas en la Base de Datos', valor: '10', icono: 'database' }
+    { titulo: 'Docentes Activos', valor: '...', icono: 'users' },
+    { titulo: 'Asignaturas', valor: '...', icono: 'book' },
+    { titulo: 'Aulas Asignadas', valor: '...', icono: 'building' },
+    { titulo: 'Personas en la Base de Datos', valor: '...', icono: 'database' }
   ];
 
   /** Accesos rápidos a las secciones principales de administración. */
@@ -107,9 +117,42 @@ export class InicioAdministrador implements OnInit {
     if (nombre) {
       this.nombreAdmin = nombre;
     }
+    this.cargarMetricas();
   }
 
-  // Navegación directa para todas las tarjetas
+  /** Consulta los totales reales al backend y actualiza las tarjetas. */
+  private cargarMetricas(): void {
+    const contar = (obs: any) =>
+      obs.pipe(
+        map((resp: any) => (resp.body ?? []) as any[]),
+        catchError(err => {
+          console.error('Error cargando métricas', err);
+          return of(null);
+        })
+      );
+
+    forkJoin({
+      profesores: contar(this.profesorService.mostrarTodo()),
+      administradores: contar(this.administradorService.mostrarTodo()),
+      asignaturas: contar(this.asignaturaService.mostrarTodo()),
+      salones: contar(this.salonService.mostrarTodo())
+    }).subscribe((r: any) => {
+      const total = (lista: any[] | null) => lista ? String(lista.length) : '—';
+
+      const personas = (r.profesores && r.administradores)
+        ? String(r.profesores.length + r.administradores.length)
+        : '—';
+
+      this.metricas = [
+        { titulo: 'Docentes Activos', valor: total(r.profesores), icono: 'users' },
+        { titulo: 'Asignaturas', valor: total(r.asignaturas), icono: 'book' },
+        { titulo: 'Aulas Asignadas', valor: total(r.salones), icono: 'building' },
+        { titulo: 'Personas en la Base de Datos', valor: personas, icono: 'database' }
+      ];
+      this.cdr.markForCheck();
+    });
+  }
+
   /** Navega a la ruta configurada en la tarjeta seleccionada. */
   ejecutarAccion(item: TarjetaAcceso): void {
     this.router.navigate([item.ruta]);
