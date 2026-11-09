@@ -285,6 +285,28 @@
     </div>
   </div>
 
+  <!-- Modal de confirmación de eliminación -->
+  <div class="modal-overlay" *ngIf="registroAEliminar()" (click)="cancelarEliminacion()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h2>Eliminar {{ registroAEliminar()!.rol }}</h2>
+
+      <p class="confirm-text">
+        ¿Seguro que quieres eliminar a
+        <strong>{{ registroAEliminar()!.nombre }}</strong>?
+        Esta acción no se puede deshacer.
+      </p>
+
+      <p class="form-error" *ngIf="errorEliminar()">{{ errorEliminar() }}</p>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancelar" [disabled]="eliminando()" (click)="cancelarEliminacion()">Cancelar</button>
+        <button type="button" class="btn-danger" [disabled]="eliminando()" (click)="confirmarEliminacion()">
+          {{ eliminando() ? 'Eliminando...' : 'Eliminar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
   <app-seleccion-crear-registro
     *ngIf="mostrarModalRegistro()"
     (cerrar)="cerrarModalRegistro()">

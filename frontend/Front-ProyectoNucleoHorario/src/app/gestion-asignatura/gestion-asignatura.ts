@@ -44,6 +44,16 @@ export class GestionAsignatura implements OnInit {
   /** Mensaje de error mostrado dentro del modal. */
   errorModal: string | null = null;
 
+  // Modal de confirmación de eliminación
+  /** Controla la visibilidad del modal de confirmación de eliminación. */
+  mostrarModalEliminar: boolean = false;
+  /** Asignatura pendiente de eliminar. */
+  registroAEliminar: AsignaturaModel | null = null;
+  /** Indica si se está eliminando. */
+  eliminando: boolean = false;
+  /** Mensaje de error del modal de eliminación. */
+  errorEliminar: string | null = null;
+
   constructor(
     private router: Router,
     private asignaturaService: AsignaturaService,
@@ -104,24 +114,44 @@ export class GestionAsignatura implements OnInit {
     this.paginaActual = 1; // Reiniciar a la primera página al buscar
   }
 
-  /**
-   * Elimina una asignatura usando el endpoint del backend por nombre.
-   */
-  /** Elimina una asignatura después de solicitar confirmación. */
+  /** Abre el modal de confirmación para eliminar una asignatura. */
   eliminarRegistro(reg: AsignaturaModel): void {
-    if (confirm(`¿Estás seguro de eliminar la asignatura "${reg.nombre}"?`)) {
-      this.asignaturaService.eliminarAsignatura(reg.nombre).subscribe({
-        next: (mensaje) => {
-          console.log(mensaje);
-          alert('Asignatura eliminada con éxito');
-          this.cargarAsignaturas(); // Recargar la tabla
-        },
-        error: (err) => {
-          console.error('Error al eliminar:', err);
-          alert('Error al eliminar la asignatura: ' + this.extraerMensaje(err));
-        }
-      });
-    }
+    this.registroAEliminar = reg;
+    this.errorEliminar = null;
+    this.mostrarModalEliminar = true;
+  }
+
+  /** Cierra el modal de confirmación sin eliminar. */
+  cancelarEliminacion(): void {
+    if (this.eliminando) return;
+    this.mostrarModalEliminar = false;
+    this.registroAEliminar = null;
+    this.errorEliminar = null;
+  }
+
+  /** Elimina la asignatura seleccionada tras la confirmación. */
+  confirmarEliminacion(): void {
+    if (!this.registroAEliminar) return;
+
+    this.eliminando = true;
+    this.errorEliminar = null;
+
+    this.asignaturaService.eliminarAsignatura(this.registroAEliminar.nombre).subscribe({
+      next: (mensaje) => {
+        console.log(mensaje);
+        this.eliminando = false;
+        this.mostrarModalEliminar = false;
+        this.registroAEliminar = null;
+        this.cdr.markForCheck();
+        this.cargarAsignaturas();
+      },
+      error: (err) => {
+        console.error('Error al eliminar:', err);
+        this.errorEliminar = 'No se pudo eliminar la asignatura: ' + this.extraerMensaje(err);
+        this.eliminando = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   /**
