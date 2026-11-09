@@ -54,7 +54,7 @@ describe('AsignacionHorarios', () => {
     profesorCalled = false;
     grupoCalled = false;
 
-    TestBed.resetTestingModule(); // <-- Soluciona el conflicto de instanciación en Vitest
+    TestBed.resetTestingModule();
 
     await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, RouterTestingModule],

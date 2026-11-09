@@ -1,6 +1,6 @@
 <div class="layout-wrapper">
 
-  <!-- BARRA LATERAL (SIDEBAR) -->
+
   <aside class="sidebar">
     <div class="sidebar-top">
       <div class="user-menu-container">
@@ -42,6 +42,13 @@
           <line x1="16" y1="2" x2="16" y2="6"></line>
           <line x1="8" y1="2" x2="8" y2="6"></line>
           <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </button>
+
+      <button type="button" class="sidebar-btn" (click)="navegarA('/edicion-horarios')" title="Edición de Horarios Guardados">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M12 20h9"></path>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
         </svg>
       </button>
 
@@ -88,16 +95,16 @@
     <div class="sidebar-corner-decor"></div>
   </aside>
 
-  <!-- CONTENIDO PRINCIPAL -->
+
   <main class="main-content">
     <div class="horarios-container">
 
-      <!-- CABECERA CON FILTRO DE PERIODO Y DOCENTE -->
+
       <header class="horarios-header">
         <div class="header-title-box" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
           <h1>Asignación de horarios</h1>
 
-          <!-- SELECTOR DE PERIODO ACADÉMICO / INTERSEMESTRAL -->
+
           <div style="display: flex; align-items: center; gap: 6px;">
             <label style="font-size: 13px; font-weight: 600; color: #334155;">Periodo:</label>
             <select [(ngModel)]="periodoSeleccionado" (change)="onPeriodoChange()"
@@ -108,7 +115,7 @@
             </button>
           </div>
 
-          <!-- FILTRAR DOCENTE -->
+
           <div style="display: flex; align-items: center; gap: 6px;">
             <label style="font-size: 13px; font-weight: 600; color: #334155;">Docente:</label>
             <select [(ngModel)]="docenteSeleccionFiltro" (change)="onDocenteFiltroChange()"
@@ -137,7 +144,7 @@
 
       <div class="workspace-grid">
 
-        <!-- PANEL IZQUIERDO -->
+
         <div class="asignaturas-sidebar-panel">
           <div class="panel-header-asig">
             <h3>Asignaturas / Grupos</h3>
@@ -175,7 +182,7 @@
           </div>
         </div>
 
-        <!-- PANEL DERECHO: CALENDARIO -->
+
         <div class="calendar-grid-card">
           <div class="table-responsive">
             <table class="schedule-table">
@@ -191,7 +198,7 @@
               <tr *ngFor="let hora of horasBloques">
                 <td class="time-cell" [class.time-cell-almuerzo]="esAlmuerzo(hora)">{{ hora }}</td>
 
-                <!-- FILA DE ALMUERZO (12:00 - 13:00): bloqueada -->
+
                 <td class="slot-almuerzo" *ngIf="esAlmuerzo(hora); else filaNormal" [attr.colspan]="dias.length">
                   <div class="bloque-almuerzo">{{ textoAlmuerzo }}</div>
                 </td>
@@ -250,7 +257,7 @@
     </div>
   </main>
 
-  <!-- MODAL 1: ELEGIR PROFESOR -->
+
   <div class="modal-overlay" *ngIf="mostrarModalProfesor">
     <div class="modal-card-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
@@ -276,7 +283,7 @@
     </div>
   </div>
 
-  <!-- MODAL 2: VINCULAR UNA MATERIA SIN PROFESOR AL DOCENTE ACTUAL -->
+
   <div class="modal-overlay" *ngIf="mostrarModalAsignatura">
     <div class="modal-card-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
@@ -353,7 +360,7 @@
     </div>
   </div>
 
-  <!-- MODAL: CREAR PERIODO -->
+
   <div class="modal-overlay" *ngIf="mostrarModalPeriodo">
     <div class="modal-card-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
@@ -400,7 +407,7 @@
     </div>
   </div>
 
-  <!-- CONFIRMACIÓN VISUAL -->
+
   <div class="modal-overlay confirm-overlay" *ngIf="confirmacion">
     <div class="modal-card-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
@@ -415,7 +422,7 @@
     </div>
   </div>
 
-  <!-- AVISO DE ÉXITO (VENTANA) -->
+
   <div class="modal-overlay confirm-overlay" *ngIf="avisoExito" (click)="cerrarAvisoExito()">
     <div class="modal-card-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
@@ -428,7 +435,7 @@
     </div>
   </div>
 
-  <!-- NOTIFICACIONES (TOASTS) -->
+
   <div class="toast-container">
     <div class="toast" *ngFor="let t of toasts" [ngClass]="'toast-' + t.tipo">
       <span class="toast-icono">

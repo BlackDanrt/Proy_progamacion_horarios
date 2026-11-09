@@ -15,7 +15,7 @@
   overflow-x: hidden;
 }
 
-/* --- BARRA LATERAL --- */
+
 .sidebar {
   width: 85px;
   background-color: #17522d;
@@ -95,7 +95,7 @@
   opacity: 0.85;
 }
 
-/* --- MENÚ DESPLEGABLE USUARIO --- */
+
 .user-menu-container {
   position: relative;
   display: inline-block;
@@ -140,7 +140,7 @@
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* --- CONTENIDO PRINCIPAL CENTRADO --- */
+
 .main-content {
   flex: 1;
   padding: 40px 28px;
@@ -152,12 +152,12 @@
 
 .dashboard-container {
   width: 100%;
-  max-width: 650px; /* Reducido para que la vista única no se vea vacía */
+  max-width: 650px; 
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centramos todo horizontalmente */
+  align-items: center; 
   gap: 32px;
-  margin-top: 6vh; /* Lo empujamos un poco hacia abajo para centrar verticalmente */
+  margin-top: 6vh; 
 }
 
 .welcome-card {
@@ -167,7 +167,7 @@
   border-radius: 12px;
   padding: 32px 24px;
   box-shadow: 0 8px 25px rgba(23, 82, 45, 0.15);
-  text-align: center; /* Centramos el texto del banner */
+  text-align: center; 
 }
 
 .welcome-text h1 {
@@ -180,11 +180,11 @@
   font-size: 20px;
   font-weight: 700;
   color: #1a2b49;
-  text-align: center; /* Centramos la pregunta */
+  text-align: center; 
   margin-top: 8px;
 }
 
-/* --- TARJETA ÚNICA (FOCALIZADA) --- */
+
 .modules-grid {
   display: flex;
   justify-content: center;
@@ -193,17 +193,17 @@
 
 .module-card {
   background: #ffffff;
-  padding: 36px 24px; /* Un poco más de espacio interno (padding) */
+  padding: 36px 24px; 
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centramos el contenido dentro de la tarjeta */
+  align-items: center; 
   text-align: center;
   width: 100%;
-  max-width: 420px; /* Evita que la tarjeta sea gigante */
+  max-width: 420px; 
 }
 
 .module-card:hover {
@@ -246,7 +246,7 @@
   color: #f25100;
 }
 
-/* --- DECORACIÓN DERECHA --- */
+
 .right-decor-panel {
   width: 140px;
   position: relative;

@@ -495,11 +495,11 @@
   display: inline-block;
 }
 
-/* Ventana desplegable del perfil */
+
 .user-dropdown {
   position: absolute;
   top: 0;
-  left: 55px; /* Aparece flotando a la derecha del botón del avatar */
+  left: 55px; 
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
@@ -510,7 +510,7 @@
   animation: fadeIn 0.15s ease-in-out;
 }
 
-/* Ítem del menú desplegable */
+
 .dropdown-item {
   width: 100%;
   display: flex;
@@ -520,7 +520,7 @@
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: #ef4444; /* Color rojo para el cierre de sesión */
+  color: #ef4444; 
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -542,7 +542,7 @@
   }
 }
 
-/* ---- Mensajes, campos sin icono, especialidades y datos de solo lectura ---- */
+
 .banner {
   display: flex;
   align-items: center;
@@ -633,7 +633,7 @@
   border: 1px solid #fed7aa;
 }
 
-/* ---- Horas por contrato y ventana de éxito ---- */
+
 .dato-contrato {
   padding: 10px 14px;
   border: 1px dashed #cbd5e1;
