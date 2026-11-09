@@ -5,14 +5,18 @@ import { SalonService } from '../services/salon.service';
 import { SalonModel } from '../models/salon.model';
 import { Bloque } from '../enums/bloque.enum';
 
+export interface Toast {
+  mensaje: string;
+  tipo: 'exito' | 'error';
+}
+
 @Component({
   selector: 'app-gestion-aulas',
   standalone: false,
   templateUrl: './gestion-aulas.html',
-  styleUrls: ['./gestion-aulas.css']
+  styleUrls: ['./gestion-aulas.css'],
 })
 export class GestionAulas implements OnInit {
-
   /** Salones cargados desde el backend. */
   registros: SalonModel[] = [];
   /** Salones que coinciden con el filtro actual. */
@@ -53,15 +57,27 @@ export class GestionAulas implements OnInit {
   /** Datos del salón que se está creando o editando. */
   nuevoRegistro: SalonModel = this.obtenerModeloVacio();
 
+  // Sistema de notificaciones emergentes
+  toasts: Toast[] = [];
+
   constructor(
     private router: Router,
     private salonService: SalonService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   /** Carga los salones al inicializar el componente. */
   ngOnInit(): void {
     this.cargarSalones();
+  }
+
+  mostrarToast(mensaje: string, tipo: 'exito' | 'error' = 'exito'): void {
+    this.toasts.push({ mensaje, tipo });
+    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.toasts.shift();
+      this.cdr.markForCheck();
+    }, 4000);
   }
 
   /** Construye un salón con valores iniciales para el formulario. */
@@ -71,7 +87,7 @@ export class GestionAulas implements OnInit {
       numeroSalon: 101,
       capacidad: 30,
       tieneComputadores: false,
-      tieneSillasMoviles: false
+      tieneSillasMoviles: false,
     };
   }
 
@@ -89,11 +105,11 @@ export class GestionAulas implements OnInit {
         this.cdr.markForCheck();
       },
       error: (err) => {
-        console.error('Error al cargar salones:', err);
+        this.mostrarToast('No se pudieron cargar los registros de salones', 'error');
         this.error = 'No se pudieron cargar los registros de salones desde el servidor.';
         this.cargando = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -109,10 +125,11 @@ export class GestionAulas implements OnInit {
       this.registrosFiltrados = this.registros;
     } else {
       const termino = this.filtroBusqueda.toLowerCase();
-      this.registrosFiltrados = this.registros.filter(reg =>
-        reg.bloque.toString().toLowerCase().includes(termino) ||
-        reg.numeroSalon.toString().includes(termino) ||
-        reg.capacidad.toString().includes(termino)
+      this.registrosFiltrados = this.registros.filter(
+        (reg) =>
+          reg.bloque.toString().toLowerCase().includes(termino) ||
+          reg.numeroSalon.toString().includes(termino) ||
+          reg.capacidad.toString().includes(termino),
       );
     }
     this.paginaActual = 1;
@@ -131,25 +148,32 @@ export class GestionAulas implements OnInit {
     if (!this.salonAEliminar) return;
 
     const reg = this.salonAEliminar;
-    const bloqueValor = typeof reg.bloque === 'object' ? (reg.bloque as any).toString() : reg.bloque;
+    const bloqueValor =
+      typeof reg.bloque === 'object' ? (reg.bloque as any).toString() : reg.bloque;
 
     this.salonService.eliminarSalon(bloqueValor, reg.numeroSalon).subscribe({
       next: () => {
+        this.mostrarToast('Salón eliminado con éxito', 'exito');
         this.cerrarModalConfirmacion();
         this.cargarSalones();
       },
       error: (err) => {
-        console.error('Error al eliminar el salón:', err);
-        const mensajeBackend = typeof err.error === 'string' ? err.error : (err.error?.message || '');
+        this.mostrarToast('Error al eliminar el salón', 'error');
+        const mensajeBackend = typeof err.error === 'string' ? err.error : err.error?.message || '';
 
         // Verificamos si el error indica que está vinculado a un grupo
-        if (mensajeBackend.toLowerCase().includes('grupo') || err.status === 400 || err.status === 409) {
-          this.errorEliminacion = 'Este salón no se puede eliminar porque está vinculado a un grupo.';
+        if (
+          mensajeBackend.toLowerCase().includes('grupo') ||
+          err.status === 400 ||
+          err.status === 409
+        ) {
+          this.errorEliminacion =
+            'Este salón no se puede eliminar porque está vinculado a un grupo.';
         } else {
           this.errorEliminacion = 'No se pudo eliminar el salón. Inténtalo de nuevo.';
         }
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -174,17 +198,21 @@ export class GestionAulas implements OnInit {
 
     peticion.subscribe({
       next: () => {
+        this.mostrarToast(
+          this.modoEdicion ? 'Salón actualizado con éxito' : 'Salón creado con éxito',
+          'exito',
+        );
         this.guardando = false;
         this.mostrarModalRegistro = false;
         this.cdr.markForCheck();
         this.cargarSalones();
       },
       error: (err) => {
-        console.error('Error al guardar salón:', err);
+        this.mostrarToast('Error al guardar el salón', 'error');
         this.errorModal = 'Error al guardar: ' + (err.error?.message || err.error || err.message);
         this.guardando = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
