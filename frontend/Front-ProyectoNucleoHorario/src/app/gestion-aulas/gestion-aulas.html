@@ -229,6 +229,7 @@
               id="bloque"
               name="bloque"
               [(ngModel)]="nuevoRegistro.bloque"
+              (ngModelChange)="validarLimiteSalon()"
               required>
               <option value="" disabled>Seleccionar...</option>
               <option *ngFor="let b of bloques" [value]="b">{{ b }}</option>
@@ -242,9 +243,14 @@
               name="numeroSalon"
               type="number"
               min="100"
+              [max]="obtenerMaximoSalon()"
               [(ngModel)]="nuevoRegistro.numeroSalon"
+              (input)="validarLimiteSalon()"
               required
               placeholder="Ej: 402">
+            <small class="form-hint" style="color: #64748b; font-size: 11px; margin-top: 4px;">
+              Máximo permitido para Bloque {{ nuevoRegistro.bloque }}: {{ obtenerMaximoSalon() }}
+            </small>
           </div>
         </div>
 
