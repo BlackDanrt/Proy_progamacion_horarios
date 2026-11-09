@@ -1,5 +1,8 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { FormsModule } from '@angular/forms';
 import { Loginn } from './loginn';
 
 describe('Loginn', () => {
@@ -7,16 +10,18 @@ describe('Loginn', () => {
   let fixture: ComponentFixture<Loginn>;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
-      declarations: [Loginn],
+      imports: [HttpClientTestingModule, RouterTestingModule, FormsModule],
+      declarations: [Loginn]
     }).compileComponents();
 
     fixture = TestBed.createComponent(Loginn);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it('should create the component successfully', () => {
     expect(component).toBeTruthy();
   });
 });
