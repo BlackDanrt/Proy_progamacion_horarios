@@ -289,12 +289,13 @@ export class RegistroProfesor implements OnInit {
       return 'Una clase de 2 horas desde esta hora chocaría con el almuerzo o con el cierre del sábado.';
     }
 
-    const marcada = (idx: number): boolean =>
-      idx >= 0 && idx < this.filas.length && this.seleccion.has(this.clave(dia, this.filas[idx]));
+    // Bloque nuevo = filas i e i+1. Puede quedar pegado a otro bloque (horas seguidas),
+    // pero no puede cruzarse con horas ya marcadas.
+    const ocupada = (idx: number): boolean =>
+      this.seleccion.has(this.clave(dia, this.filas[idx]));
 
-    // Bloque nuevo = filas i e i+1. No puede tocar otro bloque (ni antes ni después).
-    if (marcada(i - 1) || marcada(i + 1) || marcada(i + 2)) {
-      return 'No puedes tener clases seguidas: deja al menos 1 hora libre entre bloques.';
+    if (ocupada(i) || ocupada(i + 1)) {
+      return 'Ese bloque de 2 horas se cruza con horas que ya marcaste.';
     }
 
     if (this.horasSeleccionadas + this.HORAS_POR_CLASE > this.limiteHoras) {
@@ -303,19 +304,24 @@ export class RegistroProfesor implements OnInit {
     return null;
   }
 
-  /** Quita de la grilla el bloque (horas seguidas) al que pertenece la celda. */
+  /**
+   * Quita de la grilla el bloque de 2 horas al que pertenece la celda.
+   * Como los bloques pueden quedar seguidos, se parte la tanda de horas consecutivas
+   * en bloques de 2 contando desde su inicio y solo se borra el bloque pulsado.
+   */
   private quitarBloque(dia: Dia, fila: FilaHora): void {
     const marcada = (idx: number): boolean =>
       idx >= 0 && idx < this.filas.length && this.seleccion.has(this.clave(dia, this.filas[idx]));
 
     const i: number = this.filas.indexOf(fila);
     let desde: number = i;
-    let hasta: number = i;
     while (marcada(desde - 1)) desde--;
-    while (marcada(hasta + 1)) hasta++;
 
-    for (let k = desde; k <= hasta; k++) {
-      this.seleccion.delete(this.clave(dia, this.filas[k]));
+    const inicioBloque: number = desde + Math.floor((i - desde) / this.HORAS_POR_CLASE) * this.HORAS_POR_CLASE;
+    for (let k = inicioBloque; k < inicioBloque + this.HORAS_POR_CLASE; k++) {
+      if (marcada(k)) {
+        this.seleccion.delete(this.clave(dia, this.filas[k]));
+      }
     }
   }
 
