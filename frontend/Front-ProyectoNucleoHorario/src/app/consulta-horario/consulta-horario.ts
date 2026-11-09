@@ -260,6 +260,9 @@ export class ConsultaHorario implements OnInit {
       ['miercoles', 'MIÉRCOLES'],
       ['jueves', 'JUEVES'],
       ['viernes', 'VIERNES'],
+      ['sabado', 'SABADO'],
+
+
     ];
 
     this.dias = claves.map(([clave, nombre], i) => {
