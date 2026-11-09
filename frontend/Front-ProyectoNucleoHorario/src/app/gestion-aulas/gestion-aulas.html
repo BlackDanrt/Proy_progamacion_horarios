@@ -211,6 +211,7 @@
   </main>
 
 
+  <!-- Modal para Crear / Editar -->
   <div class="modal-overlay" *ngIf="mostrarModalRegistro" (click)="cerrarModalRegistro()">
     <div class="modal-card" (click)="$event.stopPropagation()">
 
@@ -294,6 +295,29 @@
         </div>
 
       </form>
+    </div>
+  </div>
+
+
+  <!-- Modal Personalizado para Confirmar Eliminación -->
+  <div class="modal-overlay" *ngIf="mostrarModalConfirmacion" (click)="cerrarModalConfirmacion()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h2>Confirmar eliminación</h2>
+        <button type="button" class="modal-close" (click)="cerrarModalConfirmacion()" title="Cerrar">×</button>
+      </div>
+
+      <div style="padding: 16px 0; color: #334155; font-size: 14px;">
+        <p *ngIf="!errorEliminacion">¿Estás seguro de eliminar el salón {{ salonAEliminar?.numeroSalon }} del Bloque {{ salonAEliminar?.bloque }}?</p>
+        <p *ngIf="errorEliminacion" style="color: #ef4444; font-weight: 500;">{{ errorEliminacion }}</p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="cerrarModalConfirmacion()">Cancelar</button>
+        <button *ngIf="!errorEliminacion" type="button" class="btn-primary" style="background-color: #ef4444; border-color: #ef4444;" (click)="aceptarEliminacion()">Sí, eliminar</button>
+      </div>
+
     </div>
   </div>
 
