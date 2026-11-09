@@ -32,7 +32,7 @@ import co.edu.unbosque.horarios.service.AdministradorService;
  */
 @RestController
 @RequestMapping("/administrador")
-@CrossOrigin(origins = { "http://localhost:8080", "*" })
+@CrossOrigin(origins = { "http://localhost:8080", "https://app.netlify.com/projects/prismaweb/" })
 public class AdministradorController {
 
 	/**

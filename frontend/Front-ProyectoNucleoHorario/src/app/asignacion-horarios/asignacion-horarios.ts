@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, OnInit } from '@angular/core';
+import { Component, HostListener, inject, OnInit, ChangeDetectorRef} from '@angular/core';
 import { Router } from '@angular/router';
 import { SesionService } from '../services/sesion.service';
 import { AsignaturaService } from '../services/asignatura.service';
@@ -106,7 +106,7 @@ export class AsignacionHorarios implements OnInit {
   private grupoService = inject(GrupoService);
   private router = inject(Router);
   private sesion = inject(SesionService);
-
+  private cdr = inject(ChangeDetectorRef);
   // Modales
   mostrarModalProfesor: boolean = false; // elegir profesor
   mostrarModalAsignatura: boolean = false; // vincular materia libre
@@ -219,12 +219,14 @@ export class AsignacionHorarios implements OnInit {
   mostrarToast(tipo: TipoToast, mensaje: string, duracionMs: number = 6000): void {
     const id = ++this.toastSeq;
     this.toasts.push({ id, tipo, mensaje });
+    this.cdr.detectChanges();
     setTimeout(() => this.cerrarToast(id), duracionMs);
   }
 
   /** Cierra la notificación identificada. */
   cerrarToast(id: number): void {
     this.toasts = this.toasts.filter((t) => t.id !== id);
+    this.cdr.detectChanges();
   }
 
   /** Abre una confirmación y registra las acciones para aceptar o cancelar. */
@@ -605,6 +607,7 @@ export class AsignacionHorarios implements OnInit {
     this.asignaturaService.mostrarTodo().subscribe({
       next: (response) => {
         if (response.body) this.listaMaterias = response.body;
+        this.cdr.detectChanges();
       },
       error: (err) => console.error('Error al cargar asignaturas:', err),
     });
@@ -620,6 +623,7 @@ export class AsignacionHorarios implements OnInit {
             if (!this.mapaSalones[salon.bloque]) this.mapaSalones[salon.bloque] = [];
             this.mapaSalones[salon.bloque].push(`${salon.bloque}${salon.numeroSalon}`);
           });
+          this.cdr.detectChanges();
           this.listaBloques = Array.from(bloquesSet);
         }
       },
@@ -636,6 +640,7 @@ export class AsignacionHorarios implements OnInit {
           if (!this.docenteSeleccionFiltro) {
             this.abrirModalProfesor();
           }
+          this.cdr.detectChanges();
         }
       },
       error: (err) => console.error('Error al cargar profesores:', err),
@@ -814,12 +819,14 @@ export class AsignacionHorarios implements OnInit {
             });
           });
         }
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al consultar horario:', err);
         this.asignaturasDisponibles = [];
         this.clasesAsignadas = [];
         this.mostrarToast('error', 'No se pudo cargar el horario del docente.');
+        this.cdr.detectChanges();
       },
     });
   }
@@ -1247,24 +1254,6 @@ export class AsignacionHorarios implements OnInit {
     porGrupo.forEach((clases) => {
       const base = clases[0];
 
-      // Regla del backend: con 3 sesiones o menos, no pueden ser en días consecutivos
-      if (clases.length <= 3) {
-        const idxDias = clases
-          .map((c) => this.dias.findIndex((d) => d.clave === c.dia))
-          .sort((a, b) => a - b);
-        const consecutivos = idxDias.some((v, i) => i > 0 && v - idxDias[i - 1] === 1);
-        if (consecutivos) {
-          errores++;
-          pendientes--;
-          this.mostrarToast(
-            'error',
-            `${base.nombre}: con dos o tres sesiones no pueden ser en días consecutivos.`,
-            10000,
-          );
-          finalizar();
-          return;
-        }
-      }
 
       // Se envían los objetos completos (no solo {id}): el back falla con
       // "Cannot map null into type int" cuando a la entidad anidada le faltan campos numéricos.
@@ -1313,11 +1302,13 @@ export class AsignacionHorarios implements OnInit {
           console.error('Error al guardar grupo:', err);
           errores++;
           pendientes--;
+          const mensajeBackend = typeof err.error === 'string' ? err.error : this.mensajeError(err);
+
           this.mostrarToast(
-            'error',
-            `No se pudo guardar ${base.nombre}: ${this.mensajeError(err)}`,
-            10000,
-          );
+            'error',`No se pudo guardar ${base.nombre}: ${mensajeBackend}`,
+          10000
+        );
+
           finalizar();
         },
       });

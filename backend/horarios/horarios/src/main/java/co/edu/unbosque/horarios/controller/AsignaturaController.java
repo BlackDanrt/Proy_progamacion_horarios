@@ -32,7 +32,7 @@ import co.edu.unbosque.horarios.service.AsignaturaService;
  */
 @RestController
 @RequestMapping("/asignatura")
-@CrossOrigin(origins = { "http://localhost:8080", "*" })
+@CrossOrigin(origins = { "http://localhost:8080", "https://app.netlify.com/projects/prismaweb/" })
 public class AsignaturaController {
 
 	/**
