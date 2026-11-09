@@ -1,9 +1,9 @@
-import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgForm } from '@angular/forms';
-import { SalonService } from '../services/salon.service'; // Ajusta la ruta exacta a tu servicio
-import { SalonModel } from '../models/salon.model';       // Ajusta la ruta a tu modelo
-import { Bloque } from '../enums/bloque.enum';             // Ajusta la ruta a tu enum Bloque
+import { SalonService } from '../services/salon.service';
+import { SalonModel } from '../models/salon.model';
+import { Bloque } from '../enums/bloque.enum';
 
 @Component({
   selector: 'app-gestion-aulas',
@@ -13,7 +13,6 @@ import { Bloque } from '../enums/bloque.enum';             // Ajusta la ruta a t
 })
 export class GestionAulas implements OnInit {
 
-  // Variables de estado
   /** Salones cargados desde el backend. */
   registros: SalonModel[] = [];
   /** Salones que coinciden con el filtro actual. */
@@ -29,17 +28,14 @@ export class GestionAulas implements OnInit {
   /** Mensaje de error mostrado en el formulario. */
   errorModal: string | null = null;
 
-  // Opciones del Enum Bloque para los desplegables
   /** Valores de bloque disponibles para seleccionar. */
   bloques: Bloque[] = Object.values(Bloque);
 
-  // Control de paginación
   /** Cantidad de salones mostrados en cada página. */
   registrosPorPagina: number = 10;
   /** Página de resultados visible actualmente. */
   paginaActual: number = 1;
 
-  // Control de modales y formulario
   /** Controla la visibilidad del modal de registro. */
   mostrarModalRegistro: boolean = false;
   /** Indica si el formulario está editando un salón existente. */
@@ -64,7 +60,7 @@ export class GestionAulas implements OnInit {
   /** Construye un salón con valores iniciales para el formulario. */
   obtenerModeloVacio(): SalonModel {
     return {
-      bloque: Bloque.A, // Valor por defecto del enum
+      bloque: Bloque.A,
       numeroSalon: 101,
       capacidad: 30,
       tieneComputadores: false,
@@ -72,9 +68,6 @@ export class GestionAulas implements OnInit {
     };
   }
 
-  /**
-   * Obtiene todos los salones desde el backend utilizando SalonService.
-   */
   /** Obtiene los salones registrados desde el backend. */
   cargarSalones(): void {
     this.cargando = true;
@@ -97,9 +90,6 @@ export class GestionAulas implements OnInit {
     });
   }
 
-  /**
-   * Filtra los salones en tiempo real por Bloque, Número de Salón o Capacidad.
-   */
   /** Actualiza el filtro de búsqueda y filtra la lista. */
   onFiltroChange(termino: string): void {
     this.filtroBusqueda = termino;
@@ -121,14 +111,11 @@ export class GestionAulas implements OnInit {
     this.paginaActual = 1;
   }
 
-  /**
-   * Elimina un salón enviando bloque y numeroSalon al backend.
-   */
   /** Elimina un salón después de pedir confirmación. */
   eliminarRegistro(reg: SalonModel): void {
     if (confirm(`¿Estás seguro de eliminar el salón ${reg.numeroSalon} del Bloque ${reg.bloque}?`)) {
       this.salonService.eliminarSalon(reg.bloque, reg.numeroSalon).subscribe({
-        next: (mensaje) => {
+        next: () => {
           alert('Salón eliminado con éxito');
           this.cargarSalones();
         },
@@ -140,9 +127,6 @@ export class GestionAulas implements OnInit {
     }
   }
 
-  /**
-   * Guarda o actualiza un salón según la bandera modoEdicion.
-   */
   /** Crea o actualiza el salón según el modo del formulario. */
   guardarRegistro(form: NgForm): void {
     if (form.invalid) return;
@@ -170,7 +154,6 @@ export class GestionAulas implements OnInit {
     });
   }
 
-  // Modales y Edición
   /** Prepara y abre el formulario para crear un salón. */
   crearNuevoRegistro(): void {
     this.modoEdicion = false;
@@ -192,7 +175,26 @@ export class GestionAulas implements OnInit {
     this.mostrarModalRegistro = false;
   }
 
-  // Control de paginación
+  /** Devuelve el número máximo de salón permitido según el bloque seleccionado. */
+  obtenerMaximoSalon(): number {
+    if (this.nuevoRegistro.bloque === Bloque.A || this.nuevoRegistro.bloque === Bloque.F) {
+      return 700;
+    }
+    if (this.nuevoRegistro.bloque === Bloque.B) {
+      return 300;
+    }
+    return 999;
+  }
+
+  /** Valida que el número de salón no supere el límite del bloque actual. */
+  validarLimiteSalon(): void {
+    const maximo = this.obtenerMaximoSalon();
+    if (this.nuevoRegistro.numeroSalon > maximo) {
+      this.nuevoRegistro.numeroSalon = maximo;
+      this.cdr.markForCheck();
+    }
+  }
+
   /** Devuelve los salones correspondientes a la página actual. */
   registrosPaginados(): SalonModel[] {
     const inicio = (this.paginaActual - 1) * this.registrosPorPagina;
@@ -219,7 +221,6 @@ export class GestionAulas implements OnInit {
     this.paginaActual = 1;
   }
 
-  // Navegación
   /** Navega a la ruta especificada. */
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
