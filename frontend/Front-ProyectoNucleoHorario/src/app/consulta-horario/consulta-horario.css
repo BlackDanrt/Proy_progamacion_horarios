@@ -11,7 +11,7 @@
   overflow-x: hidden;
 }
 
-/* SIDEBAR */
+
 .sidebar {
   width: 85px;
   background-color: #17522d;
@@ -84,7 +84,7 @@
   opacity: 0.85;
 }
 
-/* CONTENIDO */
+
 .main-content {
   flex: 1;
   padding: 28px 36px;
@@ -187,7 +187,7 @@
 
 .btn-hoy:hover { background: #f0fdf4; }
 
-/* GRID PRINCIPAL */
+
 .workspace-grid {
   display: grid;
   grid-template-columns: 1fr 290px;
@@ -195,7 +195,7 @@
   align-items: start;
 }
 
-/* CALENDARIO */
+
 .calendar-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -277,7 +277,7 @@
   color: #64748b;
 }
 
-/* PANEL DERECHO */
+
 .side-panel {
   display: flex;
   flex-direction: column;
@@ -375,11 +375,11 @@
   display: inline-block;
 }
 
-/* Ventana desplegable del perfil */
+
 .user-dropdown {
   position: absolute;
   top: 0;
-  left: 55px; /* Aparece flotando a la derecha del botón del avatar */
+  left: 55px; 
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
@@ -390,7 +390,7 @@
   animation: fadeIn 0.15s ease-in-out;
 }
 
-/* Ítem del menú desplegable */
+
 .dropdown-item {
   width: 100%;
   display: flex;
@@ -400,7 +400,7 @@
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: #ef4444; /* Color rojo para el cierre de sesión */
+  color: #ef4444; 
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -422,7 +422,7 @@
   }
 }
 
-/* VENTANA EMERGENTE (sin grupos / error) */
+
 .modal-overlay {
   position: fixed;
   inset: 0;

@@ -13,7 +13,7 @@
           </svg>
         </div>
 
-        <!-- Ventana desplegable / Popover -->
+        
         <div class="user-dropdown" *ngIf="mostrarMenuUsuario" (click)="$event.stopPropagation()">
           <button type="button" class="dropdown-item logout-btn" (click)="cerrarSesion()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -44,7 +44,7 @@
         </svg>
       </button>
 
-      <!-- BOTÓN DE ACCESO RÁPIDO EN EL SIDEBAR: EDICIÓN DE HORARIOS GUARDADOS -->
+      
       <button type="button" class="sidebar-btn" (click)="navegarA('/edicion-horarios')" title="Edición de Horarios Guardados">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M12 20h9"></path>

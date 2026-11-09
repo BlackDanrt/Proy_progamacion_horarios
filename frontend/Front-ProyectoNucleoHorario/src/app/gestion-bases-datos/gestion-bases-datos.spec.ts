@@ -146,7 +146,7 @@ describe('GestionBasesDatos', () => {
 
   it('should handle updating records based on role', () => {
     component.ngOnInit();
-    const adminReg = component.registros()[1]; // Administrador
+    const adminReg = component.registros()[1];
 
     component.actualizarRegistro(adminReg);
     expect(component.registroEditando()).toEqual(adminReg);
