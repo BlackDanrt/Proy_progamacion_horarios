@@ -310,21 +310,6 @@
           <div class="docente-chip">Grupo <strong>{{ numeroGrupoModal }}</strong></div>
         </div>
 
-        <div class="form-group" *ngIf="materiaSeleccionadaModal">
-          <label>¿La materia necesita…?</label>
-          <label class="check-requisito">
-            <input type="checkbox" [(ngModel)]="necesitaComputadoresModal" name="necesitaComputadores"
-                   [disabled]="!!materiaSeleccionadaModal.requiereComputadores" (change)="onRequisitosChange()">
-            Computadores
-          </label>
-          <label class="check-requisito">
-            <input type="checkbox" [(ngModel)]="necesitaSillasModal" name="necesitaSillas"
-                   [disabled]="!!materiaSeleccionadaModal.requiereSillasMoviles" (change)="onRequisitosChange()">
-            Sillas móviles
-          </label>
-          <small class="modal-ayuda">Solo se muestran los salones que coinciden exactamente con esta selección.</small>
-        </div>
-
         <div class="form-group">
           <label>Bloque</label>
           <select [(ngModel)]="bloqueSeleccionadoModal" name="bloque" (change)="onBloqueChange()">
