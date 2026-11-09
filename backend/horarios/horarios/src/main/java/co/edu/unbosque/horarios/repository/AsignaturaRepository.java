@@ -20,35 +20,40 @@ public interface AsignaturaRepository extends CrudRepository<Asignatura, Long> {
 
 	/**
 	 * Busca asignaturas por su nombre.
-	 * * @param nombre El nombre de la asignatura a buscar.
+	 *
+	 * @param nombre El nombre de la asignatura a buscar.
 	 * @return Un Optional con la asignatura encontrada.
 	 */
 	public Optional<Asignatura> findByNombre(String nombre);
 
 	/**
 	 * Busca asignaturas por el número de créditos.
-	 * * @param numCreditos El número de créditos a buscar.
+	 *
+	 * @param numCreditos El número de créditos a buscar.
 	 * @return Un Optional con la asignatura encontrada.
 	 */
 	public Optional<Asignatura> findByNumCreditos(int numCreditos);
 
 	/**
 	 * Busca asignaturas por su frecuencia semanal.
-	 * * @param frecuenciaSemanal La frecuencia semanal a buscar.
+	 *
+	 * @param frecuenciaSemanal La frecuencia semanal a buscar.
 	 * @return Un Optional con la asignatura encontrada.
 	 */
 	public Optional<Asignatura> findByFrecuenciaSemanal(int frecuenciaSemanal);
 
 	/**
 	 * Verifica la existencia de una asignatura mediante su nombre.
-	 * * @param nombre El nombre de la asignatura a comprobar.
+	 *
+	 * @param nombre El nombre de la asignatura a comprobar.
 	 * @return true si el registro existe, false en caso contrario.
 	 */
 	public boolean existsByNombre(String nombre);
 
 	/**
 	 * Elimina una asignatura mediante su nombre.
-	 * * @param nombre El nombre de la asignatura a eliminar.
+	 *
+	 * @param nombre El nombre de la asignatura a eliminar.
 	 */
 	public void deleteByNombre(String nombre);
 

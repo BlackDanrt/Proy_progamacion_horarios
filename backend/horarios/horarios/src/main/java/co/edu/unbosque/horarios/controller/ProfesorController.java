@@ -185,18 +185,18 @@ public class ProfesorController {
 	/**
 	 * Recupera todos los profesores registrados en el sistema.
 	 *
-	 * @return lista de profesores con estado 202 o 400 si hay un error.
+	 * @return lista de profesores con estado 200 o 500 si hay un error.
 	 */
 	@GetMapping("/mostrartodo")
 	public ResponseEntity<List<ProfesorDTO>> mostrarTodo() {
-	    try {
-	        List<ProfesorDTO> lista = profesorSer.getAll();
-	        return new ResponseEntity<>(lista, HttpStatus.OK);
+		try {
+			List<ProfesorDTO> lista = profesorSer.getAll();
+			return new ResponseEntity<>(lista, HttpStatus.OK);
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-	    }
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	/**

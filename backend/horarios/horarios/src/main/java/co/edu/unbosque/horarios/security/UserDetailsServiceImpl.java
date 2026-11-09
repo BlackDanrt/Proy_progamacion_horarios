@@ -30,9 +30,13 @@ import java.util.Optional;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
 	/**
-	 * Repositorios utilizados para consultar usuarios en la base de datos.
+	 * Repositorio utilizado para consultar administradores en la base de datos.
 	 */
 	private final AdministradorRepository adminRepo;
+
+	/**
+	 * Repositorio utilizado para consultar profesores en la base de datos.
+	 */
 	private final ProfesorRepository profesorRepo;
 
 	/**
