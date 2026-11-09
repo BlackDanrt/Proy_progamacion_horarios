@@ -9,11 +9,16 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
+import co.edu.unbosque.horarios.dto.ParametrosSistemaDTO;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.repository.FranjaHorariaRepository;
+import co.edu.unbosque.horarios.repository.ParametrosSistemaRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.Dia;
+import co.edu.unbosque.horarios.util.enums.Servicio;
+import co.edu.unbosque.horarios.util.enums.TipoAccion;
 
 /**
  * Servicio encargado de la gestión de franjas horarias del sistema.
@@ -31,10 +36,22 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 	private FranjaHorariaRepository franjaHorariaRep;
 
 	/**
+	 * Servicio utilizado para registrar la auditoría de las acciones.
+	 */
+	@Autowired
+	private AuditoriaService auditoriaService;
+
+	/**
 	 * Mapeador utilizado para convertir entre entidades y DTO.
 	 */
 	@Autowired
 	private ModelMapper mapper;
+	
+	/**
+	 * Servicio utilizado para consultar los parámetros del sistema.
+	 */
+	@Autowired
+	private ParametrosSistemaService parametrosSistemaService;
 
 	/**
 	 * Constructor vacío de la clase.
@@ -73,6 +90,8 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 	@Override
 	public int create(FranjaHorariaDTO data) {
 
+		ParametrosSistemaDTO parametros = parametrosSistemaService.get();
+		
 		LanzadorDeException.verificarFranjaHoraria(data);
 
 		LanzadorDeException.verificarDia(data.getDia());
@@ -81,16 +100,23 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 
 		LanzadorDeException.verificarHoraFin(data.getHoraFin());
 
-		LanzadorDeException.verificarHorario(data.getHoraInicio(), data.getHoraFin());
-
-		LanzadorDeException.verificarRangoHorarioInstitucional(data.getDia(), data.getHoraInicio(), data.getHoraFin());
-		LanzadorDeException.verificarBloqueAlmuerzo(data.getHoraInicio(), data.getHoraFin());
-		LanzadorDeException.verificarDuracionSesion(data.getHoraInicio(), data.getHoraFin());
-
-		FranjaHoraria entity = mapper.map(data, FranjaHoraria.class);
+		LanzadorDeException.verificarHorario(
+				data.getHoraInicio(),
+				data.getHoraFin());
+		
+		LanzadorDeException.verificarRangoHorarioInstitucional(
+				data.getDia(), data.getHoraInicio(), data.getHoraFin(),parametros);
+		LanzadorDeException.verificarBloqueAlmuerzo(
+				data.getHoraInicio(), data.getHoraFin(), parametros);
+		LanzadorDeException.verificarDuracionSesion(
+				data.getHoraInicio(), data.getHoraFin(), parametros);
+		
+		FranjaHoraria entity =
+				mapper.map(data, FranjaHoraria.class);
 
 		franjaHorariaRep.save(entity);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.CREATE, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -112,7 +138,8 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 
 			dtoList.add(dto);
 		});
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -130,7 +157,8 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 		if (franjaHorariaRep.existsById(id)) {
 
 			franjaHorariaRep.deleteById(id);
-
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.FRANJA_HORARIA);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 
@@ -147,6 +175,8 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 	@Override
 	public int updateById(Long id, FranjaHorariaDTO data) {
 
+		ParametrosSistemaDTO parametros = parametrosSistemaService.get();
+		
 		LanzadorDeException.verificarId(id);
 
 		LanzadorDeException.verificarFranjaHoraria(data);
@@ -157,11 +187,16 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 
 		LanzadorDeException.verificarHoraFin(data.getHoraFin());
 
-		LanzadorDeException.verificarHorario(data.getHoraInicio(), data.getHoraFin());
-
-		LanzadorDeException.verificarRangoHorarioInstitucional(data.getDia(), data.getHoraInicio(), data.getHoraFin());
-		LanzadorDeException.verificarBloqueAlmuerzo(data.getHoraInicio(), data.getHoraFin());
-		LanzadorDeException.verificarDuracionSesion(data.getHoraInicio(), data.getHoraFin());
+		LanzadorDeException.verificarHorario(
+				data.getHoraInicio(),
+				data.getHoraFin());
+		
+		LanzadorDeException.verificarRangoHorarioInstitucional(
+				data.getDia(), data.getHoraInicio(), data.getHoraFin(), parametros);
+		LanzadorDeException.verificarBloqueAlmuerzo(
+				data.getHoraInicio(), data.getHoraFin(), parametros);
+		LanzadorDeException.verificarDuracionSesion(
+				data.getHoraInicio(), data.getHoraFin(), parametros);
 
 		Optional<FranjaHoraria> encontrado = franjaHorariaRep.findById(id);
 
@@ -178,7 +213,8 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 		temp.setHoraFin(data.getHoraFin());
 
 		franjaHorariaRep.save(temp);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -196,8 +232,13 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 
 		List<FranjaHorariaDTO> dtoList = new ArrayList<>();
 
-		encontrado.forEach(franja -> dtoList.add(mapper.map(franja, FranjaHorariaDTO.class)));
-
+		encontrado.forEach(franja ->
+				dtoList.add(
+						mapper.map(
+								franja,
+								FranjaHorariaDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -215,8 +256,13 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 
 		List<FranjaHorariaDTO> dtoList = new ArrayList<>();
 
-		encontrado.forEach(franja -> dtoList.add(mapper.map(franja, FranjaHorariaDTO.class)));
-
+		encontrado.forEach(franja ->
+				dtoList.add(
+						mapper.map(
+								franja,
+								FranjaHorariaDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -234,8 +280,13 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 
 		List<FranjaHorariaDTO> dtoList = new ArrayList<>();
 
-		encontrado.forEach(franja -> dtoList.add(mapper.map(franja, FranjaHorariaDTO.class)));
-
+		encontrado.forEach(franja ->
+				dtoList.add(
+						mapper.map(
+								franja,
+								FranjaHorariaDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -265,7 +316,8 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 		if (franjaHorariaRep.existsByDia(dia)) {
 
 			franjaHorariaRep.deleteByDia(dia);
-
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.FRANJA_HORARIA);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 

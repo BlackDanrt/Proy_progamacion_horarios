@@ -1,6 +1,8 @@
 /**
- * Contiene los controladores REST del sistema de horarios, encargados de
- * exponer los endpoints para gestionar administradores, profesores,
- * asignaturas, grupos, salones, franjas horarias y la autenticación.
+ * Contiene los controladores REST que expresan los endpoints HTTP del
+ * sistema de horarios y delegan la lógica de negocio a la capa de servicio.
+ *
+ * @author Prisma Web
+ * @version 1.0
  */
 package co.edu.unbosque.horarios.controller;

@@ -25,6 +25,7 @@ import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.entity.Profesor;
 import co.edu.unbosque.horarios.exception.EspecialidadesInvalidasException;
 import co.edu.unbosque.horarios.repository.ProfesorRepository;
+import co.edu.unbosque.horarios.service.AuditoriaService;
 import co.edu.unbosque.horarios.service.ProfesorService;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.Dia;
@@ -44,6 +45,9 @@ class ProfesorServiceTest {
 	@Mock
 	private PasswordEncoder passwordEncoder;
 
+	@Mock
+    private AuditoriaService auditoriaService;
+	
 	@InjectMocks
 	private ProfesorService profesorService;
 

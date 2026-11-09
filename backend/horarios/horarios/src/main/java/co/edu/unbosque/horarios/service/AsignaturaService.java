@@ -10,9 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
+import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.repository.AsignaturaRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
+import co.edu.unbosque.horarios.util.enums.Servicio;
+import co.edu.unbosque.horarios.util.enums.TipoAccion;
 
 /**
  * Servicio encargado de la gestión de asignaturas del sistema de horarios.
@@ -32,6 +35,9 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	/**
 	 * Mapeador utilizado para convertir entre entidades y DTO.
 	 */
+	@Autowired
+	private AuditoriaService auditoriaService;
+	
 	@Autowired
 	private ModelMapper mapper;
 
@@ -83,7 +89,8 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		Asignatura entity = mapper.map(data, Asignatura.class);
 
 		asignaturaRep.save(entity);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.CREATE, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -104,7 +111,8 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 
 			dtoList.add(dto);
 		});
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -122,6 +130,8 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 
 		if (asignaturaRep.existsById(id)) {
 			asignaturaRep.deleteById(id);
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.ASIGNATURA);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 
@@ -169,7 +179,8 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		temp.setEspecialidadRequerida(data.getEspecialidadRequerida());
 
 		asignaturaRep.save(temp);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -188,7 +199,8 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
 		encontrado.ifPresent(asignatura -> dtoList.add(mapper.map(asignatura, AsignaturaDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -207,7 +219,8 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
 		encontrado.ifPresent(asignatura -> dtoList.add(mapper.map(asignatura, AsignaturaDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -226,7 +239,8 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
 		encontrado.ifPresent(asignatura -> dtoList.add(mapper.map(asignatura, AsignaturaDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -239,7 +253,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	public boolean findNombreAlreadyTaken(String nombre) {
 
 		LanzadorDeException.verificarNombre(nombre);
-
+		
 		return asignaturaRep.existsByNombre(nombre);
 	}
 
@@ -257,7 +271,8 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		if (asignaturaRep.existsByNombre(nombre)) {
 
 			asignaturaRep.deleteByNombre(nombre);
-
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.ASIGNATURA);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 

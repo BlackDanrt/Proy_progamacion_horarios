@@ -10,9 +10,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import co.edu.unbosque.horarios.dto.AdministradorDTO;
+import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.entity.Administrador;
 import co.edu.unbosque.horarios.repository.AdministradorRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
+import co.edu.unbosque.horarios.util.enums.Servicio;
+import co.edu.unbosque.horarios.util.enums.TipoAccion;
 
 /**
  * Servicio encargado de la gestión de administradores del sistema.
@@ -28,6 +31,12 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 	 */
 	@Autowired
 	private AdministradorRepository administradorRep;
+	
+	/**
+	 * Servicio utilizado para registrar la auditoría de las acciones.
+	 */
+	@Autowired
+	private AuditoriaService auditoriaService;
 
 	/**
 	 * Mapeador utilizado para convertir entre entidades y DTO.
@@ -98,7 +107,8 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 		entity.setContrasenia(passwordEncoder.encode(data.getContrasenia()));
 
 		administradorRep.save(entity);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.CREATE, Servicio.ADMINISTRADOR);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -119,7 +129,8 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 
 			dtoList.add(dto);
 		});
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ADMINISTRADOR);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -136,9 +147,10 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 
 		if (administradorRep.existsById(id)) {
 			administradorRep.deleteById(id);
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.ADMINISTRADOR);
+			auditoriaService.create(auditoria);
 			return 0;
 		}
-
 		return 1;
 	}
 
@@ -206,7 +218,8 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 		}
 
 		administradorRep.save(temp);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.ADMINISTRADOR);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -224,8 +237,13 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 
 		List<AdministradorDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(administrador -> dtoList.add(mapper.map(administrador, AdministradorDTO.class)));
-
+		encontrado.ifPresent(administrador ->
+				dtoList.add(
+						mapper.map(
+								administrador,
+								AdministradorDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ADMINISTRADOR);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -243,8 +261,13 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 
 		List<AdministradorDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(administrador -> dtoList.add(mapper.map(administrador, AdministradorDTO.class)));
-
+		encontrado.ifPresent(administrador ->
+				dtoList.add(
+						mapper.map(
+								administrador,
+								AdministradorDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ADMINISTRADOR);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -262,8 +285,13 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 
 		List<AdministradorDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(administrador -> dtoList.add(mapper.map(administrador, AdministradorDTO.class)));
-
+		encontrado.ifPresent(administrador ->
+				dtoList.add(
+						mapper.map(
+								administrador,
+								AdministradorDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ADMINISTRADOR);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -275,9 +303,11 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 	 */
 	public boolean findCodigoAdministradorAlreadyTaken(String codigoAdministrador) {
 
-		LanzadorDeException.verificarCodigoAdministrador(codigoAdministrador);
-
-		return administradorRep.existsByCodigoAdministrador(codigoAdministrador);
+		LanzadorDeException.verificarCodigoAdministrador(
+				codigoAdministrador);
+		
+		return administradorRep.existsByCodigoAdministrador(
+				codigoAdministrador);
 	}
 
 	/**
@@ -331,11 +361,12 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 			return 3;
 		}
 
-		if (passwordEncoder.matches(contrasenia, administrador.getContrasenia())) {
-
+		if (passwordEncoder.matches(
+				contrasenia,
+				administrador.getContrasenia())) {
 			return 0;
 		}
-
+		
 		return 1;
 	}
 
@@ -359,9 +390,10 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 		Administrador administrador = encontrado.get();
 
 		administrador.setEstado(estado);
-
+		
 		administradorRep.save(administrador);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.ADMINISTRADOR);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -377,8 +409,10 @@ public class AdministradorService implements CRUDOperation<AdministradorDTO> {
 
 		if (administradorRep.existsByCodigoAdministrador(codigoAdministrador)) {
 
-			administradorRep.deleteByCodigoAdministrador(codigoAdministrador);
-
+			administradorRep.deleteByCodigoAdministrador(
+					codigoAdministrador);
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.ADMINISTRADOR);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 

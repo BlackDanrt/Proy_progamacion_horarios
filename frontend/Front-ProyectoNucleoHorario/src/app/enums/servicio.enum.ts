@@ -1,0 +1,9 @@
+export enum ServicioEnum {
+  PROFESOR,
+  ADMINISTRADOR,
+  FRANJA_HORARIA,
+  GRUPO,
+  SALON,
+  ASIGNATURA,
+  PARAMETROS
+}

@@ -1,5 +1,9 @@
 /**
- * Contiene las clases de seguridad del sistema de horarios: configuración de
- * Spring Security, autenticación mediante tokens JWT y carga de usuarios.
+ * Contiene la configuración de seguridad del sistema: autenticación y
+ * autorización basada en JWT, filtros de solicitud y carga de detalles
+ * de usuario.
+ *
+ * @author Prisma Web
+ * @version 1.0
  */
 package co.edu.unbosque.horarios.security;

@@ -11,6 +11,7 @@ import co.edu.unbosque.horarios.dto.AdministradorDTO;
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
 import co.edu.unbosque.horarios.dto.GrupoDTO;
+import co.edu.unbosque.horarios.dto.ParametrosSistemaDTO;
 import co.edu.unbosque.horarios.dto.ProfesorDTO;
 import co.edu.unbosque.horarios.dto.SalonDTO;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
@@ -559,10 +560,10 @@ public class LanzadorDeException {
 	 * @throws CapacidadMinimaInvalidaException si la capacidad mínima es menor que
 	 *                                          10.
 	 */
-	public static void verificarCapacidadMinima(int capacidadMinima) {
-
-		if (capacidadMinima < 10) {
-			throw new CapacidadMinimaInvalidaException("La capacidad mínima no puede ser menor que 10");
+	public static void verificarCapacidadMinima(int capacidadMinima, ParametrosSistemaDTO parametrosSistemaDTO) {
+		int minimo = parametrosSistemaDTO.getMinEstudiantesParaAbrir();
+		if (capacidadMinima < minimo) {
+			throw new CapacidadMinimaInvalidaException("La capacidad mínima no puede ser menor que "+minimo);
 		}
 	}
 
@@ -573,11 +574,10 @@ public class LanzadorDeException {
 	 * @throws CapacidadMaximaInvalidaException si la capacidad máxima es mayor que
 	 *                                          44.
 	 */
-	public static void verificarCapacidadMaxima(int capacidadMaxima) {
-
-		if (capacidadMaxima > 44) {
-			throw new CapacidadMaximaInvalidaException("La capacidad máxima no puede ser mayor que 44");
-		}
+	public static void verificarCapacidadMaxima(int capacidadMaxima, ParametrosSistemaDTO parametrosSistemaDTO) {
+	    if (capacidadMaxima <= 0) {
+	        throw new CapacidadMaximaInvalidaException("La capacidad máxima debe ser mayor que cero");
+	    }
 	}
 
 	/**
@@ -616,14 +616,14 @@ public class LanzadorDeException {
 	 * @throws SesionesInvalidasException si el número de sesiones está fuera del
 	 *                                    rango.
 	 */
-	public static void verificarSesiones(int sesiones) {
-
-		if (sesiones < 0) {
+	public static void verificarSesiones(int sesiones, ParametrosSistemaDTO parametrosSistemaDTO) {
+		
+		if (sesiones <= 0) {
 			throw new SesionesInvalidasException("El número de sesiones no puede ser menor que 0");
 		}
-
-		if (sesiones > 4) {
-			throw new SesionesInvalidasException("El número de sesiones no puede ser mayor que 4");
+		int maximo = parametrosSistemaDTO.getMaxSesionesPorSemana();
+		if (sesiones > maximo) {
+			throw new SesionesInvalidasException("El número de sesiones no puede ser mayor que "+maximo);
 		}
 	}
 
@@ -811,19 +811,22 @@ public class LanzadorDeException {
 	 * @param horaFin    hora de fin.
 	 * @throws RangoHorarioInvalidoException si la franja queda fuera de la jornada.
 	 */
-	public static void verificarRangoHorarioInstitucional(Dia dia, LocalTime horaInicio, LocalTime horaFin) {
+	public static void verificarRangoHorarioInstitucional(Dia dia, LocalTime horaInicio, LocalTime horaFin,
+	        ParametrosSistemaDTO parametrosSistemaDTO) {
 
-		LocalTime inicioJornada = LocalTime.of(7, 0);
-		LocalTime finJornadaSemana = LocalTime.of(22, 0);
-		LocalTime finJornadaSabado = LocalTime.of(13, 0);
+	    LocalTime inicioJornada = (dia == Dia.SABADO)
+	            ? parametrosSistemaDTO.getHoraInicioSabado()
+	            : parametrosSistemaDTO.getHoraInicioEntreSemana();
+	    LocalTime finPermitido = (dia == Dia.SABADO)
+	            ? parametrosSistemaDTO.getHoraFinSabado()
+	            : parametrosSistemaDTO.getHoraFinEntreSemana();
 
-		LocalTime finPermitido = (dia == Dia.SABADO) ? finJornadaSabado : finJornadaSemana;
-
-		if (horaInicio.isBefore(inicioJornada) || horaFin.isAfter(finPermitido)) {
-			throw new RangoHorarioInvalidoException(
-					dia == Dia.SABADO ? "El sábado solo se pueden asignar clases entre las 7:00 AM y la 1:00 PM"
-							: "De lunes a viernes solo se pueden asignar clases entre las 7:00 AM y las 10:00 PM");
-		}
+	    if (horaInicio.isBefore(inicioJornada) || horaFin.isAfter(finPermitido)) {
+	        throw new RangoHorarioInvalidoException(
+	                dia == Dia.SABADO
+	                        ? "El sábado solo se pueden asignar clases entre las " + inicioJornada + " y las " + finPermitido
+	                        : "De lunes a viernes solo se pueden asignar clases entre las " + inicioJornada + " y las " + finPermitido);
+	    }
 	}
 
 	/**
@@ -835,16 +838,15 @@ public class LanzadorDeException {
 	 * @throws BloqueAlmuerzoInvalidoException si la franja se cruza con el
 	 *                                         almuerzo.
 	 */
-	public static void verificarBloqueAlmuerzo(LocalTime horaInicio, LocalTime horaFin) {
+	public static void verificarBloqueAlmuerzo(LocalTime horaInicio, LocalTime horaFin, ParametrosSistemaDTO parametrosSistemaDTO) {
+	    LocalTime inicioAlmuerzo = parametrosSistemaDTO.getHoraInicioAlmuerzo();
+	    LocalTime finAlmuerzo = parametrosSistemaDTO.getHoraFinAlmuerzo();
 
-		LocalTime inicioAlmuerzo = LocalTime.of(12, 0);
-		LocalTime finAlmuerzo = LocalTime.of(13, 0);
-
-		boolean seSolapa = horaInicio.isBefore(finAlmuerzo) && horaFin.isAfter(inicioAlmuerzo);
-
-		if (seSolapa) {
-			throw new BloqueAlmuerzoInvalidoException("No se pueden asignar clases entre las 12:00 M y la 1:00 PM");
-		}
+	    boolean seSolapa = horaInicio.isBefore(finAlmuerzo) && horaFin.isAfter(inicioAlmuerzo);
+	    if (seSolapa) {
+	        throw new BloqueAlmuerzoInvalidoException(
+	                "No se pueden asignar clases entre " + inicioAlmuerzo + " y " + finAlmuerzo);
+	    }
 	}
 
 	/**
@@ -854,13 +856,13 @@ public class LanzadorDeException {
 	 * @param horaFin    hora de fin.
 	 * @throws DuracionSesionInvalidaException si la duración no es de 2 horas.
 	 */
-	public static void verificarDuracionSesion(LocalTime horaInicio, LocalTime horaFin) {
-
-		long minutos = Duration.between(horaInicio, horaFin).toMinutes();
-
-		if (minutos != 120) {
-			throw new DuracionSesionInvalidaException("Cada sesión de clase debe durar exactamente 2 horas");
-		}
+	public static void verificarDuracionSesion(LocalTime horaInicio, LocalTime horaFin, ParametrosSistemaDTO parametrosSistemaDTO) {
+	    long minutos = Duration.between(horaInicio, horaFin).toMinutes();
+	    int duracionEsperada = parametrosSistemaDTO.getDuracionSesionMinutos();
+	    if (minutos != duracionEsperada) {
+	        throw new DuracionSesionInvalidaException(
+	                "Cada sesión de clase debe durar exactamente " + duracionEsperada + " minutos");
+	    }
 	}
 
 	/**
@@ -1040,23 +1042,17 @@ public class LanzadorDeException {
 	 * @param capacidadMaxima capacidad máxima del grupo.
 	 * @throws CapacidadMaximaExcedidaException si se supera el límite.
 	 */
-	public static void verificarCapacidadMaximaInstitucional(int capacidadMaxima) {
-
-		final int CAPACIDAD_MAXIMA_INSTITUCIONAL = 40;
-		final double TOLERANCIA = 0.10;
-		int limite = (int) Math.floor(CAPACIDAD_MAXIMA_INSTITUCIONAL * (1 + TOLERANCIA)); // 44
+	public static void verificarCapacidadMaximaInstitucional(int capacidadMaxima, ParametrosSistemaDTO parametrosSistemaDTO) {
+		
+		int capacidad = parametrosSistemaDTO.getCapacidadMaximaGrupo();
+		double tolerancia = parametrosSistemaDTO.getToleranciaCapacidad() / 100.0;
+		int limite = (int) Math.floor(capacidad * (1 + tolerancia));
 
 		if (capacidadMaxima > limite) {
 			throw new CapacidadMaximaExcedidaException(
-					"La capacidad máxima no puede superar " + limite + " estudiantes (40 + 10% de tolerancia)");
+					"La capacidad máxima no puede superar " + limite + " estudiantes ("+ parametrosSistemaDTO.getToleranciaCapacidad() +" + 10% de tolerancia)");
 		}
 	}
-
-	/**
-	 * Indica si se exige que las sesiones de un grupo con dos o tres sesiones no
-	 * sean en días consecutivos.
-	 */
-	private static final boolean EXIGIR_DIAS_NO_CONSECUTIVOS = true;
 
 	/**
 	 * Verifica que las horas máximas semanales no superen el tope de la dedicación
@@ -1081,13 +1077,13 @@ public class LanzadorDeException {
 	 * @param sesiones sesiones del grupo.
 	 * @throws RangoHorarioInvalidoException si alguna sesión incumple las reglas.
 	 */
-	public static void verificarSesionesGrupo(List<FranjaHoraria> sesiones) {
+	public static void verificarSesionesGrupo(List<FranjaHoraria> sesiones, ParametrosSistemaDTO parametrosSistemaDTO) {
 		for (FranjaHoraria sesion : sesiones) {
 			verificarDia(sesion.getDia());
 			verificarHorario(sesion.getHoraInicio(), sesion.getHoraFin());
-			verificarRangoHorarioInstitucional(sesion.getDia(), sesion.getHoraInicio(), sesion.getHoraFin());
-			verificarBloqueAlmuerzo(sesion.getHoraInicio(), sesion.getHoraFin());
-			verificarDuracionSesion(sesion.getHoraInicio(), sesion.getHoraFin());
+			verificarRangoHorarioInstitucional(sesion.getDia(), sesion.getHoraInicio(), sesion.getHoraFin(), parametrosSistemaDTO);
+			verificarBloqueAlmuerzo(sesion.getHoraInicio(), sesion.getHoraFin(), parametrosSistemaDTO);
+			verificarDuracionSesion(sesion.getHoraInicio(), sesion.getHoraFin(), parametrosSistemaDTO);
 		}
 	}
 
@@ -1099,7 +1095,7 @@ public class LanzadorDeException {
 	 * @throws SesionesInvalidasException si dos sesiones coinciden en el día o son
 	 *                                    en días consecutivos.
 	 */
-	public static void verificarDiasSesiones(List<FranjaHoraria> sesiones) {
+	public static void verificarDiasSesiones(List<FranjaHoraria> sesiones, ParametrosSistemaDTO parametrosSistemaDTO) {
 		List<Integer> dias = new ArrayList<>();
 		for (FranjaHoraria sesion : sesiones) {
 			dias.add(sesion.getDia().ordinal());
@@ -1109,13 +1105,14 @@ public class LanzadorDeException {
 			if (dias.get(i).equals(dias.get(i - 1))) {
 				throw new SesionesInvalidasException("Las sesiones de un mismo grupo deben ser en días distintos");
 			}
-			if (EXIGIR_DIAS_NO_CONSECUTIVOS && sesiones.size() <= 3 && dias.get(i) - dias.get(i - 1) == 1) {
+			if (parametrosSistemaDTO.isExigirDiasNoConsecutivos() && sesiones.size() <= 3
+					&& dias.get(i) - dias.get(i - 1) == 1) {
 				throw new SesionesInvalidasException(
 						"Las sesiones de un grupo con dos o tres sesiones no pueden ser en días consecutivos");
 			}
 		}
 	}
-
+	
 	/**
 	 * Verifica que los inscritos no sean negativos ni superen los cupos del grupo.
 	 *

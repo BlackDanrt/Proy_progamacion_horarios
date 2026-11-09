@@ -50,7 +50,7 @@ export class InicioAdministrador implements OnInit {
       descripcion: 'Administra docentes, roles, especialidades y cargas académicas del sistema.',
       icono: 'database',
       ruta: '/gestion-bases-datos',
-      badge: '10 Registros'
+      badge: 'Registros'
     },
     {
       titulo: 'Asignación de Horarios',
@@ -58,6 +58,13 @@ export class InicioAdministrador implements OnInit {
       icono: 'calendar',
       ruta: '/horarios',
       badge: 'Semana Actual'
+    },
+    {
+      titulo: 'Edición de Horarios Guardados',
+      descripcion: 'Modifica, actualiza salones, cupos o elimina grupos ya almacenados en el sistema.',
+      icono: 'edit',
+      ruta: '/edicion-horarios',
+      badge: 'Gestión BD'
     },
     {
       titulo: 'Gestión de Aulas',
@@ -72,6 +79,20 @@ export class InicioAdministrador implements OnInit {
       icono: 'building',
       ruta: '/gestion-aulas',
       badge: 'Infraestructura'
+    },
+    {
+      titulo: 'Parámetros del Sistema',
+      descripcion: 'Configura las jornadas, horarios y reglas generales del sistema.',
+      icono: 'settings',
+      ruta: '/parametros-sistema',
+      badge: 'Configuración'
+    },
+    {
+      titulo: 'Auditoría',
+      descripcion: 'Consulta el registro de acciones realizadas en el sistema.',
+      icono: 'audit',
+      ruta: '/auditoria',
+      badge: 'Actividad'
     }
   ];
 

@@ -59,7 +59,6 @@ public class Asignatura {
 	 * Número de días por semana en los que se programa la asignatura.
 	 */
 	@Min(value = 1, message = "La frecuencia semanal debe ser al menos 1 día")
-	@Max(value = 4, message = "No puede exceder las 4 sesiones semanales")
 	private int frecuenciaSemanal;
 
 	/**
