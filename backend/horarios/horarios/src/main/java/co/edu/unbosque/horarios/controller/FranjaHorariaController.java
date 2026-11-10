@@ -34,7 +34,7 @@ import co.edu.unbosque.horarios.util.enums.Dia;
  */
 @RestController
 @RequestMapping("/franjahoraria")
-@CrossOrigin(origins = { "http://localhost:8080", "https://app.netlify.com/projects/prismaweb/" })
+@CrossOrigin(origins = { "https://prismawebueb.netlify.app" })
 public class FranjaHorariaController {
 
 	/**

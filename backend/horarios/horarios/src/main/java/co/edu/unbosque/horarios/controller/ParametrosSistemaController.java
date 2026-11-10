@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/parametrossistema")
-@CrossOrigin(origins = { "http://localhost:8080", "https://app.netlify.com/projects/prismaweb/" })
+@CrossOrigin(origins = { "https://prismawebueb.netlify.app" })
 public class ParametrosSistemaController {
 
 	@Autowired

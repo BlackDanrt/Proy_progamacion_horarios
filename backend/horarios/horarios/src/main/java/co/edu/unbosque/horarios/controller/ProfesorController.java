@@ -41,7 +41,7 @@ import co.edu.unbosque.horarios.util.enums.TipoVinculacion;
  */
 @RestController
 @RequestMapping("/profesor")
-@CrossOrigin(origins = { "http://localhost:8080", "https://app.netlify.com/projects/prismaweb/" })
+@CrossOrigin(origins = { "https://prismawebueb.netlify.app" })
 public class ProfesorController {
 
 	/**
