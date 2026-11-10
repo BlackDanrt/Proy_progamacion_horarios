@@ -9,27 +9,53 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.dto.FranjaHorariaDTO;
+import co.edu.unbosque.horarios.dto.ParametrosSistemaDTO;
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
 import co.edu.unbosque.horarios.repository.FranjaHorariaRepository;
+import co.edu.unbosque.horarios.repository.ParametrosSistemaRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
 import co.edu.unbosque.horarios.util.enums.Dia;
+import co.edu.unbosque.horarios.util.enums.Servicio;
+import co.edu.unbosque.horarios.util.enums.TipoAccion;
 
 /**
  * Servicio encargado de la gestión de franjas horarias del sistema.
  * <p>
- * Implementa operaciones CRUD, búsquedas por día y horarios
- * y validaciones de negocio mediante LanzadorDeException.
+ * Implementa operaciones CRUD, búsquedas por día y horarios y validaciones de
+ * negocio mediante LanzadorDeException.
  */
 @Service
 public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 
+	/**
+	 * Repositorio utilizado para acceder a los datos de las franjas horarias.
+	 */
 	@Autowired
 	private FranjaHorariaRepository franjaHorariaRep;
 
+	/**
+	 * Servicio utilizado para registrar la auditoría de las acciones.
+	 */
+	@Autowired
+	private AuditoriaService auditoriaService;
+
+	/**
+	 * Mapeador utilizado para convertir entre entidades y DTO.
+	 */
 	@Autowired
 	private ModelMapper mapper;
+	
+	/**
+	 * Servicio utilizado para consultar los parámetros del sistema.
+	 */
+	@Autowired
+	private ParametrosSistemaService parametrosSistemaService;
 
+	/**
+	 * Constructor vacío de la clase.
+	 */
 	public FranjaHorariaService() {
 	}
 
@@ -64,25 +90,33 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 	@Override
 	public int create(FranjaHorariaDTO data) {
 
+		ParametrosSistemaDTO parametros = parametrosSistemaService.get();
+		
 		LanzadorDeException.verificarFranjaHoraria(data);
 
 		LanzadorDeException.verificarDia(data.getDia());
 
-		LanzadorDeException.verificarHoraInicio(
-				data.getHoraInicio());
+		LanzadorDeException.verificarHoraInicio(data.getHoraInicio());
 
-		LanzadorDeException.verificarHoraFin(
-				data.getHoraFin());
+		LanzadorDeException.verificarHoraFin(data.getHoraFin());
 
 		LanzadorDeException.verificarHorario(
 				data.getHoraInicio(),
 				data.getHoraFin());
-
+		
+		LanzadorDeException.verificarRangoHorarioInstitucional(
+				data.getDia(), data.getHoraInicio(), data.getHoraFin(),parametros);
+		LanzadorDeException.verificarBloqueAlmuerzo(
+				data.getHoraInicio(), data.getHoraFin(), parametros);
+		LanzadorDeException.verificarDuracionSesion(
+				data.getHoraInicio(), data.getHoraFin(), parametros);
+		
 		FranjaHoraria entity =
 				mapper.map(data, FranjaHoraria.class);
 
 		franjaHorariaRep.save(entity);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.CREATE, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -94,22 +128,18 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 	@Override
 	public List<FranjaHorariaDTO> getAll() {
 
-		Iterable<FranjaHoraria> entityList =
-				franjaHorariaRep.findAll();
+		Iterable<FranjaHoraria> entityList = franjaHorariaRep.findAll();
 
-		List<FranjaHorariaDTO> dtoList =
-				new ArrayList<>();
+		List<FranjaHorariaDTO> dtoList = new ArrayList<>();
 
 		entityList.forEach(entity -> {
 
-			FranjaHorariaDTO dto =
-					mapper.map(
-							entity,
-							FranjaHorariaDTO.class);
+			FranjaHorariaDTO dto = mapper.map(entity, FranjaHorariaDTO.class);
 
 			dtoList.add(dto);
 		});
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -127,7 +157,8 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 		if (franjaHorariaRep.existsById(id)) {
 
 			franjaHorariaRep.deleteById(id);
-
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.FRANJA_HORARIA);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 
@@ -137,33 +168,37 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 	/**
 	 * Actualiza una franja horaria.
 	 *
-	 * @param id identificador de la franja.
+	 * @param id   identificador de la franja.
 	 * @param data nuevos datos.
 	 * @return 0 si se actualiza correctamente, 1 si no existe.
 	 */
 	@Override
-	public int updateById(
-			Long id,
-			FranjaHorariaDTO data) {
+	public int updateById(Long id, FranjaHorariaDTO data) {
 
+		ParametrosSistemaDTO parametros = parametrosSistemaService.get();
+		
 		LanzadorDeException.verificarId(id);
 
 		LanzadorDeException.verificarFranjaHoraria(data);
 
 		LanzadorDeException.verificarDia(data.getDia());
 
-		LanzadorDeException.verificarHoraInicio(
-				data.getHoraInicio());
+		LanzadorDeException.verificarHoraInicio(data.getHoraInicio());
 
-		LanzadorDeException.verificarHoraFin(
-				data.getHoraFin());
+		LanzadorDeException.verificarHoraFin(data.getHoraFin());
 
 		LanzadorDeException.verificarHorario(
 				data.getHoraInicio(),
 				data.getHoraFin());
+		
+		LanzadorDeException.verificarRangoHorarioInstitucional(
+				data.getDia(), data.getHoraInicio(), data.getHoraFin(), parametros);
+		LanzadorDeException.verificarBloqueAlmuerzo(
+				data.getHoraInicio(), data.getHoraFin(), parametros);
+		LanzadorDeException.verificarDuracionSesion(
+				data.getHoraInicio(), data.getHoraFin(), parametros);
 
-		Optional<FranjaHoraria> encontrado =
-				franjaHorariaRep.findById(id);
+		Optional<FranjaHoraria> encontrado = franjaHorariaRep.findById(id);
 
 		if (encontrado.isEmpty()) {
 			return 1;
@@ -173,14 +208,13 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 
 		temp.setDia(data.getDia());
 
-		temp.setHoraInicio(
-				data.getHoraInicio());
+		temp.setHoraInicio(data.getHoraInicio());
 
-		temp.setHoraFin(
-				data.getHoraFin());
+		temp.setHoraFin(data.getHoraFin());
 
 		franjaHorariaRep.save(temp);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -194,18 +228,17 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 
 		LanzadorDeException.verificarDia(dia);
 
-		List<FranjaHoraria> encontrado =
-				franjaHorariaRep.findByDia(dia);
+		List<FranjaHoraria> encontrado = franjaHorariaRep.findByDia(dia);
 
-		List<FranjaHorariaDTO> dtoList =
-				new ArrayList<>();
+		List<FranjaHorariaDTO> dtoList = new ArrayList<>();
 
 		encontrado.forEach(franja ->
 				dtoList.add(
 						mapper.map(
 								franja,
 								FranjaHorariaDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -215,25 +248,21 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 	 * @param horaInicio hora de inicio.
 	 * @return lista de franjas encontradas.
 	 */
-	public List<FranjaHorariaDTO> findByHoraInicio(
-			LocalTime horaInicio) {
+	public List<FranjaHorariaDTO> findByHoraInicio(LocalTime horaInicio) {
 
-		LanzadorDeException.verificarHoraInicio(
-				horaInicio);
+		LanzadorDeException.verificarHoraInicio(horaInicio);
 
-		List<FranjaHoraria> encontrado =
-				franjaHorariaRep.findByHoraInicio(
-						horaInicio);
+		List<FranjaHoraria> encontrado = franjaHorariaRep.findByHoraInicio(horaInicio);
 
-		List<FranjaHorariaDTO> dtoList =
-				new ArrayList<>();
+		List<FranjaHorariaDTO> dtoList = new ArrayList<>();
 
 		encontrado.forEach(franja ->
 				dtoList.add(
 						mapper.map(
 								franja,
 								FranjaHorariaDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -243,25 +272,21 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 	 * @param horaFin hora de fin.
 	 * @return lista de franjas encontradas.
 	 */
-	public List<FranjaHorariaDTO> findByHoraFin(
-			LocalTime horaFin) {
+	public List<FranjaHorariaDTO> findByHoraFin(LocalTime horaFin) {
 
-		LanzadorDeException.verificarHoraFin(
-				horaFin);
+		LanzadorDeException.verificarHoraFin(horaFin);
 
-		List<FranjaHoraria> encontrado =
-				franjaHorariaRep.findByHoraFin(
-						horaFin);
+		List<FranjaHoraria> encontrado = franjaHorariaRep.findByHoraFin(horaFin);
 
-		List<FranjaHorariaDTO> dtoList =
-				new ArrayList<>();
+		List<FranjaHorariaDTO> dtoList = new ArrayList<>();
 
 		encontrado.forEach(franja ->
 				dtoList.add(
 						mapper.map(
 								franja,
 								FranjaHorariaDTO.class)));
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.FRANJA_HORARIA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -291,26 +316,46 @@ public class FranjaHorariaService implements CRUDOperation<FranjaHorariaDTO> {
 		if (franjaHorariaRep.existsByDia(dia)) {
 
 			franjaHorariaRep.deleteByDia(dia);
-
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.FRANJA_HORARIA);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 
 		return 1;
 	}
 
+	/**
+	 * Obtiene el repositorio de franjas horarias.
+	 *
+	 * @return repositorio de franjas horarias.
+	 */
 	public FranjaHorariaRepository getFranjaHorariaRep() {
 		return franjaHorariaRep;
 	}
 
-	public void setFranjaHorariaRep(
-			FranjaHorariaRepository franjaHorariaRep) {
+	/**
+	 * Establece el repositorio de franjas horarias.
+	 *
+	 * @param franjaHorariaRep repositorio de franjas horarias.
+	 */
+	public void setFranjaHorariaRep(FranjaHorariaRepository franjaHorariaRep) {
 		this.franjaHorariaRep = franjaHorariaRep;
 	}
 
+	/**
+	 * Obtiene el mapeador utilizado para convertir entre entidades y DTO.
+	 *
+	 * @return mapeador de objetos.
+	 */
 	public ModelMapper getMapper() {
 		return mapper;
 	}
 
+	/**
+	 * Establece el mapeador utilizado para convertir entre entidades y DTO.
+	 *
+	 * @param mapper mapeador de objetos.
+	 */
 	public void setMapper(ModelMapper mapper) {
 		this.mapper = mapper;
 	}

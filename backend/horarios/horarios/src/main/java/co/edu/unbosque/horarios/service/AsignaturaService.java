@@ -7,27 +7,43 @@ import java.util.Optional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.horarios.dto.AsignaturaDTO;
+import co.edu.unbosque.horarios.dto.AuditoriaDTO;
 import co.edu.unbosque.horarios.entity.Asignatura;
 import co.edu.unbosque.horarios.repository.AsignaturaRepository;
 import co.edu.unbosque.horarios.util.LanzadorDeException;
+import co.edu.unbosque.horarios.util.enums.Servicio;
+import co.edu.unbosque.horarios.util.enums.TipoAccion;
 
 /**
  * Servicio encargado de la gestión de asignaturas del sistema de horarios.
  * <p>
- * Implementa operaciones CRUD, búsquedas por diferentes atributos
- * y validaciones de negocio mediante LanzadorDeException.
+ * Implementa operaciones CRUD, búsquedas por diferentes atributos y
+ * validaciones de negocio mediante LanzadorDeException.
  */
 @Service
 public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 
+	/**
+	 * Repositorio utilizado para acceder a los datos de las asignaturas.
+	 */
 	@Autowired
 	private AsignaturaRepository asignaturaRep;
 
+	/**
+	 * Mapeador utilizado para convertir entre entidades y DTO.
+	 */
+	@Autowired
+	private AuditoriaService auditoriaService;
+	
 	@Autowired
 	private ModelMapper mapper;
 
+	/**
+	 * Constructor vacío de la clase.
+	 */
 	public AsignaturaService() {
 	}
 
@@ -64,19 +80,17 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 
 		LanzadorDeException.verificarAsignatura(data);
 
-		LanzadorDeException.verificarNombre(data.getNombre());
-		LanzadorDeException.verificarNumCreditos(
-				data.getNumCreditos());
-		LanzadorDeException.verificarFrecuenciaSemanal(
-				data.getFrecuenciaSemanal());
+		LanzadorDeException.verificarNombreAsignatura(data.getNombre());
+		LanzadorDeException.verificarNumCreditos(data.getNumCreditos());
+		LanzadorDeException.verificarFrecuenciaSemanal(data.getFrecuenciaSemanal());
 
-		LanzadorDeException.verificarNombreDuplicado(
-				asignaturaRep.existsByNombre(data.getNombre()));
+		LanzadorDeException.verificarNombreDuplicado(asignaturaRep.existsByNombre(data.getNombre()));
 
 		Asignatura entity = mapper.map(data, Asignatura.class);
 
 		asignaturaRep.save(entity);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.CREATE, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -93,12 +107,12 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
 		entityList.forEach(entity -> {
-			AsignaturaDTO dto =
-					mapper.map(entity, AsignaturaDTO.class);
+			AsignaturaDTO dto = mapper.map(entity, AsignaturaDTO.class);
 
 			dtoList.add(dto);
 		});
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -109,12 +123,15 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @return 0 si se elimina, 1 si no existe.
 	 */
 	@Override
+
 	public int deleteById(Long id) {
 
 		LanzadorDeException.verificarId(id);
 
 		if (asignaturaRep.existsById(id)) {
 			asignaturaRep.deleteById(id);
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.ASIGNATURA);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 
@@ -124,7 +141,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	/**
 	 * Actualiza una asignatura por ID.
 	 *
-	 * @param id identificador de la asignatura.
+	 * @param id   identificador de la asignatura.
 	 * @param data nuevos datos de la asignatura.
 	 * @return 0 si se actualiza correctamente, 1 si no existe.
 	 */
@@ -134,14 +151,11 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		LanzadorDeException.verificarId(id);
 		LanzadorDeException.verificarAsignatura(data);
 
-		LanzadorDeException.verificarNombre(data.getNombre());
-		LanzadorDeException.verificarNumCreditos(
-				data.getNumCreditos());
-		LanzadorDeException.verificarFrecuenciaSemanal(
-				data.getFrecuenciaSemanal());
+		LanzadorDeException.verificarNombreAsignatura(data.getNombre());
+		LanzadorDeException.verificarNumCreditos(data.getNumCreditos());
+		LanzadorDeException.verificarFrecuenciaSemanal(data.getFrecuenciaSemanal());
 
-		Optional<Asignatura> encontrado =
-				asignaturaRep.findById(id);
+		Optional<Asignatura> encontrado = asignaturaRep.findById(id);
 
 		if (encontrado.isEmpty()) {
 			return 1;
@@ -150,23 +164,23 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 		Asignatura temp = encontrado.get();
 
 		/*
-		 * Solo se verifica duplicado si el nombre
-		 * realmente está cambiando.
+		 * Solo se verifica duplicado si el nombre realmente está cambiando.
 		 */
 		if (!temp.getNombre().equals(data.getNombre())) {
 
-			LanzadorDeException.verificarNombreDuplicado(
-					asignaturaRep.existsByNombre(
-							data.getNombre()));
+			LanzadorDeException.verificarNombreDuplicado(asignaturaRep.existsByNombre(data.getNombre()));
 		}
 
 		temp.setNombre(data.getNombre());
 		temp.setNumCreditos(data.getNumCreditos());
-		temp.setFrecuenciaSemanal(
-				data.getFrecuenciaSemanal());
+		temp.setFrecuenciaSemanal(data.getFrecuenciaSemanal());
+		temp.setRequiereComputadores(data.isRequiereComputadores());
+		temp.setRequiereSillasMoviles(data.isRequiereSillasMoviles());
+		temp.setEspecialidadRequerida(data.getEspecialidadRequerida());
 
 		asignaturaRep.save(temp);
-
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.UPDATE, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return 0;
 	}
 
@@ -180,17 +194,13 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 
 		LanzadorDeException.verificarNombre(nombre);
 
-		Optional<Asignatura> encontrado =
-				asignaturaRep.findByNombre(nombre);
+		Optional<Asignatura> encontrado = asignaturaRep.findByNombre(nombre);
 
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(asignatura ->
-				dtoList.add(
-						mapper.map(
-								asignatura,
-								AsignaturaDTO.class)));
-
+		encontrado.ifPresent(asignatura -> dtoList.add(mapper.map(asignatura, AsignaturaDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -200,23 +210,17 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @param numCreditos número de créditos.
 	 * @return lista con las asignaturas encontradas.
 	 */
-	public List<AsignaturaDTO> findByNumCreditos(
-			int numCreditos) {
+	public List<AsignaturaDTO> findByNumCreditos(int numCreditos) {
 
-		LanzadorDeException.verificarNumCreditos(
-				numCreditos);
+		LanzadorDeException.verificarNumCreditos(numCreditos);
 
-		Optional<Asignatura> encontrado =
-				asignaturaRep.findByNumCreditos(numCreditos);
+		Optional<Asignatura> encontrado = asignaturaRep.findByNumCreditos(numCreditos);
 
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(asignatura ->
-				dtoList.add(
-						mapper.map(
-								asignatura,
-								AsignaturaDTO.class)));
-
+		encontrado.ifPresent(asignatura -> dtoList.add(mapper.map(asignatura, AsignaturaDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -226,24 +230,17 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @param frecuenciaSemanal frecuencia semanal.
 	 * @return lista con las asignaturas encontradas.
 	 */
-	public List<AsignaturaDTO> findByFrecuenciaSemanal(
-			int frecuenciaSemanal) {
+	public List<AsignaturaDTO> findByFrecuenciaSemanal(int frecuenciaSemanal) {
 
-		LanzadorDeException.verificarFrecuenciaSemanal(
-				frecuenciaSemanal);
+		LanzadorDeException.verificarFrecuenciaSemanal(frecuenciaSemanal);
 
-		Optional<Asignatura> encontrado =
-				asignaturaRep.findByFrecuenciaSemanal(
-						frecuenciaSemanal);
+		Optional<Asignatura> encontrado = asignaturaRep.findByFrecuenciaSemanal(frecuenciaSemanal);
 
 		List<AsignaturaDTO> dtoList = new ArrayList<>();
 
-		encontrado.ifPresent(asignatura ->
-				dtoList.add(
-						mapper.map(
-								asignatura,
-								AsignaturaDTO.class)));
-
+		encontrado.ifPresent(asignatura -> dtoList.add(mapper.map(asignatura, AsignaturaDTO.class)));
+		AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.READ, Servicio.ASIGNATURA);
+    	auditoriaService.create(auditoria);
 		return dtoList;
 	}
 
@@ -256,7 +253,7 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	public boolean findNombreAlreadyTaken(String nombre) {
 
 		LanzadorDeException.verificarNombre(nombre);
-
+		
 		return asignaturaRep.existsByNombre(nombre);
 	}
 
@@ -266,34 +263,55 @@ public class AsignaturaService implements CRUDOperation<AsignaturaDTO> {
 	 * @param nombre nombre de la asignatura.
 	 * @return 0 si se elimina, 1 si no existe.
 	 */
+	@Transactional
 	public int deleteByNombre(String nombre) {
 
-		LanzadorDeException.verificarNombre(nombre);
+		LanzadorDeException.verificarNombreAsignatura(nombre);
 
 		if (asignaturaRep.existsByNombre(nombre)) {
 
 			asignaturaRep.deleteByNombre(nombre);
-
+			AuditoriaDTO auditoria = auditoriaService.preAccion(TipoAccion.DELETE, Servicio.ASIGNATURA);
+	    	auditoriaService.create(auditoria);
 			return 0;
 		}
 
 		return 1;
 	}
 
+	/**
+	 * Obtiene el repositorio de asignaturas.
+	 *
+	 * @return repositorio de asignaturas.
+	 */
 	public AsignaturaRepository getAsignaturaRep() {
 		return asignaturaRep;
 	}
 
-	public void setAsignaturaRep(
-			AsignaturaRepository asignaturaRep) {
+	/**
+	 * Establece el repositorio de asignaturas.
+	 *
+	 * @param asignaturaRep repositorio de asignaturas.
+	 */
+	public void setAsignaturaRep(AsignaturaRepository asignaturaRep) {
 
 		this.asignaturaRep = asignaturaRep;
 	}
 
+	/**
+	 * Obtiene el mapeador utilizado para convertir entre entidades y DTO.
+	 *
+	 * @return mapeador de objetos.
+	 */
 	public ModelMapper getMapper() {
 		return mapper;
 	}
 
+	/**
+	 * Establece el mapeador utilizado para convertir entre entidades y DTO.
+	 *
+	 * @param mapper mapeador de objetos.
+	 */
 	public void setMapper(ModelMapper mapper) {
 		this.mapper = mapper;
 	}

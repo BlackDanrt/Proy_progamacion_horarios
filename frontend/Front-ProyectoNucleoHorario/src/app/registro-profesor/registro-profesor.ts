@@ -1,0 +1,675 @@
+import { ChangeDetectorRef, Component, HostListener, OnInit, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { ProfesorService } from '../services/profesor.service';
+import { SesionService } from '../services/sesion.service';
+import { Dia } from '../enums/dia.enum';
+import { Escalafon } from '../enums/escalafon.enum';
+import { Especialidad } from '../enums/especialidad.enum';
+import { TipoVinculacion } from '../enums/tipoViculacion.enum';
+import { FranjahorariaModel } from '../models/franjahoraria.model';
+import { ProfesorModel } from '../models/profesor.model';
+import { reglaDe } from '../utils/reglas-contrato';
+
+/** Ventana principal del administrador, a donde se vuelve tras crear un profesor. */
+const RUTA_PRINCIPAL = '/inicio-administrador';
+
+/** Intervalo de una hora mostrado en la grilla de disponibilidad. */
+interface FilaHora {
+  /** Hora de inicio de la fila. */
+  inicio: string;
+  /** Hora de fin de la fila. */
+  fin: string;
+  /** Indica si la fila corresponde al almuerzo. */
+  esAlmuerzo: boolean;
+}
+
+/** Mensaje de estado presentado en el formulario. */
+interface Mensaje {
+  /** Tipo visual del mensaje. */
+  tipo: 'exito' | 'error';
+  /** Texto del mensaje. */
+  texto: string;
+}
+
+@Component({
+  selector: 'app-registro-profesor',
+  standalone: false,
+  templateUrl: './registro-profesor.html',
+  styleUrl: './registro-profesor.css',
+})
+/** Permite registrar profesores y gestionar la disponibilidad horaria docente. */
+export class RegistroProfesor implements OnInit {
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly profesorService = inject(ProfesorService);
+  private readonly sesion = inject(SesionService);
+
+  /** true = el administrador registra un profesor; false = el profesor registra su disponibilidad. */
+  esAdministrador: boolean = false;
+
+  // ---- Datos del profesor (modo administrador) ----
+  /** Nombre del profesor. */
+  nombre: string = '';
+  /** Apellido del profesor. */
+  apellido: string = '';
+  /** Documento del profesor, conservado como texto durante la edición. */
+  documento: string = '';
+  /** Correo institucional del profesor. */
+  correo: string = '';
+  /** Contraseña para crear o actualizar la cuenta. */
+  contrasenia: string = '';
+  /** Tipo de vinculación laboral seleccionado. */
+  tipoVinculacion: TipoVinculacion = TipoVinculacion.TIEMPO_COMPLETO;
+  /** Nivel de escalafón seleccionado. */
+  escalafon: Escalafon = Escalafon.INSTRUCTOR_ASISTENTE;
+  /** Horas máximas semanales derivadas del contrato. */
+  horasMaximasSemanales: number = 40;
+  /** Especialidades seleccionadas para el profesor. */
+  especialidadesSeleccionadas: Especialidad[] = [];
+
+  // ---- Modo edición (el administrador edita un profesor existente) ----
+  /** true cuando se llega con ?id=<idProfesor> (desde Gestión de bases de datos). */
+  modoEdicion: boolean = false;
+  private idEdicion: number | null = null;
+  /** Objeto original del back: se usa como base para no perder campos al guardar. */
+  private profesorOriginal: ProfesorModel | null = null;
+
+  // ---- Profesor con sesión (modo profesor) ----
+  /** Perfil del profesor autenticado en modo docente. */
+  profesor: ProfesorModel | null = null;
+
+  // ---- Listas de opciones ----
+  /** Tipos de vinculación disponibles en el formulario. */
+  tiposVinculacion: TipoVinculacion[] = Object.values(TipoVinculacion);
+  /** Niveles de escalafón disponibles. */
+  escalafones: Escalafon[] = Object.values(Escalafon);
+  /** Especialidades disponibles para seleccionar. */
+  especialidades: Especialidad[] = Object.values(Especialidad);
+
+  // ---- Grilla de disponibilidad ----
+  /** Días que aparecen en la grilla de disponibilidad. */
+  dias: { clave: Dia; nombre: string }[] = [
+    { clave: Dia.LUNES, nombre: 'Lunes' },
+    { clave: Dia.MARTES, nombre: 'Martes' },
+    { clave: Dia.MIERCOLES, nombre: 'Miércoles' },
+    { clave: Dia.JUEVES, nombre: 'Jueves' },
+    { clave: Dia.VIERNES, nombre: 'Viernes' },
+    { clave: Dia.SABADO, nombre: 'Sábado' },
+  ];
+
+  /** Filas de 1 hora de 7:00 a 22:00; la de 12:00 a 13:00 es el almuerzo. */
+  filas: FilaHora[] = this.construirFilas();
+
+  /** Filas seleccionadas, identificadas por día y hora. */
+  private seleccion: Set<string> = new Set<string>();
+
+  /** Duración de una clase en horas. */
+  private readonly HORAS_POR_CLASE = 2;
+
+  // ---- Estado de pantalla ----
+  /** Mensaje de resultado del formulario. */
+  mensaje: Mensaje | null = null;
+  /** Aviso que se muestra junto a la grilla cuando un clic no es válido. */
+  avisoGrilla: string | null = null;
+  /** Indica si se está enviando información al backend. */
+  guardando: boolean = false;
+  /** Mensaje de éxito que se muestra en una ventana centrada tras crear un profesor. */
+  exitoCreacion: string | null = null;
+  private temporizadorExito?: ReturnType<typeof setTimeout>;
+  /** Controla la visibilidad del menú de usuario. */
+  mostrarMenuUsuario: boolean = false;
+
+  /** Determina el rol activo y carga los datos necesarios para la pantalla. */
+  ngOnInit(): void {
+    this.esAdministrador = this.sesion.esAdministrador();
+
+    if (!this.esAdministrador) {
+      this.cargarProfesorConSesion();
+      return;
+    }
+
+    // Administrador: si viene ?id=..., se edita ese profesor
+    const idParam = this.route.snapshot.queryParamMap.get('id');
+    if (idParam !== null && !isNaN(Number(idParam))) {
+      this.modoEdicion = true;
+      this.idEdicion = Number(idParam);
+      this.cargarProfesorParaEdicion(this.idEdicion);
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Opciones y etiquetas
+  // ------------------------------------------------------------------
+
+  /** Convierte un valor de enum (TIEMPO_COMPLETO) en texto legible (Tiempo completo). */
+  etiqueta(valor: string): string {
+    const texto: string = valor.replace(/_/g, ' ').toLowerCase();
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+
+  /** Devuelve el nombre legible de la vinculación y su rango de horas. */
+  etiquetaVinculacion(tipo: TipoVinculacion): string {
+    const r = reglaDe(tipo);
+    return `${this.etiqueta(tipo)} (${r.minHoras} a ${r.maxHoras} h)`;
+  }
+
+  /** Las horas de clase salen del contrato: el administrador no las digita. */
+  /** Mínimo de horas semanales establecido por el tipo de vinculación. */
+  get minimoHoras(): number {
+    return reglaDe(this.esAdministrador ? this.tipoVinculacion : this.profesor?.tipoVinculacion)
+      .minHoras;
+  }
+
+  /** Máximo de horas semanales establecido por el tipo de vinculación. */
+  get maximoHoras(): number {
+    return reglaDe(this.esAdministrador ? this.tipoVinculacion : this.profesor?.tipoVinculacion)
+      .maxHoras;
+  }
+
+  /** Actualiza el límite semanal y avisa si la selección lo supera. */
+  alCambiarVinculacion(): void {
+    this.horasMaximasSemanales = this.maximoHoras;
+    // Si ya había marcado más horas de las que permite el nuevo contrato, se avisa
+    if (this.horasSeleccionadas > this.maximoHoras) {
+      this.avisoGrilla = `Con este tipo de vinculación el máximo es ${this.maximoHoras} h y tienes ${this.horasSeleccionadas} h marcadas. Quita algunos bloques.`;
+    }
+  }
+
+  /** Valida las horas marcadas contra el contrato. `exigirMinimo` = false permite dejar la malla vacía (el docente la llena en su primer ingreso). */
+  private validarHorasContrato(exigirMinimo: boolean): string | null {
+    const h = this.horasSeleccionadas;
+    if (h > this.maximoHoras) {
+      return `Marcaste ${h} h y el máximo para este contrato es ${this.maximoHoras} h.`;
+    }
+    if (h < this.minimoHoras && (exigirMinimo || h > 0)) {
+      return `Marcaste ${h} h y el mínimo para este contrato es ${this.minimoHoras} h.`;
+    }
+    return null;
+  }
+
+  /** Añade o quita una especialidad de la selección actual. */
+  toggleEspecialidad(especialidad: Especialidad): void {
+    const indice: number = this.especialidadesSeleccionadas.indexOf(especialidad);
+    if (indice >= 0) {
+      this.especialidadesSeleccionadas.splice(indice, 1);
+    } else {
+      this.especialidadesSeleccionadas.push(especialidad);
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Grilla de disponibilidad
+  // ------------------------------------------------------------------
+
+  /** Genera las filas horarias de la grilla diaria. */
+  private construirFilas(): FilaHora[] {
+    const filas: FilaHora[] = [];
+    for (let hora = 7; hora <= 21; hora++) {
+      filas.push({
+        inicio: this.formatoHora(hora),
+        fin: this.formatoHora(hora + 1),
+        esAlmuerzo: hora === 12,
+      });
+    }
+    return filas;
+  }
+
+  /** Formatea una hora entera como HH:00. */
+  private formatoHora(hora: number): string {
+    return `${hora.toString().padStart(2, '0')}:00`;
+  }
+
+  /** Construye la clave única de una celda de disponibilidad. */
+  private clave(dia: Dia, fila: FilaHora): string {
+    return `${dia}|${fila.inicio}`;
+  }
+
+  /** El almuerzo y, el sábado, todo lo posterior a la 1:00 p. m. no se pueden marcar. */
+  estaDeshabilitada(dia: Dia, fila: FilaHora): boolean {
+    return fila.esAlmuerzo || (dia === Dia.SABADO && fila.inicio >= '13:00');
+  }
+
+  /** Indica si la celda de día y hora está seleccionada. */
+  estaSeleccionada(dia: Dia, fila: FilaHora): boolean {
+    return this.seleccion.has(this.clave(dia, fila));
+  }
+
+  /** Tope de horas semanales: el del formulario (admin) o el del profesor con sesión. */
+  /** Límite semanal de horas según el contrato activo. */
+  get limiteHoras(): number {
+    return this.maximoHoras;
+  }
+
+  /** Cantidad de horas actualmente seleccionadas en la grilla. */
+  get horasSeleccionadas(): number {
+    return this.seleccion.size;
+  }
+
+  /** Selecciona o deselecciona un bloque, validando las reglas horarias. */
+  toggleCelda(dia: Dia, fila: FilaHora): void {
+    if (this.estaDeshabilitada(dia, fila)) {
+      return;
+    }
+    this.avisoGrilla = null;
+
+    // Clic sobre un bloque ya marcado: se desmarca completo.
+    if (this.estaSeleccionada(dia, fila)) {
+      this.quitarBloque(dia, fila);
+      return;
+    }
+
+    const problema: string | null = this.validarNuevoBloque(dia, fila);
+    if (problema) {
+      this.avisoGrilla = problema;
+      return;
+    }
+
+    const i: number = this.filas.indexOf(fila);
+    this.seleccion.add(this.clave(dia, this.filas[i]));
+    this.seleccion.add(this.clave(dia, this.filas[i + 1]));
+  }
+
+  /** Devuelve el motivo por el que no se puede marcar el bloque, o null si es válido. */
+  private validarNuevoBloque(dia: Dia, fila: FilaHora): string | null {
+    if (!this.esAdministrador && !this.profesor) {
+      return 'Espera a que cargue tu información.';
+    }
+
+    const i: number = this.filas.indexOf(fila);
+    const siguiente: FilaHora | undefined = this.filas[i + 1];
+
+    if (!siguiente) {
+      return 'Las clases duran 2 horas y no alcanzan a terminar antes de las 10:00 p. m.';
+    }
+    if (this.estaDeshabilitada(dia, siguiente)) {
+      return 'Una clase de 2 horas desde esta hora chocaría con el almuerzo o con el cierre del sábado.';
+    }
+
+    // Bloque nuevo = filas i e i+1. Puede quedar pegado a otro bloque (horas seguidas),
+    // pero no puede cruzarse con horas ya marcadas.
+    const ocupada = (idx: number): boolean =>
+      this.seleccion.has(this.clave(dia, this.filas[idx]));
+
+    if (ocupada(i) || ocupada(i + 1)) {
+      return 'Ese bloque de 2 horas se cruza con horas que ya marcaste.';
+    }
+
+    if (this.horasSeleccionadas + this.HORAS_POR_CLASE > this.limiteHoras) {
+      return `No puedes superar tus horas máximas por semana (${this.limiteHoras} h).`;
+    }
+    return null;
+  }
+
+  /**
+   * Quita de la grilla el bloque de 2 horas al que pertenece la celda.
+   * Como los bloques pueden quedar seguidos, se parte la tanda de horas consecutivas
+   * en bloques de 2 contando desde su inicio y solo se borra el bloque pulsado.
+   */
+  private quitarBloque(dia: Dia, fila: FilaHora): void {
+    const marcada = (idx: number): boolean =>
+      idx >= 0 && idx < this.filas.length && this.seleccion.has(this.clave(dia, this.filas[idx]));
+
+    const i: number = this.filas.indexOf(fila);
+    let desde: number = i;
+    while (marcada(desde - 1)) desde--;
+
+    const inicioBloque: number = desde + Math.floor((i - desde) / this.HORAS_POR_CLASE) * this.HORAS_POR_CLASE;
+    for (let k = inicioBloque; k < inicioBloque + this.HORAS_POR_CLASE; k++) {
+      if (marcada(k)) {
+        this.seleccion.delete(this.clave(dia, this.filas[k]));
+      }
+    }
+  }
+
+  /** Une las horas seguidas de cada día en rangos (por ejemplo 07:00 a 12:00). */
+  private construirFranjas(): FranjahorariaModel[] {
+    const franjas: FranjahorariaModel[] = [];
+
+    for (const dia of this.dias) {
+      const horas: FilaHora[] = this.filas.filter((f) => this.estaSeleccionada(dia.clave, f));
+      let inicio: string | null = null;
+      let fin: string | null = null;
+
+      for (const fila of horas) {
+        if (inicio !== null && fin === fila.inicio) {
+          fin = fila.fin;
+        } else {
+          if (inicio !== null && fin !== null) {
+            franjas.push({ dia: dia.clave, horaInicio: inicio, horaFin: fin });
+          }
+          inicio = fila.inicio;
+          fin = fila.fin;
+        }
+      }
+      if (inicio !== null && fin !== null) {
+        franjas.push({ dia: dia.clave, horaInicio: inicio, horaFin: fin });
+      }
+    }
+    return franjas;
+  }
+
+  /** Marca en la grilla las horas que cubren las franjas ya guardadas. */
+  private cargarSeleccion(franjas: FranjahorariaModel[]): void {
+    this.seleccion.clear();
+    for (const franja of franjas) {
+      const inicio: string = franja.horaInicio.slice(0, 5);
+      const fin: string = franja.horaFin.slice(0, 5);
+      for (const fila of this.filas) {
+        if (!fila.esAlmuerzo && fila.inicio >= inicio && fila.fin <= fin) {
+          this.seleccion.add(this.clave(franja.dia, fila));
+        }
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Carga del profesor con sesión
+  // ------------------------------------------------------------------
+
+  /** Carga el perfil y disponibilidad del profesor autenticado. */
+  private cargarProfesorConSesion(): void {
+    const id: number | null = this.sesion.getProfesorId();
+
+    this.profesorService.mostrarTodo().subscribe({
+      next: (respuesta) => {
+        this.profesor = (respuesta.body ?? []).find((p) => p.id === id) ?? null;
+        if (this.profesor) {
+          this.cargarSeleccion(this.profesor.disponibilidadHoraria ?? []);
+        }
+        this.cdr.detectChanges();
+      },
+      error: (error: HttpErrorResponse) => this.mostrarError(error),
+    });
+  }
+
+  /** Carga los datos ya registrados del profesor en el formulario y su malla en la grilla. */
+  private cargarProfesorParaEdicion(id: number): void {
+    this.profesorService.mostrarTodo().subscribe({
+      next: (respuesta) => {
+        const encontrado = (respuesta.body ?? []).find((p) => p.id === id) ?? null;
+        if (!encontrado) {
+          this.mostrarMensaje('error', 'No se encontró el profesor que intentas editar.');
+          return;
+        }
+
+        this.profesorOriginal = encontrado;
+        this.nombre = encontrado.nombre ?? '';
+        this.apellido = encontrado.apellido ?? '';
+        this.documento = encontrado.documento != null ? String(encontrado.documento) : '';
+        this.correo = encontrado.correo ?? '';
+        this.contrasenia = ''; // vacía = no se cambia
+        this.tipoVinculacion = encontrado.tipoVinculacion;
+        this.escalafon = encontrado.escalafon;
+        this.horasMaximasSemanales = this.maximoHoras;
+        this.especialidadesSeleccionadas = [...(encontrado.especialidades ?? [])];
+        this.cargarSeleccion(encontrado.disponibilidadHoraria ?? []);
+        this.cdr.detectChanges();
+      },
+      error: (error: HttpErrorResponse) => this.mostrarError(error),
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // Guardar
+  // ------------------------------------------------------------------
+
+  /** Guarda el perfil o disponibilidad según el rol y modo actual. */
+  guardar(): void {
+    if (this.guardando) {
+      return;
+    }
+    this.mensaje = null;
+
+    if (this.esAdministrador && this.modoEdicion) {
+      this.actualizarProfesorExistente();
+    } else if (this.esAdministrador) {
+      this.crearProfesor();
+    } else {
+      this.guardarDisponibilidadPropia();
+    }
+  }
+
+  /** Valida y envía al backend el nuevo perfil docente. */
+  private crearProfesor(): void {
+    if (
+      !this.nombre.trim() ||
+      !this.apellido.trim() ||
+      !this.documento ||
+      !this.correo.trim() ||
+      !this.contrasenia
+    ) {
+      this.mostrarMensaje('error', 'Completa nombre, apellido, documento, correo y contraseña.');
+      return;
+    }
+    if (this.especialidadesSeleccionadas.length === 0) {
+      this.mostrarMensaje('error', 'Selecciona al menos una especialidad.');
+      return;
+    }
+    const errorHoras = this.validarHorasContrato(false);
+    if (errorHoras) {
+      this.mostrarMensaje('error', errorHoras);
+      return;
+    }
+
+    const profesor: ProfesorModel = {
+      nombre: this.nombre.trim(),
+      apellido: this.apellido.trim(),
+      documento: Number(this.documento),
+      correo: this.correo.trim(),
+      contrasenia: this.contrasenia,
+      tipoVinculacion: this.tipoVinculacion,
+      escalafon: this.escalafon,
+      especialidades: this.especialidadesSeleccionadas,
+      horasMaximasSemanales: this.maximoHoras,
+      disponibilidadHoraria: this.construirFranjas(),
+    };
+
+    this.guardando = true;
+    this.profesorService.crearProfesor(profesor).subscribe({
+      next: (texto: string) => {
+        this.guardando = false;
+        this.limpiarFormulario();
+        this.mostrarExitoCreacion(texto);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.guardando = false;
+        this.mostrarError(error);
+      },
+    });
+  }
+
+  /** Edición por el administrador: actualiza los datos y luego reemplaza la malla horaria. */
+  private actualizarProfesorExistente(): void {
+    if (this.idEdicion === null || !this.profesorOriginal) {
+      this.mostrarMensaje('error', 'Aún no se han cargado los datos del profesor.');
+      return;
+    }
+    if (!this.nombre.trim() || !this.apellido.trim() || !this.documento || !this.correo.trim()) {
+      this.mostrarMensaje('error', 'Completa nombre, apellido, documento y correo.');
+      return;
+    }
+    if (this.especialidadesSeleccionadas.length === 0) {
+      this.mostrarMensaje('error', 'Selecciona al menos una especialidad.');
+      return;
+    }
+    const errorHoras = this.validarHorasContrato(false);
+    if (errorHoras) {
+      this.mostrarMensaje('error', errorHoras);
+      return;
+    }
+
+    const idProfesor: number = this.idEdicion;
+    const franjas: FranjahorariaModel[] = this.construirFranjas();
+    const teniaMalla: boolean = (this.profesorOriginal.disponibilidadHoraria ?? []).length > 0;
+
+    const profesor = {
+      ...this.profesorOriginal,
+      nombre: this.nombre.trim(),
+      apellido: this.apellido.trim(),
+      documento: Number(this.documento),
+      correo: this.correo.trim(),
+      tipoVinculacion: this.tipoVinculacion,
+      escalafon: this.escalafon,
+      especialidades: this.especialidadesSeleccionadas,
+      horasMaximasSemanales: this.maximoHoras,
+      disponibilidadHoraria: franjas,
+    } as ProfesorModel;
+
+    // Contraseña: solo se envía si el administrador escribió una nueva
+    if (this.contrasenia) {
+      profesor.contrasenia = this.contrasenia;
+    } else {
+      delete (profesor as any).contrasenia;
+    }
+
+    this.guardando = true;
+    this.profesorService
+      .actualizarInformacionProfesor(profesor)
+      .pipe(
+        switchMap(() =>
+          franjas.length > 0 || teniaMalla
+            ? this.profesorService.guardarDisponibilidad(idProfesor, franjas)
+            : of(''),
+        ),
+      )
+      .subscribe({
+        next: () => {
+          this.guardando = false;
+          this.router.navigate(['/gestion-bases-datos']);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.guardando = false;
+          this.mostrarError(error);
+        },
+      });
+  }
+
+  /** Valida y guarda la disponibilidad del profesor autenticado. */
+  private guardarDisponibilidadPropia(): void {
+    const id: number | null = this.sesion.getProfesorId();
+    if (id === null) {
+      this.mostrarMensaje('error', 'No se encontró tu sesión. Inicia sesión de nuevo.');
+      return;
+    }
+
+    const franjas: FranjahorariaModel[] = this.construirFranjas();
+    if (franjas.length === 0) {
+      this.mostrarMensaje('error', 'Marca al menos una hora de disponibilidad.');
+      return;
+    }
+    const errorHorasPropias = this.validarHorasContrato(true);
+    if (errorHorasPropias) {
+      this.mostrarMensaje('error', errorHorasPropias);
+      return;
+    }
+
+    this.guardando = true;
+    this.profesorService.guardarDisponibilidad(id, franjas).subscribe({
+      next: () => {
+        this.guardando = false;
+        this.router.navigate(['/inicio-docente']);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.guardando = false;
+        this.mostrarError(error);
+      },
+    });
+  }
+
+  /** Restablece los campos y la grilla a sus valores iniciales. */
+  private limpiarFormulario(): void {
+    this.nombre = '';
+    this.apellido = '';
+    this.documento = '';
+    this.correo = '';
+    this.contrasenia = '';
+    this.tipoVinculacion = TipoVinculacion.TIEMPO_COMPLETO;
+    this.escalafon = Escalafon.INSTRUCTOR_ASISTENTE;
+    this.horasMaximasSemanales = this.maximoHoras;
+    this.especialidadesSeleccionadas = [];
+    this.seleccion.clear();
+    this.avisoGrilla = null;
+    this.cdr.detectChanges();
+  }
+
+  // ------------------------------------------------------------------
+  // Éxito al crear: ventana centrada y regreso a la ventana principal
+  // ------------------------------------------------------------------
+
+  private mostrarExitoCreacion(texto: string): void {
+    this.exitoCreacion = texto && texto.trim() ? texto : 'Se ha creado el profesor con éxito.';
+    this.cdr.detectChanges();
+    this.temporizadorExito = setTimeout(() => this.cerrarExitoCreacion(), 2500);
+  }
+
+  /** Cierra el aviso de creación exitosa y vuelve a la pantalla principal. */
+  cerrarExitoCreacion(): void {
+    if (this.temporizadorExito) clearTimeout(this.temporizadorExito);
+    this.exitoCreacion = null;
+    this.router.navigate([RUTA_PRINCIPAL]);
+  }
+
+  // ------------------------------------------------------------------
+  // Mensajes
+  // ------------------------------------------------------------------
+
+  private mostrarMensaje(tipo: 'exito' | 'error', texto: string): void {
+    this.mensaje = { tipo, texto };
+    this.cdr.detectChanges();
+  }
+
+  /** Muestra el motivo que devuelve el back (texto) o un mensaje según el código HTTP. */
+  private mostrarError(error: HttpErrorResponse): void {
+    if (error.status === 0) {
+      this.mostrarMensaje('error', 'No se pudo conectar con el servidor.');
+    } else if (error.status === 403) {
+      this.mostrarMensaje(
+        'error',
+        typeof error.error === 'string' && error.error
+          ? error.error
+          : 'No tienes permiso para realizar esta acción.',
+      );
+    } else {
+      this.mostrarMensaje(
+        'error',
+        typeof error.error === 'string' && error.error
+          ? error.error
+          : `Ocurrió un error (código ${error.status}).`,
+      );
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Navegación y sesión
+  // ------------------------------------------------------------------
+
+  /** Navega a la ruta indicada. */
+  navegarA(ruta: string): void {
+    this.router.navigate([ruta]);
+  }
+
+  /** Alterna el menú de usuario y evita propagar el clic. */
+  toggleMenuUsuario(event: Event): void {
+    event.stopPropagation();
+    this.mostrarMenuUsuario = !this.mostrarMenuUsuario;
+  }
+
+  /** Cierra la sesión actual y vuelve a la pantalla de acceso. */
+  cerrarSesion(): void {
+    this.mostrarMenuUsuario = false;
+    this.sesion.cerrarSesion();
+    this.router.navigate(['/loginn']);
+  }
+
+  @HostListener('document:click')
+  /** Cierra el menú cuando se hace clic fuera de él. */
+  cerrarMenuAlHacerClicFuera(): void {
+    if (this.mostrarMenuUsuario) {
+      this.mostrarMenuUsuario = false;
+    }
+  }
+}

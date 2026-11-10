@@ -3,6 +3,8 @@ package co.edu.unbosque.horarios.repository;
 import java.time.LocalTime;
 import java.util.List;
 
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 import co.edu.unbosque.horarios.entity.FranjaHoraria;
@@ -22,36 +24,50 @@ public interface FranjaHorariaRepository extends CrudRepository<FranjaHoraria, L
 
 	/**
 	 * Busca las franjas horarias correspondientes a un día específico.
-	 * * @param dia El día de la semana a buscar.
+	 * 
+	 * @param dia El día de la semana a buscar.
 	 * @return Una lista con las franjas horarias encontradas.
 	 */
 	public List<FranjaHoraria> findByDia(Dia dia);
 
 	/**
 	 * Busca las franjas horarias que comienzan a una hora específica.
-	 * * @param horaInicio La hora de inicio a buscar.
+	 * 
+	 * @param horaInicio La hora de inicio a buscar.
 	 * @return Una lista con las franjas horarias encontradas.
 	 */
 	public List<FranjaHoraria> findByHoraInicio(LocalTime horaInicio);
 
 	/**
 	 * Busca las franjas horarias que terminan a una hora específica.
-	 * * @param horaFin La hora de fin a buscar.
+	 * 
+	 * @param horaFin La hora de fin a buscar.
 	 * @return Una lista con las franjas horarias encontradas.
 	 */
 	public List<FranjaHoraria> findByHoraFin(LocalTime horaFin);
 
 	/**
 	 * Verifica la existencia de una franja horaria correspondiente a un día.
-	 * * @param dia El día de la semana a comprobar.
-	 * @return true si existe al menos una franja para ese día, false en caso contrario.
+	 * 
+	 * @param dia El día de la semana a comprobar.
+	 * @return true si existe al menos una franja para ese día, false en caso
+	 *         contrario.
 	 */
 	public boolean existsByDia(Dia dia);
 
 	/**
 	 * Elimina todas las franjas horarias correspondientes a un día específico.
-	 * * @param dia El día de la semana cuyas franjas se eliminarán.
+	 * 
+	 * @param dia El día de la semana cuyas franjas se eliminarán.
 	 */
 	public void deleteByDia(Dia dia);
+
+	/**
+	 * Elimina las franjas horarias huérfanas (aquellas que no están asociadas ni a
+	 * un grupo ni a la disponibilidad de un profesor).
+	 */
+	@Modifying
+	@Query(value = "DELETE FROM franja_horaria WHERE id NOT IN (SELECT franja_horaria_id FROM grupo_franja) AND id NOT IN (SELECT franja_horaria_id FROM profesor_franja)", nativeQuery = true)
+	public void deleteOrphanFranjas();
 
 }

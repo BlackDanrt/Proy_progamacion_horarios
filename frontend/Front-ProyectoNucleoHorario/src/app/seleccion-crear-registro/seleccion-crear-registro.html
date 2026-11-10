@@ -1,0 +1,45 @@
+<div class="modal-overlay" (click)="cerrarModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <button type="button" class="close-btn" (click)="cerrarModal()" title="Cerrar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+
+    <div class="modal-header">
+      <h2>Crear Nuevo Registro</h2>
+    </div>
+
+    <div class="options-container">
+
+      <div class="option-card" (click)="seleccionarTipo('docente')">
+        <div class="icon-wrapper icon-docente">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M17 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M9 21v-2a4 4 0 0 1 4-4h1"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <h3>Docente</h3>
+        <p>Registra un nuevo profesor con su disponibilidad horaria y especialidad</p>
+        <span class="btn-select">Crear Docente</span>
+      </div>
+
+      <div class="option-card" (click)="seleccionarTipo('administrador')">
+        <div class="icon-wrapper icon-admin">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <h3>Administrador</h3>
+        <p>Registra un usuario administrador con gestión total sobre el sistema</p>
+        <span class="btn-select">Crear Administrador</span>
+      </div>
+
+    </div>
+
+  </div>
+</div>
