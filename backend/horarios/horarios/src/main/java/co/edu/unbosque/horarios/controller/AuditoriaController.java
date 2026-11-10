@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
  */
 @RestController
 @RequestMapping("/auditoria")
-@CrossOrigin(origins = { "http://localhost:8080", "*" })
+@CrossOrigin(origins = { "https://prismawebueb.netlify.app" })
 public class AuditoriaController {
 
 	/** Servicio para la lógica de la auditoria. */

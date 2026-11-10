@@ -31,7 +31,7 @@ import co.edu.unbosque.horarios.security.JwtUtil;
  */
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = { "http://localhost:8080", "*" })
+@CrossOrigin(origins = { "https://prismawebueb.netlify.app" })
 public class AuthController {
 
 	/** Gestor encargado de la autenticación de los usuarios. */

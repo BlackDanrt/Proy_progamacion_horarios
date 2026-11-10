@@ -32,7 +32,7 @@ import co.edu.unbosque.horarios.util.enums.Bloque;
  */
 @RestController
 @RequestMapping("/salon")
-@CrossOrigin(origins = { "http://localhost:8080", "*" })
+@CrossOrigin(origins = { "https://prismawebueb.netlify.app" })
 public class SalonController {
 
 	/**

@@ -34,7 +34,7 @@ import co.edu.unbosque.horarios.util.enums.EstadoGrupo;
  */
 @RestController
 @RequestMapping("/grupo")
-@CrossOrigin(origins = { "http://localhost:8080", "*" })
+@CrossOrigin(origins = { "https://prismawebueb.netlify.app" })
 public class GrupoController {
 
 	/**
